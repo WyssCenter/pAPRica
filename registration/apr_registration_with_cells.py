@@ -34,7 +34,7 @@ def display_registration(u1, u2, translation, scale=[1, 1, 1], contrast_limit=[0
         viewer.add_image(u1,
                          contrast_limits=contrast_limit,
                          multiscale=False,
-                         name='Left',
+                         name='1',
                          scale=scale,
                          opacity=opacity,
                          colormap='red',
@@ -42,7 +42,7 @@ def display_registration(u1, u2, translation, scale=[1, 1, 1], contrast_limit=[0
         viewer.add_image(u2,
                          contrast_limits=contrast_limit,
                          multiscale=False,
-                         name='Right',
+                         name='2',
                          translate=translation,
                          scale=scale,
                          opacity=opacity,
@@ -108,11 +108,11 @@ def compare_segmentation(u, lmap1, lmap2, vdim=2, **kwargs):
     with napari.gui_qt():
         viewer = napari.Viewer(ndisplay=vdim)
         # add the volumes
-        viewer.add_image(u, name='Intensity image left', **kwargs)
-        viewer.add_image(u, name='Intensity image right', translate=[0, 0, u.shape[-1]], **kwargs)
+        viewer.add_image(u, name='Intensity image 1', **kwargs)
+        viewer.add_image(u, name='Intensity image 2', translate=[0, 0, u.shape[-1]], **kwargs)
         # add labels
-        viewer.add_labels(lmap1, name='Segmentation left', **kwargs)
-        viewer.add_labels(lmap2, name='Segmentation right', translate=[0, 0, u.shape[-1]], **kwargs)
+        viewer.add_labels(lmap1, name='Segmentation 1', **kwargs)
+        viewer.add_labels(lmap2, name='Segmentation 2', translate=[0, 0, u.shape[-1]], **kwargs)
 
 
 def get_projection(c):
@@ -592,195 +592,143 @@ def find_rigid_ransac(c1, c2, plot=False, verbose=True):
 
 
 # Parameters
-path = r'/media/sf_shared_folder_virtualbox/mouse_2P/data1/2P_FF0.7_AF3_Int50_Zoom3_Stacks.tif'
-overlap = 25
+folder_path = r'/media/sf_shared_folder_virtualbox/PV_interneurons'
+image_path = r'substack.tif'
+clf_path = r'classifiers/random_forest_n100.joblib'
+overlap_size = 512
+overlap_shift = 1024
 
-# Read image and divide it in two with overlap %
-image_ini = imread(path)
-image_ini = ((image_ini/4)+100).astype('uint16') # The classifier was train with this intensity transform
-s_ini = image_ini.shape
-# Image left and image right are overlapping region where we are looking for the
-# correct registration parameters
-image_left = image_ini[:, :, :int(s_ini[2]/2*(1+overlap/100))]
 
-# Apply a random shift for image_right
+# Load data
+image_1 = imread(os.path.join(folder_path, image_path))
+clf = load(os.path.join(folder_path, clf_path))
+
+# Resize image with overlap size
+image_1 = image_1[:, :, overlap_shift:overlap_shift+overlap_size]
+print('Overlap data size: {:.2f} Mo.'.format(image_1.size*2/1e6))
+# image_ini = ((image_ini/4)+100).astype('uint16') # The classifier was train with this intensity transform
+
+# Apply a random shift for image_2
 np.random.seed(0)
-random_displacement = np.random.randn(3)*[1, 5, 5]
-image_ini_shifted = np.abs(np.fft.ifftn(fourier_shift(np.fft.fftn(image_ini), shift=random_displacement))).astype('uint16')
-image_right = image_ini_shifted[:, :, int(s_ini[2]/2*(1-overlap/100)):]
+random_displacement = np.random.randn(3)*[5, 10, 10]
+image_2 = np.abs(np.fft.ifftn(fourier_shift(np.fft.fftn(image_1), shift=random_displacement)))
+image_2 = (image_2 + np.random.randn(*image_2.shape)*100)
+image_2[image_2 < 0] = 0
+image_2[image_2 > 2**16-1] = 2**16-1
+image_2 = image_2.astype('uint16')
 
 # Visualize both volumes using Napari with the compensated shift
-display_registration(image_left, image_right, contrast_limit=[0, 40000],
-                     translation=[0, 0, int(s_ini[2]/2*(1-overlap/100))])
-display_registration(image_left, image_right, contrast_limit=[0, 40000],
-                     translation=[0, 0, int(s_ini[2]/2*(1-overlap/100))]-random_displacement)
+# display_registration(image_1, image_2, contrast_limit=[0, 1000], translation=[0, 0, 0])
+# display_registration(image_1, image_2, contrast_limit=[0, 1000], translation=-random_displacement)
 
 # Convert volumes to APR
 par = pyapr.APRParameters()
 par.auto_parameters = False # really heuristic and not working
-par.sigma_th = 26.0
-par.grad_th = 3.0
-par.Ip_th = 253.0
+# Parameters for Nissl
+# par.sigma_th = 26.0
+# par.grad_th = 3.0
+# par.Ip_th = 253.0
+# par.rel_error = 0.2
+# par.gradient_smoothing = 2
+# Parameters for PV_interneurons
+par.sigma_th = 562.0
+par.grad_th = 49.0
+par.Ip_th = 903.0
 par.rel_error = 0.2
-par.gradient_smoothing = 2
-apr_left, parts_left = pyapr.converter.get_apr(image_left, verbose=True, params=par)
-apr_right, parts_right = pyapr.converter.get_apr(image_right, verbose=True, params=par)
+par.gradient_smoothing = 2.0
+par.dx = 1
+par.dy = 1
+par.dz = 3
+apr_1, parts_1 = pyapr.converter.get_apr(image_1, verbose=True, params=par)
+apr_2, parts_2 = pyapr.converter.get_apr(image_2, verbose=True, params=par)
 
 # Segment particles on both overlapping volumes
-clf = load('/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_forest_n100.joblib')
-cc_left = segment_apr(apr_left, parts_left, clf)
-cc_right = segment_apr(apr_right, parts_right, clf)
+t = time()
+cc_1 = segment_apr(apr_1, parts_1, clf)
+print('Segmentation of 1st APR elapsed time: {:.3f} s.'.format(time()-t))
+t = time()
+cc_2 = segment_apr(apr_2, parts_2, clf)
+print('Segmentation of 1st APR elapsed time: {:.3f} s.'.format(time()-t))
+
+# Display segmentations
+lmap_1 = np.array(pyapr.numerics.reconstruction.recon_pc(apr_1, cc_1))
+lmap_2 = np.array(pyapr.numerics.reconstruction.recon_pc(apr_2, cc_2))
+# display_registration(lmap_1, lmap_2, translation=-random_displacement)
 
 # Compute features on both segmented volumes
-lmap_left = np.array(pyapr.numerics.reconstruction.recon_pc(apr_left, cc_left))
-lmap_right = np.array(pyapr.numerics.reconstruction.recon_pc(apr_right, cc_right))
-display_registration(lmap_left, lmap_right, translation=[0, 0, int(s_ini[2]/2*(1-overlap/100))]-random_displacement)
-f_left = pd.DataFrame(regionprops_table(label_image=lmap_left, intensity_image=image_left, properties=PROPS.values()))
-f_right = pd.DataFrame(regionprops_table(label_image=lmap_right, intensity_image=image_right, properties=PROPS.values()))
+f_1 = pd.DataFrame(regionprops_table(label_image=lmap_1, intensity_image=image_1, properties=PROPS.values()))
+f_2 = pd.DataFrame(regionprops_table(label_image=lmap_2, intensity_image=image_2, properties=PROPS.values()))
 
 coord = 'weighted_centroid-'
 
-# TODO: check the conditions on ind to include all the overlapping cells
-c_left = f_left[[coord + str(i) for i in range(3)]]
-# f_left.drop([coord + str(i) for i in range(3)], axis='columns', inplace=True)
-ind = c_left[coord + str(2)] > s_ini[2]/2 - overlap
-f_left_overlap = f_left[ind].dropna(axis='columns')
-c_left = c_left[ind].to_numpy()
-c_left[:, 2] = c_left[:, 2] - s_ini[2]/2*(1-overlap/100)
+# TODO: display segmentation and centroid in napari
+c_1 = f_1[[coord + str(i) for i in range(3)]].to_numpy()
+f_1_numpy = f_1.drop([coord + str(i) for i in range(3)], axis='columns').to_numpy()
 
-c_right = f_right[[coord + str(i) for i in range(3)]]
-# f_right.drop([coord + str(i) for i in range(3)], axis='columns', inplace=True)
-ind = c_right[coord + str(2)] < s_ini[2]/2*(overlap/100) + overlap
-f_right_overlap = f_right[ind].dropna(axis='columns')
-c_right = c_right[ind].to_numpy()
+c_2 = f_2[[coord + str(i) for i in range(3)]].to_numpy()
+f_2_numpy = f_2.drop([coord + str(i) for i in range(3)], axis='columns').to_numpy()
 
-c1, c2 = match_features_flann(f_left_overlap, f_right_overlap, c_left, c_right, lowe_ratio=0.7)
+t = time()
+c1, c2 = match_features_flann(f_1_numpy, f_2_numpy, c_1, c_2, lowe_ratio=0.7)
+print('Flann match elapsed time: {:.3f} s.'.format(time()-t))
 
-def display_registration_points(u1, u2, c1, c2, translation, scale=[1, 1, 1], contrast_limit=[0, 30000], opacity=0.7):
-    with napari.gui_qt():
-        viewer = napari.Viewer()
-        viewer.add_image(u1,
-                         contrast_limits=contrast_limit,
-                         multiscale=False,
-                         name='Left',
-                         scale=scale,
-                         opacity=opacity,
-                         colormap='red',
-                         blending='additive')
-        viewer.add_points(c1)
-        viewer.add_image(u2,
-                         contrast_limits=contrast_limit,
-                         multiscale=False,
-                         name='Right',
-                         translate=translation,
-                         scale=scale,
-                         opacity=opacity,
-                         colormap='green',
-                         blending='additive')
-        viewer.add_points(c2)
+# def display_registration_points(u1, u2, c1, c2, translation, scale=[1, 1, 1], contrast_limit=[0, 30000], opacity=0.7):
+#     with napari.gui_qt():
+#         viewer = napari.Viewer()
+#         viewer.add_image(u1,
+#                          contrast_limits=contrast_limit,
+#                          multiscale=False,
+#                          name='1',
+#                          scale=scale,
+#                          opacity=opacity,
+#                          colormap='red',
+#                          blending='additive')
+#         viewer.add_points(c1)
+#         viewer.add_image(u2,
+#                          contrast_limits=contrast_limit,
+#                          multiscale=False,
+#                          name='2',
+#                          translate=translation,
+#                          scale=scale,
+#                          opacity=opacity,
+#                          colormap='green',
+#                          blending='additive')
+#         viewer.add_points(c2)
 
 
 # Display in 3D c1 and c2_reg before computing the transform with ransac
-c2_reg = c2 - np.tile(random_displacement, (c2.shape[0], 1))
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(c1[:, 0], c1[:, 1], c1[:, 2], color='k', label='image_left')
-ax.scatter(c2_reg[:, 0], c2_reg[:, 1], c2_reg[:, 2], color='r', label='image_right reg')
-plt.legend()
+# c2_reg = c2 - np.tile(random_displacement, (c2.shape[0], 1))
+# fig = plt.figure()
+# ax = fig.add_subplot(111, projection='3d')
+# ax.scatter(c1[:, 0], c1[:, 1], c1[:, 2], color='g', label='image_1', alpha=0.5)
+# ax.scatter(c2_reg[:, 0], c2_reg[:, 1], c2_reg[:, 2], color='r', label='image_2 reg', alpha=0.5)
+# plt.legend()
+#
+# plt.figure()
+# plt.scatter(c1[:, 0], c1[:, 1], color='g', label='image_1', alpha=0.5)
+# plt.scatter(c2_reg[:, 0], c2_reg[:, 1], color='r', label='image_2 reg', alpha=0.5)
+# plt.xlabel('0')
+# plt.ylabel('1')
+# plt.legend()
+#
+# plt.figure()
+# plt.scatter(c1[:, 0], c1[:, 2], color='g', label='image_1', alpha=0.5)
+# plt.scatter(c2_reg[:, 0], c2_reg[:, 2], color='r', label='image_2 reg', alpha=0.5)
+# plt.xlabel('0')
+# plt.ylabel('2')
+# plt.legend()
+#
+# plt.figure()
+# plt.scatter(c1[:, 1], c1[:, 2], color='g', label='image_1', alpha=0.5)
+# plt.scatter(c2_reg[:, 1], c2_reg[:, 2], color='r', label='image_2 reg', alpha=0.5)
+# plt.xlabel('1')
+# plt.ylabel('2')
+# plt.legend()
 
-plt.figure()
-plt.scatter(c1[:, 0], c1[:, 1], color='k', label='image_left')
-plt.scatter(c2_reg[:, 0], c2_reg[:, 1], color='r', label='image_right reg')
-plt.xlabel('0')
-plt.ylabel('1')
-plt.legend()
+t = time()
+d_mes = find_rigid_ransac(c1, c2, plot=False, verbose=True)
+print('RANSAC elapsed time: {:.3f} s.'.format(time()-t))
 
-plt.figure()
-plt.scatter(c1[:, 0], c1[:, 2], color='k', label='image_left')
-plt.scatter(c2_reg[:, 0], c2_reg[:, 2], color='r', label='image_right reg')
-plt.xlabel('0')
-plt.ylabel('2')
-plt.legend()
-
-plt.figure()
-plt.scatter(c1[:, 1], c1[:, 2], color='k', label='image_left')
-plt.scatter(c2_reg[:, 1], c2_reg[:, 2], color='r', label='image_right reg')
-plt.xlabel('1')
-plt.ylabel('2')
-plt.legend()
-
-d_mes = find_rigid_ransac(c1, c2, plot=True, verbose=True)
-
-# Keep only cells on the overlapping area
-# l = s_ini[2]
-# centroids = f_left['centroid-2']
-# ind_left = centroids > l*(1-overlap/100)
-
-
-#
-#
-#
-#
-# # Create sub-images on the overlapping area
-# parts_left = np.array(parts_left)
-# parts_right = np.array(parts_right)
-#
-# # Get particle position and level for left image
-# apr_it = apr_left.iterator()
-# part_position_left = []
-# part_level_left = []
-# part_intensity_left = []
-# for level in range(apr_it.level_min(), apr_it.level_max()+1):
-#     for z in range(apr_it.z_num(level)):
-#         for x in range(apr_it.x_num(level)):
-#             for idx in range(apr_it.begin(level, z, x), apr_it.end()):
-#                 y = apr_it.y(idx)
-#                 part_position_left.append([z, y, x])
-#                 part_level_left.append(level)
-#                 part_intensity_left.append(parts_left[idx])
-#
-# # Find the Nth particles with highest brightness
-# N = 1000
-# part_intensity_left = np.array(part_intensity_left)
-# ind_max = np.argpartition(part_intensity_left, kth=len(part_intensity_left)-N)
-# ind_max = ind_max[-N:]
-# subpart_position_left = np.array(part_position_left)
-# subpart_position_left = subpart_position_left[ind_max, :]
-# subpart_level_left = np.array(part_level_left)
-# subpart_level_left = subpart_level_left[ind_max]
-# subpart_intensity_left = np.array(part_intensity_left)
-# subpart_intensity_left = subpart_intensity_left[ind_max]
-# features_left = np.vstack((subpart_intensity_left, subpart_level_left))
-#
-# # Get particle position and level for right image
-# apr_it = apr_right.iterator()
-# part_position_right = []
-# part_level_right = []
-# part_intensity_right = []
-# for level in range(apr_it.level_min(), apr_it.level_max()+1):
-#     for z in range(apr_it.z_num(level)):
-#         for x in range(apr_it.x_num(level)):
-#             for idx in range(apr_it.begin(level, z, x), apr_it.end()):
-#                 y = apr_it.y(idx)
-#                 part_position_right.append([z, y, x])
-#                 part_level_right.append(level)
-#                 part_intensity_right.append(parts_right[idx])
-#
-# # Find the Nth particles with highest brightness
-# N = 1000
-# part_intensity_right = np.array(part_intensity_right)
-# ind_max = np.argpartition(part_intensity_right, kth=len(part_intensity_right)-N)
-# ind_max = ind_max[-N:]
-# subpart_position_right = np.array(part_position_right)
-# subpart_position_right = subpart_position_right[ind_max, :]
-# subpart_level_right = np.array(part_level_right)
-# subpart_level_right = subpart_level_right[ind_max]
-# subpart_intensity_right = np.array(part_intensity_right)
-# subpart_intensity_right = subpart_intensity_right[ind_max]
-# features_right = np.vstack((subpart_intensity_right, subpart_level_right))
-#
-# # Use Flann method to match particles
-# (a, b) = match_features_flann(features_left, features_right, subpart_position_left, subpart_position_right, lowe_ratio=1)
-#
-# # Add random translation to particles on the right image
-# # TODO: add random translation + noise and see if it still works
+accuracy = (d_mes-random_displacement)
+for i, ax in enumerate(['z', 'x', 'y']):
+    print('Registration error for {} axis: {:0.3f} pixel.'.format(ax, accuracy[i]))

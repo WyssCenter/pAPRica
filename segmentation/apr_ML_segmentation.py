@@ -4,8 +4,6 @@ from skimage.io import imsave, imread
 import matplotlib.pyplot as plt
 import napari
 from time import time
-from skimage.measure import regionprops
-import pandas as pd
 
 
 def are_labels_the_same(local_labels):
@@ -145,153 +143,10 @@ def sample_labels_on_APR(labels, apr, parts_train):
                             print('Ambiguous label detected, set it to 0.')
     return parts_train
 
-def get_patch(apr, parts, minc, maxc, i, display=False):
-    image_patch = np.array(pyapr.numerics.reconstruction.recon_patch(apr, parts,
-                                                            minc[i, 0], maxc[i, 0],
-                                                            minc[i, 1], maxc[i, 1],
-                                                            minc[i, 2], maxc[i, 2]))
-    if display:
-        with napari.gui_qt():
-            viewer = napari.Viewer(ndisplay=2)
-            # add the volume
-            viewer.add_image(image_patch, name='Patch')
-
-    return image_patch
-
-PROPS = {
-    'Area': 'area',
-    'BoundingBox': 'bbox',
-    'BoundingBoxArea': 'bbox_area',
-    'CentralMoments': 'moments_central',
-    'Centroid': 'centroid',
-    'ConvexArea': 'convex_area',
-    # 'ConvexHull',
-    'ConvexImage': 'convex_image',
-    'Coordinates': 'coords',
-    # 'Eccentricity': 'eccentricity',
-    'EquivDiameter': 'equivalent_diameter',
-    'EulerNumber': 'euler_number',
-    'Extent': 'extent',
-    # 'Extrema',
-    # 'FeretDiameterMax': 'feret_diameter_max',
-    'FilledArea': 'filled_area',
-    'FilledImage': 'filled_image',
-    # 'HuMoments': 'moments_hu',
-    'Image': 'image',
-    'InertiaTensor': 'inertia_tensor',
-    'InertiaTensorEigvals': 'inertia_tensor_eigvals',
-    'IntensityImage': 'intensity_image',
-    'Label': 'label',
-    'LocalCentroid': 'local_centroid',
-    'MajorAxisLength': 'major_axis_length',
-    'MaxIntensity': 'max_intensity',
-    'MeanIntensity': 'mean_intensity',
-    'MinIntensity': 'min_intensity',
-    'MinorAxisLength': 'minor_axis_length',
-    'Moments': 'moments',
-    'NormalizedMoments': 'moments_normalized',
-    # 'Orientation': 'orientation',
-    # 'Perimeter': 'perimeter',
-    # 'CroftonPerimeter': 'perimeter_crofton',
-    # 'PixelIdxList',
-    # 'PixelList',
-    # 'Slice': 'slice',
-    # 'Solidity': 'solidity',
-    # 'SubarrayIdx'
-    'WeightedCentralMoments': 'weighted_moments_central',
-    'WeightedCentroid': 'weighted_centroid',
-    # 'WeightedHuMoments': 'weighted_moments_hu',
-    'WeightedLocalCentroid': 'weighted_local_centroid',
-    'WeightedMoments': 'weighted_moments',
-    'WeightedNormalizedMoments': 'weighted_moments_normalized'
-}
-
-OBJECT_COLUMNS = {
-    'image', 'coords', 'convex_image', 'slice',
-    'filled_image', 'intensity_image'
-}
-
-COL_DTYPES = {
-    'area': int,
-    'bbox': int,
-    'bbox_area': int,
-    'moments_central': float,
-    'centroid': float,
-    'convex_area': int,
-    'convex_image': object,
-    'coords': object,
-    'eccentricity': float,
-    'equivalent_diameter': float,
-    'euler_number': int,
-    'extent': float,
-    'feret_diameter_max': float,
-    'filled_area': int,
-    'filled_image': object,
-    'moments_hu': float,
-    'image': object,
-    'inertia_tensor': float,
-    'inertia_tensor_eigvals': float,
-    'intensity_image': object,
-    'label': int,
-    'local_centroid': float,
-    'major_axis_length': float,
-    'max_intensity': int,
-    'mean_intensity': float,
-    'min_intensity': int,
-    'minor_axis_length': float,
-    'moments': float,
-    'moments_normalized': float,
-    'orientation': float,
-    'perimeter': float,
-    'perimeter_crofton': float,
-    'slice': object,
-    'solidity': float,
-    'weighted_moments_central': float,
-    'weighted_centroid': float,
-    'weighted_moments_hu': float,
-    'weighted_local_centroid': float,
-    'weighted_moments': float,
-    'weighted_moments_normalized': float
-}
-
-PROP_VALS = set(PROPS.values())
-
-
-def _props_to_dict(regions, properties=PROPS.values(), separator='-'):
-
-    out = {}
-    n = len(regions)
-    for prop in properties:
-        r = regions[0]
-        rp = getattr(r, prop)
-        dtype = COL_DTYPES[prop]
-        column_buffer = np.zeros(n, dtype=dtype)
-
-        # scalars and objects are dedicated one column per prop
-        # array properties are raveled into multiple columns
-        # for more info, refer to notes 1
-        if np.isscalar(rp) or prop in OBJECT_COLUMNS or dtype is np.object_:
-            for i in range(n):
-                column_buffer[i] = regions[i][prop]
-            out[prop] = np.copy(column_buffer)
-        else:
-            if isinstance(rp, np.ndarray):
-                shape = rp.shape
-            else:
-                shape = (len(rp),)
-
-            for ind in np.ndindex(shape):
-                for k in range(n):
-                    loc = ind if len(ind) > 1 else ind[0]
-                    column_buffer[k] = regions[k][prop][loc]
-                modified_prop = separator.join(map(str, (prop,) + ind))
-                out[modified_prop] = np.copy(column_buffer)
-    return out
-
 
 # APR file to segment
-fpath_apr = r'/media/sf_shared_folder_virtualbox/mouse_2P/data1/2P_mouse_re0.2.apr'
-fpath_labels = r'/media/sf_shared_folder_virtualbox/mouse_2P/data1/manual_sparse_labels_membrane.npy'
+fpath_apr = r'/media/sf_shared_folder_virtualbox/PV_interneurons/output.apr'
+fpath_labels = r'/media/sf_shared_folder_virtualbox/PV_interneurons/manual_sparse_labels_membrane.npy'
 
 # Instantiate APR and particle objects
 apr = pyapr.APR()
@@ -400,8 +255,8 @@ display_segmentation(data, lmap)
 # Save classifier
 # Note: this method is not perfect and it might break if scikit-learn version is not the same between the
 # dump and the loading. Use with caution (see https://scikit-learn.org/stable/modules/model_persistence.html)
-from joblib import dump
-dump(clf, '/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_forest_n100.joblib')
+# from joblib import dump
+# dump(clf, '/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_forest_n100.joblib')
 # To load back use:
 # from joblib import load
 # toto = load('/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_forest_n100.joblib')
@@ -414,18 +269,4 @@ dump(clf, '/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_
 #
 # # Compute the number of detected cells
 # print('Total number of detected cells: {}\n'.format(len(valid_labels)))
-#
-# # Loop to reconstruct object and compute properties on them
-# mask = cc>0
-# n_object = minc.shape[0]
-# cells = []
-# for i in range(n_object):
-#     image_patch = get_patch(apr, parts, minc, maxc, i)
-#     label_patch = get_patch(apr, mask, minc, maxc, i)
-#     l = regionprops(label_image=label_patch, intensity_image=image_patch)
-#     if len(l)>1:
-#         raise ValueError('Several cells detected in the patch.')
-#     cells.append(l[0])
-#
-# cells_dataframe = pd.DataFrame(cells)
 

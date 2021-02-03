@@ -1,3 +1,6 @@
+# This script demonstrate the possibility of performing registration using max-proj on APR
+# followed by phase cross correlation
+
 import pyapr
 from skimage.io import imread, imsave
 import numpy as np
@@ -178,4 +181,4 @@ accuracy = (d+random_displacement)
 for i, ax in enumerate(['z', 'x', 'y']):
     print('Registration error for {} axis: {:0.3f} pixel.'.format(ax, accuracy[i]))
 
-print('Relialability for registration: {:0.3f}.'.format(relialability))
+print('\nRelialability for registration: {:0.3f}.'.format(relialability))

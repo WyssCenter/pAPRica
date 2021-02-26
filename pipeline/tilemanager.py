@@ -9,22 +9,31 @@ import pandas as pd
 import pyapr
 from skimage.registration import phase_cross_correlation
 import re
+from viewer.pyapr_napari import display_layers, APRArray
+from napari.layers import Image
 
 
 class tileParser():
     def __init__(self, path):
         self.path = path
         self.tiles_list = self.get_tile_list()
+        self.type = self.get_type(self.tiles_list[0]['path'])
         self.n_tiles = len(self.tiles_list)
         self.ncol = self.get_ncol()
         self.nrow = self.get_nrow()
         self.neighbors, self.n_edges = self.get_neighbors_map()
         self.path_list = self.get_path_list()
-        self.overlap = self.get_overlap()
+        self.overlap, self.frame_size = self.get_overlap()
 
     def get_overlap(self):
-        u = imread(glob(os.path.join(self.tiles_list[0]['path'], '*.tif'))[0])
-        nx = u.shape[1]
+        if self.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(glob(os.path.join(self.tiles_list[0]['path'], '*.apr'))[0], apr, parts)
+            nx = apr.x_num(apr.level_max())
+        else:
+            u = imread(glob(os.path.join(self.tiles_list[0]['path'], '*.tif'))[0])
+            nx = u.shape[1]
 
         tile1 = self.tiles_list[0]['path']
         tile2 = self.tiles_list[1]['path']
@@ -39,7 +48,7 @@ class tileParser():
         else:
             raise ValueError('Error: can''t infer overlap.')
 
-        return int(overlap)
+        return int(overlap), int(nx)
 
     def get_tile_list(self):
         H_folders = [f.path for f in os.scandir(self.path) if f.is_dir()]
@@ -63,6 +72,10 @@ class tileParser():
             return 'tiff2D'
         elif n_files == 1:
             return 'tiff3D'
+        elif n_files == 0:
+            n_files = len(glob(os.path.join(path, '*.apr')))
+            if n_files == 1:
+                return 'apr'
         else:
             raise TypeError('Error: no tiff files found in {}.'.format(path))
 
@@ -146,6 +159,7 @@ class tileParser():
             neighbors_path.append(self.path_list[y + x * self.nrow])
         e['neighbors_path'] = neighbors_path
         e['overlap'] = self.overlap
+        e['frame_size'] = self.frame_size
         return e
 
     def __len__(self):
@@ -164,9 +178,11 @@ class tileLoader():
         self.neighbors = tile['neighbors']
         self.neighbors_path = tile['neighbors_path']
         self.overlap = tile['overlap']
+        self.frame_size = tile['frame_size']
         self.data = self.load_tile(self.path)
         self.data_neighbors = self.load_neighbors()
-        self.convert_to_apr()
+        if self.type != 'apr':
+            self.convert_to_apr()
 
     def convert_to_apr(self):
         # Parameters are hardcoded for now
@@ -198,6 +214,11 @@ class tileLoader():
                 u[i+1] = imread(file)
         elif self.type == 'tiff3D':
             u = imread(*glob(os.path.join(path, '*.tif')))
+        elif self.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(*glob(os.path.join(path, '*.apr')), apr, parts)
+            u = (apr, parts)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
         return u
@@ -223,19 +244,20 @@ class tileLoader():
 
             tgraph.cgraph_from.append(np.ravel_multi_index([self.row, self.col], dims=(tgraph.nrow, tgraph.ncol)))
             tgraph.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]], dims=(tgraph.nrow, tgraph.ncol)))
-            tgraph.dH.append(reg[1])
-            tgraph.dV.append(reg[2])
+            # H=x, V=y, D=z
+            tgraph.dH.append(reg[2])
+            tgraph.dV.append(reg[1])
             tgraph.dD.append(reg[0])
-            tgraph.relia_H.append(rel[1])
-            tgraph.relia_V.append(rel[2])
+            tgraph.relia_H.append(rel[2])
+            tgraph.relia_V.append(rel[1])
             tgraph.relia_D.append(rel[0])
 
     def _get_max_proj_apr(self, apr, parts, plot=False):
         proj = []
         for d in range(3):
-            # dim=0: project along Y to produce a ZX plane
-            # dim=1: project along X to produce a ZY plane
-            # dim=2: project along Z to produce an XY plane
+            # dim=0: project along Y to produce a ZY plane
+            # dim=1: project along X to produce a ZX plane
+            # dim=2: project along Z to produce an YX plane
             proj.append(pyapr.numerics.transform.maximum_projection(apr, parts, dim=d))
 
         if plot:
@@ -244,7 +266,7 @@ class tileLoader():
                 ax[i].imshow(proj[i], cmap='gray')
         return proj[0], proj[1], proj[2]
 
-    def _get_proj_shifts(self, proj1, proj2, upsample_factor=10):
+    def _get_proj_shifts(self, proj1, proj2, upsample_factor=1):
         """
         This function computes shifts from max-projections on overlapping areas. It uses the phase cross-correlation
         to compute the shifts.
@@ -259,66 +281,103 @@ class tileLoader():
         shifts in (x, y, z) and relialability measure (0=lowest, 1=highest)
         """
         # Compute phase cross-correlation to extract shifts
-        dzx, error_zx, _ = phase_cross_correlation(proj1[0], proj2[0],
+        dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
                                                    return_error=True, upsample_factor=upsample_factor)
-        dzy, error_zy, _ = phase_cross_correlation(proj1[1], proj2[1],
+        dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
                                                    return_error=True, upsample_factor=upsample_factor)
-        dxy, error_xy, _ = phase_cross_correlation(proj1[2], proj2[2],
+        dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
                                                    return_error=True, upsample_factor=upsample_factor)
 
         # Keep only the most reliable registration
+        # D/z
         if error_zx < error_zy:
             dz = dzx[0]
             rz = error_zx
         else:
             dz = dzy[0]
             rz = error_zy
-        if error_zx < error_xy:
+
+        # H/x
+        if error_zx < error_yx:
             dx = dzx[1]
             rx = error_zx
         else:
-            dx = dxy[0]
-            rx = error_xy
-        if error_xy < error_zy:
-            dy = dxy[1]
-            ry = error_xy
+            dx = dyx[1]
+            rx = error_yx
+
+        # V/y
+        if error_yx < error_zy:
+            dy = dyx[0]
+            ry = error_yx
         else:
             dy = dzy[1]
             ry = error_zy
 
-        return np.array([dz, dx, dy]), np.array([rz, rx, ry])
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+        #
+        # if self.row==0 and self.col==1:
+        #     print('ok')
+
+        return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
     def _compute_east_registration(self, v):
         apr_1, parts_1 = self.data
         apr_2, parts_2 = v
 
         # TODO: use the crop in maxproj directly in APR for improving the speed
-        proj_xz1, proj_zy1, proj_xy1 = self._get_max_proj_apr(apr_1, parts_1, plot=False)
-        proj_xz1 = proj_xz1[:, -self.overlap:]
-        proj_xy1 = proj_xy1[:, -self.overlap:]
+        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, plot=False)
+        proj_zx1 = proj_zx1[:, -self.overlap:]
+        proj_yx1 = proj_yx1[:, -self.overlap:]
 
-        proj_xz2, proj_zy2, proj_xy2 = self._get_max_proj_apr(apr_2, parts_2, plot=False)
-        proj_xz2 = proj_xz2[:, :self.overlap]
-        proj_xy2 = proj_xy2[:, :self.overlap]
+        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, plot=False)
+        proj_zx2 = proj_zx2[:, :self.overlap]
+        proj_yx2 = proj_yx2[:, :self.overlap]
 
-        return self._get_proj_shifts([proj_xz1, proj_zy1, proj_xy1],
-                                     [proj_xz2, proj_zy2, proj_xy2])
+        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('EAST')
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+
+        # if self.row==0 and self.col==1:
+        #     print('ok')
+
+        return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                     [proj_zy2, proj_zx2, proj_yx2])
 
     def _compute_south_registration(self, v):
         apr_1, parts_1 = self.data
         apr_2, parts_2 = v
 
         # TODO: use the crop in maxproj directly in APR for improving the speed
-        proj_xz1, proj_zy1, proj_xy1 = self._get_max_proj_apr(apr_1, parts_1, plot=False)
-        proj_zy1 = proj_zy1[-self.overlap:, :]
-        proj_xy1 = proj_xy1[-self.overlap:, :]
+        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, plot=False)
+        proj_zy1 = proj_zy1[:, -self.overlap:]
+        proj_yx1 = proj_yx1[-self.overlap:, :]
 
-        proj_xz2, proj_zy2, proj_xy2 = self._get_max_proj_apr(apr_2, parts_2, plot=False)
-        proj_zy2 = proj_zy2[:self.overlap, :]
-        proj_xy2 = proj_xy2[:self.overlap, :]
+        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, plot=False)
+        proj_zy2 = proj_zy2[:, :self.overlap]
+        proj_yx2 = proj_yx2[:self.overlap, :]
 
-        return self._get_proj_shifts([proj_xz1, proj_zy1, proj_xy1],
-                                         [proj_xz2, proj_zy2, proj_xy2])
+        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('EAST')
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+
+        # if self.row==0 and self.col==1:
+        #     print('ok')
+
+        return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                     [proj_zy2, proj_zx2, proj_yx2])
 
 
 class tileGraph():
@@ -333,6 +392,8 @@ class tileGraph():
         self.nrow = tiles.nrow
         self.n_vertex = self.ncol*self.nrow
         self.n_edges = tiles.n_edges
+        self.overlap = tiles.overlap
+        self.frame_size = tiles.frame_size
         self.cgraph_from = []
         self.cgraph_to = []
         self.relia_H = []
@@ -344,6 +405,7 @@ class tileGraph():
 
         # Attributes below are set when the corresponding method are called.
         self.registration_map_rel = None
+        self.registration_map_abs = None
         self.ctree_from_H = None
         self.ctree_from_V = None
         self.ctree_from_D = None
@@ -398,7 +460,56 @@ class tileGraph():
             ctree_to = min_tree.col
             setattr(self, 'ctree_to_' + g[-1], ctree_to)
 
-    def plot_min_trees(self):
+    def plot_graph(self, annotate=False):
+        """
+        Plot the graph for each direction (H, D, V). This method needs to be called after the graph
+        optimization.
+
+        """
+
+        if self.graph_relia_H is None:
+            raise TypeError('Error: graph not build yet, please use build_sparse_graph()'
+                            'before trying to plot the graph.')
+
+        fig, ax = plt.subplots(1, 3)
+        for i, d in enumerate(['H', 'V', 'D']):
+            ind_from = getattr(self, 'cgraph_from')
+            row, col = np.unravel_index(ind_from, shape=(self.nrow, self.ncol))
+            V1 = np.vstack((row, col)).T
+
+            ind_to = getattr(self, 'cgraph_to')
+            row, col = np.unravel_index(ind_to, shape=(self.nrow, self.ncol))
+            V2 = np.vstack((row, col)).T
+
+            rel = getattr(self, 'relia_' + d)
+            dX = getattr(self, 'd' + d)
+            for ii in range(V1.shape[0]):
+                ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko', markerfacecolor='r')
+                if annotate:
+                    p1 = ax[i].transData.transform_point([V1[ii, 1], V1[ii, 0]])
+                    p2 = ax[i].transData.transform_point([V2[ii, 1], V2[ii, 0]])
+                    dy = p2[1]-p1[1]
+                    dx = p2[0]-p1[0]
+                    rot = np.degrees(np.arctan2(dy, dx))
+                    if rel[ii] < 0.15:
+                        color = 'g'
+                    elif rel[ii] < 0.30:
+                        color = 'orange'
+                    else:
+                        color = 'r'
+                    ax[i].annotate(text='err={:.2f} d{}={:.2f}'.format(rel[ii], d, dX[ii]),
+                                   xy=((V1[ii, 1]+V2[ii, 1])/2, (V1[ii, 0]+V2[ii, 0])/2),
+                                   ha='center',
+                                   va='center',
+                                   rotation=rot,
+                                   backgroundcolor='w',
+                                   color=color)
+            ax[i].set_title(d + ' tree')
+            ax[i].invert_yaxis()
+
+        return fig, ax
+
+    def plot_min_trees(self, annotate=False):
         """
         Plot the minimum spanning tree for each direction (H, D, V). This method needs to be called after the graph
         optimization.
@@ -409,7 +520,8 @@ class tileGraph():
             raise TypeError('Error: minimum spanning tree not computed yet, please use optimize_sparse_graph()'
                             'before trying to plot the trees.')
 
-        fig, ax = plt.subplots(1,3)
+        fig, ax = self.plot_graph(annotate=annotate)
+
         for i, d in enumerate(['H', 'V', 'D']):
             ind_from = getattr(self, 'ctree_from_' + d)
             row, col = np.unravel_index(ind_from, shape=(self.nrow, self.ncol))
@@ -419,10 +531,11 @@ class tileGraph():
             row, col = np.unravel_index(ind_to, shape=(self.nrow, self.ncol))
             V2 = np.vstack((row, col)).T
 
+            rel = getattr(self, 'relia_' + d)
+            dX = getattr(self, 'd' + d)
             for ii in range(V1.shape[0]):
-                ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko-', markerfacecolor='r')
+                ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko-', markerfacecolor='r', linewidth=2)
             ax[i].set_title(d + ' tree')
-            ax[i].invert_yaxis()
 
     def produce_registration_map(self):
         """
@@ -472,9 +585,35 @@ class tileGraph():
                 # Get the corresponding reg parameter
                 d = getattr(self, 'd' + min_tree[-1])[ind_graph]
                 # Update the local reg parameter in the 2D matrix
-                reg_rel_map[i, ind1, ind2] = d_neighbor + d
+                if node_to > node_from[0]:
+                    reg_rel_map[i, ind1, ind2] = d_neighbor + d
+                else:
+                    reg_rel_map[i, ind1, ind2] = d_neighbor - d
         self.registration_map_rel = reg_rel_map
-        return reg_rel_map
+
+        reg_abs_map = np.zeros_like(reg_rel_map)
+        # H
+        for x in range(reg_abs_map.shape[2]):
+            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size-self.overlap)
+        # V
+        for x in range(reg_abs_map.shape[2]):
+            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap)
+        self.registration_map_abs = reg_abs_map
+
+        return reg_rel_map, reg_abs_map
+
+    def plot_registration_map(self):
+
+        if self.registration_map_abs is None:
+            raise TypeError('Error: registration map not computed yet, please use produce_registration_map()'
+                            'before trying to display the registration map.')
+
+        fig, ax = plt.subplots(2, 3)
+        for i, d in enumerate(['H', 'V', 'D']):
+            ax[0, i].imshow(reg_rel_map[i], cmap='gray')
+            ax[0, i].set_title('Rel reg. map ' + d)
+            ax[1, i].imshow(reg_abs_map[i], cmap='gray')
+            ax[1, i].set_title('Abs reg. map ' + d)
 
     def build_database(self, tiles):
         """
@@ -491,13 +630,20 @@ class tileGraph():
                                                 'col',
                                                 'dH',
                                                 'dV',
-                                                'dD'])
+                                                'dD',
+                                                'ABS_H',
+                                                'ABS_V',
+                                                'ABS_D'])
         for i in range(self.n_vertex):
             row = tiles[i]['row']
             col = tiles[i]['col']
             self.database.loc[i] = [tiles[i]['path'], row, col,
-                                    self.registration_map_rel[0, row, col], self.registration_map_rel[1, row, col],
-                                    self.registration_map_rel[2, row, col]]
+                                    self.registration_map_rel[0, row, col],
+                                    self.registration_map_rel[1, row, col],
+                                    self.registration_map_rel[2, row, col],
+                                    self.registration_map_abs[0, row, col],
+                                    self.registration_map_abs[1, row, col],
+                                    self.registration_map_abs[2, row, col]]
 
     def save_database(self, path):
         """
@@ -527,12 +673,106 @@ class tileGraph():
         return ind
 
 
+class tileViewer():
+    def __init__(self, tiles, tgraph):
+        self.tiles = tiles
+        self.tgraph = tgraph
+        self.nrow = tiles.nrow
+        self.ncol = tiles.ncol
+        self.loaded_ind = []
+        self.loaded_tiles = {}
+
+    def display_tiles(self, coords, **kwargs):
+        # Check that coords is (n, 2) or (2, n)
+        if coords.size == 2:
+            coords = np.array(coords).reshape(1, 2)
+        elif coords.shape[1] != 2:
+            coords = coords.T
+            if coords.shape[1] != 2:
+                raise ValueError('Error, at least one dimension of coords should be of size 2.')
+
+        # Compute layers to be displayed by Napari
+        layers = []
+        for i in range(coords.shape[0]):
+            row = coords[i, 0]
+            col = coords[i, 1]
+
+            # Load tile if not loaded, else use cached tile
+            ind = np.ravel_multi_index((row, col), dims=(self.nrow, self.ncol))
+            if self._is_tile_loaded(row, col):
+                apr, parts = self.loaded_tiles[ind]
+            else:
+                apr, parts = self._load_tile(row, col)
+                self.loaded_ind.append(ind)
+                self.loaded_tiles[ind] = apr, parts
+
+            position = self._get_tile_position(row, col)
+            layers.append(Image(data=APRArray(apr, parts, type='constant'),
+                                rgb=False, multiscale=False,
+                                name='Tile [{}, {}]'.format(row, col), translate=position,
+                                contrast_limits=[0, 1000], opacity=0.5, **kwargs))
+
+        # Display layers
+        display_layers(layers)
+
+    def _is_tile_loaded(self, row, col):
+        ind = np.ravel_multi_index((row, col), dims=(self.nrow, self.ncol))
+        return ind in self.loaded_ind
+
+    def _load_tile(self, row, col):
+        df = tgraph.database
+        path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
+
+        if self.tiles.type == 'tiff2D':
+            files = glob(os.path.join(path, '*.tif'))
+            im = imread(files[0])
+            u = np.zeros((len(files), *im.shape))
+            u[0] = im
+            files.pop(0)
+            for i, file in enumerate(files):
+                u[i+1] = imread(file)
+            return self._get_apr(u)
+        elif self.tiles.type == 'tiff3D':
+            u = imread(*glob(os.path.join(path, '*.tif')))
+            return self._get_apr(u)
+        elif self.tiles.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(*glob(os.path.join(path, '*.apr')), apr, parts)
+            u = (apr, parts)
+            return u
+        else:
+            raise TypeError('Error: image type {} not supported.'.format(self.type))
+
+    def _get_apr(self, u):
+        # Parameters are hardcoded for now
+        par = pyapr.APRParameters()
+        par.auto_parameters = False  # really heuristic and not working
+        par.sigma_th = 26.0
+        par.grad_th = 3.0
+        par.Ip_th = 253.0
+        par.rel_error = 0.2
+        par.gradient_smoothing = 2
+
+        # Convert data to APR
+        return pyapr.converter.get_apr(image=u, params=par, verbose=False)
+
+    def _get_tile_position(self, row, col):
+        df = self.tgraph.database
+        tile_df = df[(df['row'] == row) & (df['col'] == col)]
+        px = tile_df['ABS_H'].values[0]
+        py = tile_df['ABS_V'].values[0]
+        pz = tile_df['ABS_D'].values[0]
+
+        return [pz, py, px]
+
+
 if __name__=='__main__':
     from time import time
 
-    np.random.seed(0)
     t = time()
-    tiles = tileParser(r'/media/sf_shared_folder_virtualbox/terastitcher_tests')
+    t_ini = time()
+    tiles = tileParser(r'/media/sf_shared_folder_virtualbox/multitile_registration/apr')
     print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
     t = time()
     tgraph = tileGraph(tiles)
@@ -549,18 +789,25 @@ if __name__=='__main__':
     t = time()
     tgraph.optimize_sparse_graphs()
     print('Elapsed time optimize graph: {:.2f} ms.'.format((time() - t)*1000))
-    tgraph.plot_min_trees()
+    tgraph.plot_min_trees(annotate=True)
     t = time()
-    reg_map = tgraph.produce_registration_map()
+    reg_rel_map, reg_abs_map = tgraph.produce_registration_map()
     print('Elapsed time reg map: {:.2f} ms.'.format((time() - t)*1000))
     t = time()
     tgraph.build_database(tiles)
     print('Elapsed time build database: {:.2f} ms.'.format((time() - t)*1000))
     t = time()
-    tgraph.save_database(r'/media/sf_shared_folder_virtualbox/terastitcher_tests/registration_results.csv')
+    tgraph.save_database(r'/media/sf_shared_folder_virtualbox/multitile_registration/registration_results.csv')
     print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
 
-    fig, ax = plt.subplots(1, 3)
-    for i, d in enumerate(['H', 'V', 'D']):
-        ax[i].imshow(reg_map[i], cmap='gray')
-        ax[i].set_title('Reg. map ' + d)
+    print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
+
+    viewer = tileViewer(tiles, tgraph)
+    coords = []
+    for i in range(4):
+        for j in range(4):
+            coords.append([i, j])
+    coords = np.array(coords)
+    viewer.display_tiles(coords)
+
+    viewer.display_tiles(np.array([3,3]))

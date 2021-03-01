@@ -10,22 +10,31 @@ import pyapr
 from skimage.registration import phase_cross_correlation
 import re
 from viewer.pyapr_napari import display_layers, APRArray
-from napari.layers import Image
+from napari.layers import Image, Labels
+from joblib import load
 
 
 class tileParser():
+    """
+    Class to handle the data in the same fashion as TeraStitcher, see here:
+    https://github.com/abria/TeraStitcher/wiki/Supported-volume-formats#two-level-hierarchy-of-folders
+    """
     def __init__(self, path):
         self.path = path
-        self.tiles_list = self.get_tile_list()
-        self.type = self.get_type(self.tiles_list[0]['path'])
+        self.tiles_list = self._get_tile_list()
+        self.type = self._get_type()
         self.n_tiles = len(self.tiles_list)
-        self.ncol = self.get_ncol()
-        self.nrow = self.get_nrow()
-        self.neighbors, self.n_edges = self.get_neighbors_map()
-        self.path_list = self.get_path_list()
-        self.overlap, self.frame_size = self.get_overlap()
+        self.ncol = self._get_ncol()
+        self.nrow = self._get_nrow()
+        self.neighbors, self.n_edges = self._get_neighbors_map()
+        self.path_list = self._get_path_list()
+        self.overlap, self.frame_size = self._get_overlap()
 
-    def get_overlap(self):
+    def _get_overlap(self):
+        """
+        Infer the overlap between each tile. This is inferred from the folder names and the frame size.
+        The overlap in H and V are supposed to be the same.
+        """
         if self.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
@@ -50,7 +59,10 @@ class tileParser():
 
         return int(overlap), int(nx)
 
-    def get_tile_list(self):
+    def _get_tile_list(self):
+        """
+        Returns a list of tiles as a dictionary
+        """
         H_folders = [f.path for f in os.scandir(self.path) if f.is_dir()]
         tiles = []
         for i, H_path in enumerate(H_folders):
@@ -59,14 +71,20 @@ class tileParser():
                 tile = {'path': v_path,
                         'row': i,
                         'col': ii,
-                        'type': self.get_type(v_path)}
+                        }
                 tiles.append(tile)
         return tiles
 
-    def get_type(self, path):
+    def _get_type(self):
         """
-        Return the type of image files either 'tiff2d' of 'tiff3d'
+        Return the type of image files either 'tiff2d', 'tiff3d or 'apr'
+        The type is inferred from the first tile and all tiles are expected to be of the same type.
         """
+        path = self.tiles_list[0]['path']
+
+        # If the number of tiff in each folder is >1 then the type is 'tiff2d' else it's 'tiff3d'
+        # If no tiff files then the type is APR.
+        # TODO: clean this up because it is not robust if new files are added in folders.
         n_files = len(glob(os.path.join(path, '*.tif')))
         if n_files > 1:
             return 'tiff2D'
@@ -74,28 +92,36 @@ class tileParser():
             return 'tiff3D'
         elif n_files == 0:
             n_files = len(glob(os.path.join(path, '*.apr')))
-            if n_files == 1:
+            if n_files > 0:
                 return 'apr'
         else:
             raise TypeError('Error: no tiff files found in {}.'.format(path))
 
-    def get_ncol(self):
+    def _get_ncol(self):
+        """
+        Returns the number of columns (H) to be stitched.
+        """
         ncol = 0
         for tile in self.tiles_list:
-            if tile['col']>ncol:
+            if tile['col'] > ncol:
                 ncol = tile['col']
         return ncol+1
 
-    def get_nrow(self):
+    def _get_nrow(self):
+        """
+        Returns the number of rows (V) to be stitched.
+        """
         nrow = 0
         for tile in self.tiles_list:
-            if tile['row']>nrow:
+            if tile['row'] > nrow:
                 nrow = tile['row']
         return nrow+1
 
-    def get_total_neighbors_map(self):
+    def _get_total_neighbors_map(self):
         """
-        Return the total neighbors maps (with redundancy in the cas of undirected graph)
+        Return the total neighbors maps (with redundancy in the case of undirected graph).
+
+        Note: this function is not used anymore.
         """
         # Initialize neighbors
         neighbors = [None] * self.ncol
@@ -120,10 +146,10 @@ class tileParser():
                 neighbors[x][y] = tmp
         return neighbors
 
-    def get_neighbors_map(self):
+    def _get_neighbors_map(self):
         """
-        Returns the non-redundant neighbors map: neighbors[row][col] gives a list of neighbors. Only
-        SOUTH and EAST are returned to avoid the redundancy.
+        Returns the non-redundant neighbors map: neighbors[row][col] gives a list of neighbors and the total
+        number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.
         """
         # Initialize neighbors
         neighbors = [None] * self.ncol
@@ -145,32 +171,47 @@ class tileParser():
                 neighbors[x][y] = tmp
         return neighbors, cnt
 
-    def get_path_list(self):
+    def _get_path_list(self):
+        """
+        Returns a list containing the path to each tile.
+        """
         path_list = []
         for tile in self.tiles_list:
             path_list.append(tile['path'])
         return path_list
 
     def __getitem__(self, item):
+        """
+        Return tiles, add neighbors information before returning.
+        """
         e = self.tiles_list[item]
         e['neighbors'] = self.neighbors[e['row']][e['col']]
         neighbors_path = []
         for x, y in e['neighbors']:
             neighbors_path.append(self.path_list[y + x * self.nrow])
         e['neighbors_path'] = neighbors_path
+        e['type'] = self.type
         e['overlap'] = self.overlap
         e['frame_size'] = self.frame_size
         return e
 
     def __len__(self):
+        """
+        Returns the number of tiles.
+        """
         return self.n_tiles
 
 
 class tileLoader():
     """
-    Load tile data and neighboring tiles.
+    Class to load each tile and neighboring tiles data, perform the registration and segmentation.
+    A tileGraph object must be initialized and passed for computing the registration.
+
+    Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
     def __init__(self, tile):
+        # TODO: here the data of each tile is passed as a dictionary. Maybe there is a less redundant or cleaner way
+        # to achieve this.
         self.path = tile['path']
         self.row = tile['row']
         self.col = tile['col']
@@ -179,12 +220,127 @@ class tileLoader():
         self.neighbors_path = tile['neighbors_path']
         self.overlap = tile['overlap']
         self.frame_size = tile['frame_size']
-        self.data = self.load_tile(self.path)
-        self.data_neighbors = self.load_neighbors()
-        if self.type != 'apr':
-            self.convert_to_apr()
 
-    def convert_to_apr(self):
+        # Load tile data and neighbors data.
+        self.data = self._load_tile(self.path)
+        self.data_neighbors = self._load_neighbors()
+
+        # If data is not APR then convert it
+        if self.type != 'apr':
+            self._convert_to_apr()
+
+        # Initialize attributs for segmentation
+        self.path_classifier = None
+        self.f_names = None
+
+    def compute_registration(self, tgraph):
+        """
+        Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
+        the redundancy).
+
+        Parameters
+        ----------
+        tgraph: (tileGraph object) stores pair-wise registration to further perform the global optimization.
+
+        """
+        for v, coords in zip(self.data_neighbors, self.neighbors):
+            if self.row == coords[0] and self.col < coords[1]:
+                # EAST
+                reg, rel = self._compute_east_registration(v)
+
+            elif self.col == coords[1] and self.row < coords[0]:
+                # SOUTH
+                reg, rel = self._compute_south_registration(v)
+
+            else:
+                raise TypeError('Error: couldn''t determine registration to perform.')
+
+            tgraph.cgraph_from.append(np.ravel_multi_index([self.row, self.col], dims=(tgraph.nrow, tgraph.ncol)))
+            tgraph.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]], dims=(tgraph.nrow, tgraph.ncol)))
+            # H=x, V=y, D=z
+            tgraph.dH.append(reg[2])
+            tgraph.dV.append(reg[1])
+            tgraph.dD.append(reg[0])
+            tgraph.relia_H.append(rel[2])
+            tgraph.relia_V.append(rel[1])
+            tgraph.relia_D.append(rel[0])
+
+    def compute_segmentation(self, path_classifier=None):
+        """
+        Compute the segmentation (iLastik like) on the tile. Before attempting this, a model needs to be trained and
+        saved.
+
+        Parameters
+        ----------
+        path_classifier: (str) path to the trained model for the classification.
+
+        """
+
+        if path_classifier is None:
+            raise ValueError('Error: no classifier path was given.')
+
+        # Load classifier
+        clf = load(path_classifier)
+
+        # Compute features
+        # TODO: is there a way to adapt the computed features to the ones used to train the classifier?
+        f = self._compute_features()
+        apr = self.data[0]
+
+        # Predict particle type (cell, membrane or brackground) for each cell with the trained model
+        parts_pred = self._predict_on_APR(clf, f)
+        # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
+        parts_cells = (parts_pred == 0)
+        # Remove small holes to get the misclassified nuclei
+        parts_cells = pyapr.numerics.transform.remove_small_holes(apr, parts_cells, min_volume=500)
+        # Opening to better separate touching cells
+        pyapr.numerics.transform.opening(apr, parts_cells, radius=1, inplace=True)
+        # Apply connected component
+        cc = pyapr.ShortParticles()
+        pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
+        # Remove small objects
+        pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=200)
+        # Save segmentation results
+        pyapr.io.write(os.path.join(self.path, 'segmentation.apr'), apr, cc)
+
+    def _load_tile(self, path):
+        """
+        Load the current tile.
+        """
+        if self.type == 'tiff2D':
+            files = glob(os.path.join(path, '*.tif'))
+            im = imread(files[0])
+            u = np.zeros((len(files), *im.shape))
+            u[0] = im
+            files.pop(0)
+            for i, file in enumerate(files):
+                u[i+1] = imread(file)
+        elif self.type == 'tiff3D':
+            u = imread(*glob(os.path.join(path, '*.tif')))
+        elif self.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(*glob(os.path.join(path, '*0.apr')), apr, parts)
+            u = (apr, parts)
+        else:
+            raise TypeError('Error: image type {} not supported.'.format(self.type))
+        return u
+
+    def _load_neighbors(self):
+        """
+        Load the current tile neighbors.
+        """
+        u = []
+        for neighbor in self.neighbors_path:
+            u.append(self._load_tile(neighbor))
+        return u
+
+    def _convert_to_apr(self):
+        """
+        Converts input tile from pixel data to APR.
+        """
+        # TODO: have an automatic way to set the parameters.
+
         # Parameters are hardcoded for now
         par = pyapr.APRParameters()
         par.auto_parameters = False  # really heuristic and not working
@@ -203,56 +359,136 @@ class tileLoader():
             data_apr.append(pyapr.converter.get_apr(image=data, params=par, verbose=False))
         self.data_neighbors = data_apr
 
-    def load_tile(self, path):
-        if self.type == 'tiff2D':
-            files = glob(os.path.join(path, '*.tif'))
-            im = imread(files[0])
-            u = np.zeros((len(files), *im.shape))
-            u[0] = im
-            files.pop(0)
-            for i, file in enumerate(files):
-                u[i+1] = imread(file)
-        elif self.type == 'tiff3D':
-            u = imread(*glob(os.path.join(path, '*.tif')))
-        elif self.type == 'apr':
-            apr = pyapr.APR()
-            parts = pyapr.ShortParticles()
-            pyapr.io.read(*glob(os.path.join(path, '*.apr')), apr, parts)
-            u = (apr, parts)
-        else:
-            raise TypeError('Error: image type {} not supported.'.format(self.type))
-        return u
+    def _compute_features(self):
+        """
+        Returns the features computed on APR data for using with the classifier to produce the segmentation.
+        """
+        apr = self.data[0]
+        parts = self.data[1]
 
-    def load_neighbors(self):
-        u = []
-        for neighbor in self.neighbors_path:
-            u.append(self.load_tile(neighbor))
-        return u
+        # Compute gradient along a dimension (Sobel filter). dimension can be 0, 1 or 2
+        grad_x, grad_y, grad_z = self._compute_gradients(apr, parts)
 
-    def compute_registration(self, tgraph):
-        for v, coords in zip(self.data_neighbors, self.neighbors):
-            if self.row==coords[0] and self.col<coords[1]:
-                # EAST
-                reg, rel = self._compute_east_registration(v)
+        # Compute gradient magnitude (central finite differences)
+        grad = self._compute_gradmag(apr, parts)
 
-            elif self.col==coords[1] and self.row<coords[0]:
-                # SOUTH
-                reg, rel = self._compute_south_registration(v)
+        # Compute local standard deviation around each particle
+        local_std = self._compute_std(apr, parts, size=5)
 
-            else:
-                raise TypeError('Error: couldn''t determine registration to perform.')
+        # Compute lvl for each particle
+        lvl = self._particle_levels(apr, normalize=True)
 
-            tgraph.cgraph_from.append(np.ravel_multi_index([self.row, self.col], dims=(tgraph.nrow, tgraph.ncol)))
-            tgraph.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]], dims=(tgraph.nrow, tgraph.ncol)))
-            # H=x, V=y, D=z
-            tgraph.dH.append(reg[2])
-            tgraph.dV.append(reg[1])
-            tgraph.dD.append(reg[0])
-            tgraph.relia_H.append(rel[2])
-            tgraph.relia_V.append(rel[1])
-            tgraph.relia_D.append(rel[0])
+        # Compute difference of Gaussian
+        dog = self._gaussian_blur(apr, parts, sigma=3, size=22) - self._gaussian_blur(apr, parts, sigma=1.5, size=11)
+
+        # Aggregate filters in a feature array
+        f = np.vstack((np.array(parts, copy=True),
+                       lvl,
+                       grad_x,
+                       grad_y,
+                       grad_z,
+                       grad,
+                       local_std,
+                       dog
+                       )).T
+        if self.f_names is None:
+            self.f_names = ['Intensity',
+                            'lvl',
+                            'grad_x',
+                            'grad_y',
+                            'grad_z',
+                            'grad_mag',
+                            'local_std',
+                            'dog'
+                            ]
+        return f
+
+    def _compute_gradients(self, apr, parts, sobel=True):
+        """
+        Returns the gradients [dz, dx, dy] of APR data.
+        """
+        par = apr.get_parameters()
+        dx = pyapr.FloatParticles()
+        dy = pyapr.FloatParticles()
+        dz = pyapr.FloatParticles()
+
+        pyapr.numerics.gradient(apr, parts, dz, dimension=2, delta=par.dz, sobel=sobel)
+        pyapr.numerics.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
+        pyapr.numerics.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+        return dz, dx, dy
+
+    def _compute_laplacian(self, apr, parts, sobel=True):
+        """
+        Returns the Laplacian of APR data.
+        """
+        # TODO: merge this with compute gradient to avoid computing it twice.
+        par = apr.get_parameters()
+        dz, dx, dy = self._compute_gradients(apr, parts, sobel)
+        dx2 = pyapr.FloatParticles()
+        dy2 = pyapr.FloatParticles()
+        dz2 = pyapr.FloatParticles()
+        pyapr.numerics.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
+        pyapr.numerics.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
+        pyapr.numerics.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
+        return dz + dx + dy
+
+    def _compute_gradmag(self, apr, parts, sobel=True):
+        """
+        Returns the gradient magnitude of APR data.
+        """
+        # TODO: idem laplacian, this can probably be optimized.
+        par = apr.get_parameters()
+        gradmag = pyapr.FloatParticles()
+        pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=True)
+        return gradmag
+
+    def _gaussian_blur(self, apr, parts, sigma=1.5, size=11):
+        """
+        Returns a gaussian filtered APR data.
+        """
+        stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, 3, True)
+        output = pyapr.FloatParticles()
+        pyapr.numerics.filter.convolve_pencil(apr, parts, output, stencil, use_stencil_downsample=True,
+                                              normalize_stencil=True, use_reflective_boundary=True)
+        return output
+
+    def _particle_levels(self, apr, normalize=True):
+        """
+        Returns the particle level of APR data.
+        """
+        lvls = pyapr.ShortParticles(apr.total_number_particles())
+        lvls.fill_with_levels(apr)
+        if normalize:
+            lvls *= (1 / apr.level_max())
+        return lvls
+
+    def _compute_std(self, apr, parts, size=5):
+        """
+        Returns the local std of APR data.
+        """
+        dims = apr.org_dims()
+        box_size = [size if d >= size else 1 for d in dims]
+        locstd = pyapr.FloatParticles()
+        pyapr.numerics.local_std(apr, parts, locstd, size=box_size)
+        return locstd
+
+    def _predict_on_APR(self, clf, x):
+        """
+        Predict particle class with the trained classifier clf on the precomputed features f.
+        """
+        # Predict on numpy array
+        y_pred = clf.predict(x)
+
+        # Transform numpy array to ParticleData
+        parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
+
+        return parts_pred
 
     def _get_max_proj_apr(self, apr, parts, plot=False):
+        """
+        Get the maximum projection from 3D APR data.
+        """
+        # TODO adapt the maximum projection so that it can be computed on the overlap only.
         proj = []
         for d in range(3):
             # dim=0: project along Y to produce a ZY plane
@@ -278,7 +514,7 @@ class tileLoader():
 
         Returns
         -------
-        shifts in (x, y, z) and relialability measure (0=lowest, 1=highest)
+        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
         """
         # Compute phase cross-correlation to extract shifts
         dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
@@ -326,6 +562,9 @@ class tileLoader():
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
     def _compute_east_registration(self, v):
+        """
+        Compute the registration between the current tile and its eastern neighbor.
+        """
         apr_1, parts_1 = self.data
         apr_2, parts_2 = v
 
@@ -353,6 +592,9 @@ class tileLoader():
                                      [proj_zy2, proj_zx2, proj_yx2])
 
     def _compute_south_registration(self, v):
+        """
+        Compute the registration between the current tile and its southern neighbor.
+        """
         apr_1, parts_1 = self.data
         apr_2, parts_2 = v
 
@@ -603,6 +845,10 @@ class tileGraph():
         return reg_rel_map, reg_abs_map
 
     def plot_registration_map(self):
+        """
+        Display the registration map using matplotlib.
+
+        """
 
         if self.registration_map_abs is None:
             raise TypeError('Error: registration map not computed yet, please use produce_registration_map()'
@@ -625,15 +871,15 @@ class tileGraph():
         if self.registration_map_rel is None:
             raise TypeError('Error: database can''t be build if the registration map has not been computed.'
                             ' Please use produce_registration_map() method first.')
-        self.database = pd.DataFrame(columns = ['path',
-                                                'row',
-                                                'col',
-                                                'dH',
-                                                'dV',
-                                                'dD',
-                                                'ABS_H',
-                                                'ABS_V',
-                                                'ABS_D'])
+        self.database = pd.DataFrame(columns=['path',
+                                            'row',
+                                            'col',
+                                            'dH',
+                                            'dV',
+                                            'dD',
+                                            'ABS_H',
+                                            'ABS_V',
+                                            'ABS_D'])
         for i in range(self.n_vertex):
             row = tiles[i]['row']
             col = tiles[i]['col']
@@ -658,6 +904,9 @@ class tileGraph():
         self.database.to_csv(path)
 
     def _get_ind(self, ind_from, ind_to):
+        """
+        Returns the ind in the original graph which corresponds to (ind_from, ind_to) in the minimum spanning tree.
+        """
         ind = None
         for i, f in enumerate(self.cgraph_from):
             if f == ind_from:
@@ -674,15 +923,23 @@ class tileGraph():
 
 
 class tileViewer():
-    def __init__(self, tiles, tgraph):
+    """
+    Class to display the registration and segmentation using Napari.
+    """
+    def __init__(self, tiles, tgraph, segmentation=False):
         self.tiles = tiles
         self.tgraph = tgraph
         self.nrow = tiles.nrow
         self.ncol = tiles.ncol
         self.loaded_ind = []
         self.loaded_tiles = {}
+        self.segmentation = segmentation
+        self.loaded_segmentation = {}
 
     def display_tiles(self, coords, **kwargs):
+        """
+        Display the tiles with coordinates given in coords (np array).
+        """
         # Check that coords is (n, 2) or (2, n)
         if coords.size == 2:
             coords = np.array(coords).reshape(1, 2)
@@ -701,28 +958,60 @@ class tileViewer():
             ind = np.ravel_multi_index((row, col), dims=(self.nrow, self.ncol))
             if self._is_tile_loaded(row, col):
                 apr, parts = self.loaded_tiles[ind]
+                if self.segmentation:
+                    mask = self.loaded_segmentation[ind]
             else:
                 apr, parts = self._load_tile(row, col)
                 self.loaded_ind.append(ind)
                 self.loaded_tiles[ind] = apr, parts
+                if self.segmentation:
+                    apr, mask = self._load_segmentation(row, col)
+                    self.loaded_segmentation[ind] = mask
 
             position = self._get_tile_position(row, col)
-            layers.append(Image(data=APRArray(apr, parts, type='constant'),
+            a = APRArray(apr, parts, type='constant')
+            layers.append(Image(data=a,
                                 rgb=False, multiscale=False,
-                                name='Tile [{}, {}]'.format(row, col), translate=position,
-                                contrast_limits=[0, 1000], opacity=0.5, **kwargs))
+                                name='Tile [{}, {}]'.format(row, col),
+                                translate=position,
+                                opacity=0.7, **kwargs))
+            if self.segmentation:
+                a = APRArray(apr, mask, type='constant')
+                layers.append(Labels(data=a,
+                                    multiscale=False,
+                                    name='Segmentation [{}, {}]'.format(row, col),
+                                    translate=position,
+                                    opacity=0.7))
 
         # Display layers
         display_layers(layers)
 
+    def _load_segmentation(self, row, col):
+        """
+        Load the segmentation for tile at position [row, col].
+        """
+        df = tgraph.database
+        path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
+        apr = pyapr.APR()
+        parts = pyapr.ShortParticles()
+        pyapr.io.read(*glob(os.path.join(path, 'segmentation.apr')), apr, parts)
+        u = (apr, parts)
+        return u
+
+
     def _is_tile_loaded(self, row, col):
+        """
+        Returns True is tile is loaded, False otherwise.
+        """
         ind = np.ravel_multi_index((row, col), dims=(self.nrow, self.ncol))
         return ind in self.loaded_ind
 
     def _load_tile(self, row, col):
+        """
+        Load the tile at position [row, col].
+        """
         df = tgraph.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
-
         if self.tiles.type == 'tiff2D':
             files = glob(os.path.join(path, '*.tif'))
             im = imread(files[0])
@@ -738,13 +1027,14 @@ class tileViewer():
         elif self.tiles.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
-            pyapr.io.read(*glob(os.path.join(path, '*.apr')), apr, parts)
+            pyapr.io.read(*glob(os.path.join(path, '*0.apr')), apr, parts)
             u = (apr, parts)
             return u
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
 
     def _get_apr(self, u):
+        # TODO: remove this by saving APR at previous steps?
         # Parameters are hardcoded for now
         par = pyapr.APRParameters()
         par.auto_parameters = False  # really heuristic and not working
@@ -758,6 +1048,9 @@ class tileViewer():
         return pyapr.converter.get_apr(image=u, params=par, verbose=False)
 
     def _get_tile_position(self, row, col):
+        """
+        Parse tile position in the database.
+        """
         df = self.tgraph.database
         tile_df = df[(df['row'] == row) & (df['col'] == col)]
         px = tile_df['ABS_H'].values[0]
@@ -781,7 +1074,9 @@ if __name__=='__main__':
     for tile in tiles:
         loaded_tile = tileLoader(tile)
         loaded_tile.compute_registration(tgraph)
-    print('Elapsed time load and compute pairwise reg: {:.2f} s.'.format(time() - t))
+        loaded_tile.compute_segmentation(path_classifier=
+                                         r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
+    print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
 
     t = time()
     tgraph.build_sparse_graphs()
@@ -802,12 +1097,10 @@ if __name__=='__main__':
 
     print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-    viewer = tileViewer(tiles, tgraph)
+    viewer = tileViewer(tiles, tgraph, segmentation=True)
     coords = []
     for i in range(4):
         for j in range(4):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords)
-
-    viewer.display_tiles(np.array([3,3]))
+    viewer.display_tiles(coords, contrast_limits=[0, 1000])

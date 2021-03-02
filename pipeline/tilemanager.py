@@ -484,24 +484,6 @@ class tileLoader():
 
         return parts_pred
 
-    def _get_max_proj_apr(self, apr, parts, plot=False):
-        """
-        Get the maximum projection from 3D APR data.
-        """
-        # TODO adapt the maximum projection so that it can be computed on the overlap only.
-        proj = []
-        for d in range(3):
-            # dim=0: project along Y to produce a ZY plane
-            # dim=1: project along X to produce a ZX plane
-            # dim=2: project along Z to produce an YX plane
-            proj.append(pyapr.numerics.transform.maximum_projection(apr, parts, dim=d))
-
-        if plot:
-            fig, ax = plt.subplots(1, 3)
-            for i in range(3):
-                ax[i].imshow(proj[i], cmap='gray')
-        return proj[0], proj[1], proj[2]
-
     def _get_proj_shifts(self, proj1, proj2, upsample_factor=1):
         """
         This function computes shifts from max-projections on overlapping areas. It uses the phase cross-correlation
@@ -561,6 +543,25 @@ class tileLoader():
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
+    def _get_max_proj_apr(self, apr, parts, patch, plot=False):
+        """
+        Get the maximum projection from 3D APR data.
+        """
+        proj = []
+        for d in range(3):
+            # dim=0: project along Y to produce a ZY plane
+            # dim=1: project along X to produce a ZX plane
+            # dim=2: project along Z to produce an YX plane
+            proj.append(pyapr.numerics.transform.projection.maximum_projection_patch(apr, parts, dim=d, patch=patch))
+
+        if plot:
+            fig, ax = plt.subplots(1, 3)
+            for i, title in enumerate(['ZY', 'ZX', 'YX']):
+                ax[i].imshow(proj[i], cmap='gray')
+                ax[i].set_title(title)
+
+        return proj[0], proj[1], proj[2]
+
     def _compute_east_registration(self, v):
         """
         Compute the registration between the current tile and its eastern neighbor.
@@ -568,14 +569,13 @@ class tileLoader():
         apr_1, parts_1 = self.data
         apr_2, parts_2 = v
 
-        # TODO: use the crop in maxproj directly in APR for improving the speed
-        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, plot=False)
-        proj_zx1 = proj_zx1[:, -self.overlap:]
-        proj_yx1 = proj_yx1[:, -self.overlap:]
+        patch = pyapr.ReconPatch()
+        patch.y_begin = self.frame_size - self.overlap
+        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
-        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, plot=False)
-        proj_zx2 = proj_zx2[:, :self.overlap]
-        proj_yx2 = proj_yx2[:, :self.overlap]
+        patch = pyapr.ReconPatch()
+        patch.y_end = self.overlap
+        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
         # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
         # for i, title in enumerate(['ZY', 'ZX', 'YX']):
@@ -598,14 +598,13 @@ class tileLoader():
         apr_1, parts_1 = self.data
         apr_2, parts_2 = v
 
-        # TODO: use the crop in maxproj directly in APR for improving the speed
-        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, plot=False)
-        proj_zy1 = proj_zy1[:, -self.overlap:]
-        proj_yx1 = proj_yx1[-self.overlap:, :]
+        patch = pyapr.ReconPatch()
+        patch.x_begin = self.frame_size - self.overlap
+        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
-        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, plot=False)
-        proj_zy2 = proj_zy2[:, :self.overlap]
-        proj_yx2 = proj_yx2[:self.overlap, :]
+        patch = pyapr.ReconPatch()
+        patch.x_end = self.overlap
+        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
         # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
         # for i, title in enumerate(['ZY', 'ZX', 'YX']):
@@ -997,7 +996,6 @@ class tileViewer():
         pyapr.io.read(*glob(os.path.join(path, 'segmentation.apr')), apr, parts)
         u = (apr, parts)
         return u
-
 
     def _is_tile_loaded(self, row, col):
         """

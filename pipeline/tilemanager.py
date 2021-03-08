@@ -968,19 +968,18 @@ class tileViewer():
                     self.loaded_segmentation[ind] = mask
 
             position = self._get_tile_position(row, col)
-            a = APRArray(apr, parts, type='constant')
-            layers.append(Image(data=a,
-                                rgb=False, multiscale=False,
-                                name='Tile [{}, {}]'.format(row, col),
-                                translate=position,
-                                opacity=0.7, **kwargs))
+            layers.append(pyapr.viewer.apr_to_napari_Image(apr, parts,
+                                                           mode='constant',
+                                                           level_delta=0,
+                                                           name='Tile [{}, {}]'.format(row, col),
+                                                           translate=position,
+                                                           opacity=0.7))
             if self.segmentation:
-                a = APRArray(apr, mask, type='constant')
-                layers.append(Labels(data=a,
-                                    multiscale=False,
-                                    name='Segmentation [{}, {}]'.format(row, col),
-                                    translate=position,
-                                    opacity=0.7))
+                layers.append(pyapr.viewer.apr_to_napari_Image(apr, mask,
+                                                              mode='constant',
+                                                              name='Segmentation [{}, {}]'.format(row, col),
+                                                              translate=position,
+                                                              opacity=0.7))
 
         # Display layers
         display_layers(layers)
@@ -1095,10 +1094,15 @@ if __name__=='__main__':
 
     print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-    viewer = tileViewer(tiles, tgraph, segmentation=True)
+    viewer = tileViewer(tiles, tgraph, segmentation=False)
     coords = []
     for i in range(4):
         for j in range(4):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, contrast_limits=[0, 1000])
+    viewer.display_tiles(coords)
+
+    cr = []
+    for i in range(16):
+        cr.append(viewer.loaded_tiles[i][0].computational_ratio())
+    print(np.mean(cr))

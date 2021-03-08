@@ -1,58 +1,78 @@
 import pyapr
-import numpy as np
 import napari
 from napari.layers import Image, Labels
-from numbers import Integral
-from time import time
 
-class APRArray:
-    def __init__(self, apr, parts, type='constant'):
-        self.apr = apr
-        self.parts = parts
-        self.dims = apr.org_dims()
-        self.ndim = 3
-        self.shape = [self.dims[2], self.dims[1], self.dims[0]]
-        self.dtype = np.float32 if isinstance(parts, pyapr.FloatParticles) else np.uint16
-        self.t_last_call = []
-        self.t_getitem = []
 
-        if type == 'constant':
-            self.recon = pyapr.numerics.reconstruction.recon_patch
-        elif type == 'smooth':
-            self.recon = pyapr.numerics.reconstruction.recon_patch_smooth
-        elif type == 'level':
-            raise NotImplementedError()  # this can be implemented
-        else:
-            raise ValueError('APRArray type must be \'constant\' or \'smooth\'')
+def apr_to_napari_Image(apr: pyapr.APR,
+                        parts: (pyapr.ShortParticles, pyapr.FloatParticles),
+                        mode: str = 'constant',
+                        level_delta: int = 0,
+                        **kwargs):
+    """
+    Construct a napari 'Image' layer from an APR. Pixel values are reconstructed on the fly via the APRSlicer class.
 
-    def _getarray(self, *args):
-        drange = [-1, -1, -1, -1, -1, -1]  # [z_min, z_max, y_min, y_max, x_min, x_max]
-        for i in range(len(args)):
-            if args[i] is not None:
-                drange[i] = args[i]
-        return np.array(pyapr.numerics.reconstruction.recon_patch(self.apr, self.parts, *drange)).squeeze()
+    Parameters
+    ----------
+    apr : pyapr.APR
+        Input APR data structure
+    parts : pyapr.FloatParticles or pyapr.ShortParticles
+        Input particle intensities
+    mode: str
+        Interpolation mode to reconstruct pixel values. Supported values are
+            constant:   piecewise constant interpolation
+            smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.
+            level:      interpolate the particle levels to the pixels
+        (default: constant)
+    level_delta: int
+        Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.
+        Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.
+        (default: 0)
 
-    def __getitem__(self, item):
-        if isinstance(item, Integral):
-            return self._getarray(item, item+1)
-        elif isinstance(item, slice):
-            return self._getarray(item.start, item.stop)
-        elif isinstance(item, (tuple, list)):
-            if len(item) > 3:
-                raise ValueError('nope')
-            drange = [-1, -1, -1, -1, -1, -1]
-            for i in range(len(item)):
-                if isinstance(item[i], Integral):
-                    drange[2*i] = item[i]
-                    drange[2*i+1] = item[i]+1
-                elif isinstance(item[i], slice):
-                    drange[2*i] = item[i].start
-                    drange[2*i+1] = item[i].stop
-                else:
-                    raise ValueError('got item of type {}'.format(type(item[i])))
-            return self._getarray(*drange)
-        else:
-            raise ValueError('got item of type {}'.format(type(item)))
+    Returns
+    -------
+    out : napari.layers.Image
+        An Image layer of the APR that can be viewed in napari.
+    """
+
+    cmin = apr.level_min() if mode == 'level' else parts.min()
+    cmax = apr.level_max() if mode == 'level' else parts.max()
+    return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
+                 rgb=False, multiscale=False, contrast_limits=[cmin, cmax], **kwargs)
+
+
+def apr_to_napari_Labels(apr: pyapr.APR,
+                        parts: (pyapr.ShortParticles, pyapr.FloatParticles),
+                        mode: str = 'constant',
+                        level_delta: int = 0,
+                        **kwargs):
+    """
+    Construct a napari 'Layers' layer from an APR. Pixel values are reconstructed on the fly via the APRSlicer class.
+
+    Parameters
+    ----------
+    apr : pyapr.APR
+        Input APR data structure
+    parts : pyapr.FloatParticles or pyapr.ShortParticles
+        Input particle intensities
+    mode: str
+        Interpolation mode to reconstruct pixel values. Supported values are
+            constant:   piecewise constant interpolation
+            smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.
+            level:      interpolate the particle levels to the pixels
+        (default: constant)
+    level_delta: int
+        Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.
+        Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.
+        (default: 0)
+
+    Returns
+    -------
+    out : napari.layers.Image
+        A Labels layer of the APR that can be viewed in napari.
+    """
+
+    return Labels(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
+                  multiscale=False, **kwargs)
 
 
 def display_layers(layers):
@@ -77,10 +97,8 @@ def display_segmentation(apr, parts, mask):
     -------
 
     """
-    aprarr = APRArray(apr, parts, type='constant')
-    image_nap = Image(data=aprarr, rgb=False, multiscale=False, name='APR')
-    maskarr = APRArray(apr, mask, type='constant')
-    mask_nap = Labels(data=maskarr, multiscale=False, name='Segmentation')
+    image_nap = apr_to_napari_Image(apr, parts, name='APR')
+    mask_nap = apr_to_napari_Labels(apr, mask, name='Segmentation')
 
     with napari.gui_qt():
         viewer = napari.Viewer()
@@ -98,18 +116,16 @@ if __name__ == '__main__':
 
     # Read from APR file
     pyapr.io.read(fpath_apr, apr, parts)
-    aprarr = APRArray(apr, parts, type='constant')
-
     # Multi tile display example
     layers = []
-    layers.append(Image(data=aprarr, rgb=False, multiscale=False, name='APR', translate=[0, 0, 0]))
-    layers.append(Image(data=aprarr, rgb=False, multiscale=False, name='APR', translate=[0, 0, 2048]))
-    layers.append(Image(data=aprarr, rgb=False, multiscale=False, name='APR', translate=[0, 2048, 0]))
-    layers.append(Image(data=aprarr, rgb=False, multiscale=False, name='APR', translate=[0, 2048, 2048]))
+    layers.append(apr_to_napari_Image(apr, parts, name='APR', translate=[0, 0, 0]))
+    layers.append(apr_to_napari_Image(apr, parts, name='APR', translate=[0, 0, 2048]))
+    layers.append(apr_to_napari_Image(apr, parts, name='APR', translate=[0, 2048, 0]))
+    layers.append(apr_to_napari_Image(apr, parts, name='APR', translate=[0, 2048, 2048]))
     # Display APR
     viewer = display_layers(layers)
 
 
     # Segmentation display exmaple
-    mask = parts>1500
+    mask = parts > 1500
     display_segmentation(apr, parts, mask)

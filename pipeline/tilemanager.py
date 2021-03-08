@@ -9,8 +9,7 @@ import pandas as pd
 import pyapr
 from skimage.registration import phase_cross_correlation
 import re
-from viewer.pyapr_napari import display_layers, APRArray
-from napari.layers import Image, Labels
+from viewer.pyapr_napari import display_layers, apr_to_napari_Image, apr_to_napari_Labels
 from joblib import load
 
 
@@ -968,18 +967,17 @@ class tileViewer():
                     self.loaded_segmentation[ind] = mask
 
             position = self._get_tile_position(row, col)
-            layers.append(pyapr.viewer.apr_to_napari_Image(apr, parts,
-                                                           mode='constant',
-                                                           level_delta=0,
-                                                           name='Tile [{}, {}]'.format(row, col),
-                                                           translate=position,
-                                                           opacity=0.7))
+            layers.append(apr_to_napari_Image(apr, parts,
+                                               mode='constant',
+                                               name='Tile [{}, {}]'.format(row, col),
+                                               translate=position,
+                                               opacity=0.7))
             if self.segmentation:
-                layers.append(pyapr.viewer.apr_to_napari_Image(apr, mask,
-                                                              mode='constant',
-                                                              name='Segmentation [{}, {}]'.format(row, col),
-                                                              translate=position,
-                                                              opacity=0.7))
+                layers.append(apr_to_napari_Image(apr, mask,
+                                                  mode='constant',
+                                                  name='Segmentation [{}, {}]'.format(row, col),
+                                                  translate=position,
+                                                  opacity=0.7))
 
         # Display layers
         display_layers(layers)
@@ -1100,7 +1098,7 @@ if __name__=='__main__':
         for j in range(4):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords)
+    viewer.display_tiles(coords, contrast_limit=[0, 2000])
 
     cr = []
     for i in range(16):

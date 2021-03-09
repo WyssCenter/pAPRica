@@ -33,15 +33,19 @@ def apr_to_napari_Image(apr: pyapr.APR,
     out : napari.layers.Image
         An Image layer of the APR that can be viewed in napari.
     """
-
-    cmin = apr.level_min() if mode == 'level' else parts.min()
-    cmax = apr.level_max() if mode == 'level' else parts.max()
+    if 'contrast_limits' in kwargs:
+        contrast_limits = kwargs.get('contrast_limits')
+        del kwargs['contrast_limits']
+    else:
+        cmin = apr.level_min() if mode == 'level' else parts.min()
+        cmax = apr.level_max() if mode == 'level' else parts.max()
+        contrast_limits = [cmin, cmax]
     return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
-                 rgb=False, multiscale=False, contrast_limits=[cmin, cmax], **kwargs)
+                 rgb=False, multiscale=False, contrast_limits=contrast_limits, **kwargs)
 
 
 def apr_to_napari_Labels(apr: pyapr.APR,
-                        parts: (pyapr.ShortParticles, pyapr.FloatParticles),
+                        parts: pyapr.ShortParticles,
                         mode: str = 'constant',
                         level_delta: int = 0,
                         **kwargs):

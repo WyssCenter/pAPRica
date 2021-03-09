@@ -971,9 +971,10 @@ class tileViewer():
                                                mode='constant',
                                                name='Tile [{}, {}]'.format(row, col),
                                                translate=position,
-                                               opacity=0.7))
+                                               opacity=0.7,
+                                               **kwargs))
             if self.segmentation:
-                layers.append(apr_to_napari_Image(apr, mask,
+                layers.append(apr_to_napari_Labels(apr, mask,
                                                   mode='constant',
                                                   name='Segmentation [{}, {}]'.format(row, col),
                                                   translate=position,
@@ -1092,13 +1093,13 @@ if __name__=='__main__':
 
     print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-    viewer = tileViewer(tiles, tgraph, segmentation=False)
+    viewer = tileViewer(tiles, tgraph, segmentation=True)
     coords = []
     for i in range(4):
         for j in range(4):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, contrast_limit=[0, 2000])
+    viewer.display_tiles(coords, contrast_limits=[0, 1000])
 
     cr = []
     for i in range(16):

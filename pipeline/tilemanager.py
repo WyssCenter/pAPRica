@@ -537,7 +537,7 @@ class tileLoader():
         #     ax[1].imshow(proj2[i], cmap='gray')
         #     ax[1].set_title(title)
         #
-        # if self.row==0 and self.col==1:
+        # if self.row==0 and self.col==0:
         #     print('ok')
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
@@ -934,7 +934,7 @@ class tileViewer():
         self.segmentation = segmentation
         self.loaded_segmentation = {}
 
-    def display_tiles(self, coords, **kwargs):
+    def display_tiles(self, coords, level_delta=0, **kwargs):
         """
         Display the tiles with coordinates given in coords (np array).
         """
@@ -967,17 +967,21 @@ class tileViewer():
                     self.loaded_segmentation[ind] = mask
 
             position = self._get_tile_position(row, col)
+            if level_delta != 0:
+                position = [x/level_delta**2 for x in position]
             layers.append(apr_to_napari_Image(apr, parts,
                                                mode='constant',
                                                name='Tile [{}, {}]'.format(row, col),
                                                translate=position,
                                                opacity=0.7,
+                                               level_delta=level_delta,
                                                **kwargs))
             if self.segmentation:
                 layers.append(apr_to_napari_Labels(apr, mask,
                                                   mode='constant',
                                                   name='Segmentation [{}, {}]'.format(row, col),
                                                   translate=position,
+                                                  level_delta=level_delta,
                                                   opacity=0.7))
 
         # Display layers
@@ -1058,10 +1062,10 @@ class tileViewer():
 
 if __name__=='__main__':
     from time import time
-
+    path = r'/mnt/Data/wholebrain/multitile'
     t = time()
     t_ini = time()
-    tiles = tileParser(r'/media/sf_shared_folder_virtualbox/multitile_registration/apr')
+    tiles = tileParser(path)
     print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
     t = time()
     tgraph = tileGraph(tiles)
@@ -1070,8 +1074,8 @@ if __name__=='__main__':
     for tile in tiles:
         loaded_tile = tileLoader(tile)
         loaded_tile.compute_registration(tgraph)
-        loaded_tile.compute_segmentation(path_classifier=
-                                         r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
+        # loaded_tile.compute_segmentation(path_classifier=
+                                         # r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
     print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
 
     t = time()
@@ -1088,20 +1092,20 @@ if __name__=='__main__':
     tgraph.build_database(tiles)
     print('Elapsed time build database: {:.2f} ms.'.format((time() - t)*1000))
     t = time()
-    tgraph.save_database(r'/media/sf_shared_folder_virtualbox/multitile_registration/registration_results.csv')
+    tgraph.save_database(os.path.join(path, 'registration_results.csv'))
     print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
 
     print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-    viewer = tileViewer(tiles, tgraph, segmentation=True)
+    viewer = tileViewer(tiles, tgraph, segmentation=False)
     coords = []
-    for i in range(4):
-        for j in range(4):
+    for i in range(2):
+        for j in range(2):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, contrast_limits=[0, 1000])
+    viewer.display_tiles(coords, level_delta=-2, contrast_limits=[0, 15000])
 
     cr = []
-    for i in range(16):
+    for i in range(4):
         cr.append(viewer.loaded_tiles[i][0].computational_ratio())
     print(np.mean(cr))

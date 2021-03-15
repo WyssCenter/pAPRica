@@ -974,9 +974,9 @@ class tileGraph():
 
         fig, ax = plt.subplots(2, 3)
         for i, d in enumerate(['H', 'V', 'D']):
-            ax[0, i].imshow(reg_rel_map[i], cmap='gray')
+            ax[0, i].imshow(self.registration_map_rel[i], cmap='gray')
             ax[0, i].set_title('Rel reg. map ' + d)
-            ax[1, i].imshow(reg_abs_map[i], cmap='gray')
+            ax[1, i].imshow(self.registration_map_abs[i], cmap='gray')
             ax[1, i].set_title('Abs reg. map ' + d)
 
     def build_database(self, tiles):
@@ -1111,7 +1111,7 @@ class tileViewer():
         """
         Load the segmentation for tile at position [row, col].
         """
-        df = tgraph.database
+        df = self.tgraph.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         apr = pyapr.APR()
         parts = pyapr.ShortParticles()
@@ -1130,7 +1130,7 @@ class tileViewer():
         """
         Load the tile at position [row, col].
         """
-        df = tgraph.database
+        df = self.tgraph.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         if self.tiles.type == 'tiff2D':
             files = glob(os.path.join(path, '*.tif'))
@@ -1180,9 +1180,118 @@ class tileViewer():
         return [pz, py, px]
 
 
+class tileMerger():
+    def __init__(self, path_database):
+
+        self.database = pd.read_csv(path_database)
+        self.type = 'apr'
+        self.frame_size = 512
+        self.overlap = 128
+        self.n_planes = 268
+        self.n_tiles = len(self.database)
+        self.n_row = self.database['row'].max()-self.database['row'].min()+1
+        self.n_col = self.database['col'].max()-self.database['col'].min()+1
+
+        # Size of the merged array (to be defined when the merged array is initialized).
+        self.nx = None
+        self.ny = None
+        self.nz = None
+
+        self.downsample = 1
+        self.level_delta = 0
+        self.merged_data = None
+
+    def merge_additive(self):
+        H_pos = self.database['ABS_H'].to_numpy()
+        H_pos = (H_pos - H_pos.min())/self.downsample
+        V_pos = self.database['ABS_V'].to_numpy()
+        V_pos = (V_pos - V_pos.min())/self.downsample
+        D_pos = self.database['ABS_D'].to_numpy()
+        D_pos = (D_pos - D_pos.min())/self.downsample
+
+        for i in range(self.n_tiles):
+            apr, parts = self._load_tile(i)
+            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta)
+            data = u[:, :, :]
+
+            x1 = int(H_pos[i])
+            x2 = int(H_pos[i] + data.shape[2])
+            y1 = int(V_pos[i])
+            y2 = int(V_pos[i] + data.shape[1])
+            z1 = int(D_pos[i])
+            z2 = int(D_pos[i] + data.shape[0])
+
+            self.merged_data[z1:z2, y1:y2, x1:x2] = self.merged_data[z1:z2, y1:y2, x1:x2] + data
+
+    def _load_tile(self, i):
+        """
+        Load the current tile.
+        """
+        path = self.database['path'].loc[i]
+        if self.type == 'tiff2D':
+            files = glob(os.path.join(path, '*.tif'))
+            im = imread(files[0])
+            u = np.zeros((len(files), *im.shape))
+            u[0] = im
+            files.pop(0)
+            for i, file in enumerate(files):
+                u[i+1] = imread(file)
+        elif self.type == 'tiff3D':
+            u = imread(*glob(os.path.join(path, '*.tif')))
+        elif self.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(*glob(os.path.join(path, '*0.apr')), apr, parts)
+            u = (apr, parts)
+        else:
+            raise TypeError('Error: image type {} not supported.'.format(self.type))
+        return u
+
+    def initialize_merged_array(self):
+        """
+        Initialize the merged array in accordance with the asked downsampling.
+
+        """
+
+        self.nx = int(self._get_nx() / self.downsample)
+        self.ny = int(self._get_ny() / self.downsample)
+        self.nz = int(self._get_nz() / self.downsample)
+
+        self.merged_data = np.zeros((self.nz, self.ny, self.nx))
+
+    def set_downsample(self, downsample):
+        """
+        Set the downsampling value for the merging reconstruction.
+
+        Parameters
+        ----------
+        downsample: (int) downsample factor
+
+        """
+
+        # TODO: find a more rigorous way of enforcing this. (Probably requires that the APR is loaded).
+        if downsample not in [1, 2, 4, 8, 16, 32]:
+            raise ValueError('Error: downsample value should be compatible with APR levels.')
+
+        self.downsample = downsample
+        self.level_delta = int(-np.log2(self.downsample))
+
+    def _get_nx(self):
+        x_pos = self.database['ABS_H'].to_numpy()
+        return x_pos.max() - x_pos.min() + self.frame_size
+
+    def _get_ny(self):
+        y_pos = self.database['ABS_V'].to_numpy()
+        return y_pos.max() - y_pos.min() + self.frame_size
+
+    def _get_nz(self):
+        z_pos = self.database['ABS_D'].to_numpy()
+        return z_pos.max() - z_pos.min() + self.n_planes
+
+
 if __name__=='__main__':
     from time import time
-    path = r'/mnt/Data/wholebrain/multitile'
+    path = r'/media/sf_shared_folder_virtualbox/multitile_registration/apr'
     t = time()
     t_ini = time()
     tiles = tileParser(path)
@@ -1194,7 +1303,7 @@ if __name__=='__main__':
     for tile in tiles:
         loaded_tile = tileLoader(tile)
         loaded_tile.compute_registration(tgraph)
-        loaded_tile.activate_mask(threshold=95)
+        # loaded_tile.activate_mask(threshold=95)
         # loaded_tile.compute_segmentation(path_classifier=
                                          # r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
     print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
@@ -1220,13 +1329,13 @@ if __name__=='__main__':
 
     viewer = tileViewer(tiles, tgraph, segmentation=False)
     coords = []
-    for i in range(2):
-        for j in range(2):
+    for i in range(4):
+        for j in range(4):
             coords.append([i, j])
     coords = np.array(coords)
     viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 10000])
 
     cr = []
-    for i in range(4):
+    for i in range(16):
         cr.append(viewer.loaded_tiles[i][0].computational_ratio())
     print(np.mean(cr))

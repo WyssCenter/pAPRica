@@ -2,9 +2,9 @@ from tilemanager import tileMerger
 import matplotlib.pyplot as plt
 
 merger = tileMerger(r'/media/sf_shared_folder_virtualbox/multitile_registration/apr/registration_results.csv')
-# merger.set_downsample(2)
+merger.set_downsample(4)
 merger.initialize_merged_array()
-merger.merge_additive()
+merger.merge_max()
 
 fig, ax = plt.subplots(1, 3)
 ax[0].imshow(merger.merged_data[0], cmap='gray')

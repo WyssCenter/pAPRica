@@ -1181,15 +1181,13 @@ class tileViewer():
 
 
 class tileMerger():
-    def __init__(self, path_database, frame_size=None, overlap=None, n_planes=None, type=None):
+    def __init__(self, path_database, frame_size, overlap, n_planes, type):
 
         self.database = pd.read_csv(path_database)
-        # if type is None:
-        #     self.type =
-        self.type = 'apr'
-        self.frame_size = 512
-        self.overlap = 128
-        self.n_planes = 268
+        self.type = type
+        self.frame_size = frame_size
+        self.overlap = overlap
+        self.n_planes = n_planes
         self.n_tiles = len(self.database)
         self.n_row = self.database['row'].max()-self.database['row'].min()+1
         self.n_col = self.database['col'].max()-self.database['col'].min()+1

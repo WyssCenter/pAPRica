@@ -1181,9 +1181,11 @@ class tileViewer():
 
 
 class tileMerger():
-    def __init__(self, path_database):
+    def __init__(self, path_database, frame_size=None, overlap=None, n_planes=None, type=None):
 
         self.database = pd.read_csv(path_database)
+        # if type is None:
+        #     self.type =
         self.type = 'apr'
         self.frame_size = 512
         self.overlap = 128
@@ -1222,6 +1224,28 @@ class tileMerger():
             z2 = int(D_pos[i] + data.shape[0])
 
             self.merged_data[z1:z2, y1:y2, x1:x2] = self.merged_data[z1:z2, y1:y2, x1:x2] + data
+
+    def merge_max(self):
+        H_pos = self.database['ABS_H'].to_numpy()
+        H_pos = (H_pos - H_pos.min())/self.downsample
+        V_pos = self.database['ABS_V'].to_numpy()
+        V_pos = (V_pos - V_pos.min())/self.downsample
+        D_pos = self.database['ABS_D'].to_numpy()
+        D_pos = (D_pos - D_pos.min())/self.downsample
+
+        for i in range(self.n_tiles):
+            apr, parts = self._load_tile(i)
+            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta)
+            data = u[:, :, :]
+
+            x1 = int(H_pos[i])
+            x2 = int(H_pos[i] + data.shape[2])
+            y1 = int(V_pos[i])
+            y2 = int(V_pos[i] + data.shape[1])
+            z1 = int(D_pos[i])
+            z2 = int(D_pos[i] + data.shape[0])
+
+            self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
 
     def _load_tile(self, i):
         """

@@ -18,16 +18,25 @@ class tileParser():
     Class to handle the data in the same fashion as TeraStitcher, see here:
     https://github.com/abria/TeraStitcher/wiki/Supported-volume-formats#two-level-hierarchy-of-folders
     """
-    def __init__(self, path):
+    def __init__(self, path, type=None, frame_size=None, overlap=None):
         self.path = path
         self.tiles_list = self._get_tile_list()
-        self.type = self._get_type()
+        if type is None:
+            print('Type was not given, trying to deduce from files.')
+            self.type = self._get_type()
+            print('Filetype found: {}'.format(self.type))
         self.n_tiles = len(self.tiles_list)
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.path_list = self._get_path_list()
-        self.overlap, self.frame_size = self._get_overlap()
+        if (frame_size is None) or (overlap is None):
+            print('Frame size or overlap were not given, trying to deduce from files.')
+            self.overlap, self.frame_size = self._get_overlap()
+            print('Frame size found: {}\nOverlap found: {}'.format(self.frame_size, self.overlap))
+        else:
+            self.overlap = overlap
+            self.frame_size = frame_size
 
     def _get_overlap(self):
         """
@@ -219,6 +228,8 @@ class tileLoader():
         self.neighbors_path = tile['neighbors_path']
         self.overlap = tile['overlap']
         self.frame_size = tile['frame_size']
+        self.mask = False
+        self.threshold = None
 
         # Load tile data and neighbors data.
         self.data = self._load_tile(self.path)
@@ -231,6 +242,28 @@ class tileLoader():
         # Initialize attributs for segmentation
         self.path_classifier = None
         self.f_names = None
+
+    def activate_mask(self, threshold):
+        """
+        Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
+        not taken into account.
+
+        Parameters
+        ----------
+        threshold: (int) threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will
+                    create a mask removing the 5% brightest pixels).
+
+        """
+        self.mask = True
+        self.threshold = threshold
+
+    def deactivate_mask(self):
+        """
+        Deactivate the masked cross-correlation and uses a classical cross correlation.
+
+        """
+        self.mask = False
+        self.threshold = None
 
     def compute_registration(self, tgraph):
         """
@@ -496,14 +529,75 @@ class tileLoader():
         Returns
         -------
         shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
+
+        """
+        # Compute phase cross-correlation to extract shifts
+        dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
+                                                   return_error=True, upsample_factor=upsample_factor)
+        dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
+                                                   return_error=True, upsample_factor=upsample_factor)
+        dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
+                                                   return_error=True, upsample_factor=upsample_factor)
+
+        # Keep only the most reliable registration
+        # D/z
+        if error_zx < error_zy:
+            dz = dzx[0]
+            rz = error_zx
+        else:
+            dz = dzy[0]
+            rz = error_zy
+
+        # H/x
+        if error_zx < error_yx:
+            dx = dzx[1]
+            rx = error_zx
+        else:
+            dx = dyx[1]
+            rx = error_yx
+
+        # V/y
+        if error_yx < error_zy:
+            dy = dyx[0]
+            ry = error_yx
+        else:
+            dy = dzy[1]
+            ry = error_zy
+
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+        #
+        # if self.row==0 and self.col==0:
+        #     print('ok')
+
+        return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+    def _get_masked_proj_shifts(self, proj1, proj2, upsample_factor=1):
+        """
+        This function computes shifts from max-projections on overlapping areas with mask on brightest area.
+        It uses the phase cross-correlation to compute the shifts.
+
+        Parameters
+        ----------
+        proj1: (list of arrays) max-projections for tile 1
+        proj2: (list of arrays) max-projections for tile 2
+
+        Returns
+        -------
+        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
+
         """
         # Compute mask to discard very bright area that are likely bubbles or artefacts
         mask_ref = []
         mask_move = []
         for i in range(3):
-            vmax = np.percentile(proj1[i], 95)
+            vmax = np.percentile(proj1[i], self.threshold)
             mask_ref.append(proj1[i] < vmax)
-            vmax = np.percentile(proj2[i], 95)
+            vmax = np.percentile(proj2[i], self.threshold)
             mask_move.append(proj2[i] < vmax)
 
         # Compute phase cross-correlation to extract shifts
@@ -605,8 +699,12 @@ class tileLoader():
         # if self.row==0 and self.col==1:
         #     print('ok')
 
-        return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
-                                     [proj_zy2, proj_zx2, proj_yx2])
+        if self.mask:
+            return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
+        else:
+            return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
 
     def _compute_south_registration(self, v):
         """
@@ -634,8 +732,12 @@ class tileLoader():
         # if self.row==0 and self.col==1:
         #     print('ok')
 
-        return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
-                                     [proj_zy2, proj_zx2, proj_yx2])
+        if self.mask:
+            return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
+        else:
+            return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
 
 
 class tileGraph():
@@ -1092,6 +1194,7 @@ if __name__=='__main__':
     for tile in tiles:
         loaded_tile = tileLoader(tile)
         loaded_tile.compute_registration(tgraph)
+        loaded_tile.activate_mask(threshold=95)
         # loaded_tile.compute_segmentation(path_classifier=
                                          # r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
     print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))

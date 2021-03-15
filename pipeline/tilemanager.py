@@ -11,7 +11,7 @@ from skimage.registration import phase_cross_correlation
 import re
 from viewer.pyapr_napari import display_layers, apr_to_napari_Image, apr_to_napari_Labels
 from joblib import load
-
+from scipy.signal import correlate
 
 class tileParser():
     """
@@ -497,13 +497,28 @@ class tileLoader():
         -------
         shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
         """
+        # Compute mask to discard very bright area that are likely bubbles or artefacts
+        mask_ref = []
+        mask_move = []
+        for i in range(3):
+            vmax = np.percentile(proj1[i], 95)
+            mask_ref.append(proj1[i] < vmax)
+            vmax = np.percentile(proj2[i], 95)
+            mask_move.append(proj2[i] < vmax)
+
         # Compute phase cross-correlation to extract shifts
-        dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
-                                                   return_error=True, upsample_factor=upsample_factor)
-        dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
-                                                   return_error=True, upsample_factor=upsample_factor)
-        dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
-                                                   return_error=True, upsample_factor=upsample_factor)
+        dzy = phase_cross_correlation(proj1[0], proj2[0],
+                                      return_error=True, upsample_factor=upsample_factor,
+                                      reference_mask=mask_ref[0], moving_mask=mask_move[0])
+        error_zy = self._get_registration_error(proj1[0], proj2[0])
+        dzx = phase_cross_correlation(proj1[1], proj2[1],
+                                      return_error=True, upsample_factor=upsample_factor,
+                                      reference_mask=mask_ref[1], moving_mask=mask_move[1])
+        error_zx = self._get_registration_error(proj1[1], proj2[1])
+        dyx = phase_cross_correlation(proj1[2], proj2[2],
+                                      return_error=True, upsample_factor=upsample_factor,
+                                      reference_mask=mask_ref[2], moving_mask=mask_move[2])
+        error_yx = self._get_registration_error(proj1[2], proj2[2])
 
         # Keep only the most reliable registration
         # D/z
@@ -541,6 +556,9 @@ class tileLoader():
         #     print('ok')
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+    def _get_registration_error(self, proj1, proj2):
+        return np.sqrt(1-correlate(proj1, proj2).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
 
     def _get_max_proj_apr(self, apr, parts, patch, plot=False):
         """
@@ -1103,7 +1121,7 @@ if __name__=='__main__':
         for j in range(2):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, level_delta=-2, contrast_limits=[0, 15000])
+    viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 10000])
 
     cr = []
     for i in range(4):

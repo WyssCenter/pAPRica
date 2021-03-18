@@ -564,15 +564,14 @@ class tileLoader():
             dy = dzy[1]
             ry = error_zy
 
-        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #     ax[0].imshow(proj1[i], cmap='gray')
-        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-        #     ax[1].imshow(proj2[i], cmap='gray')
-        #     ax[1].set_title(title)
-        #
-        # if self.row==0 and self.col==0:
+        # if self.row==0 and self.col==3:
         #     print('ok')
+        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #         ax[0].imshow(proj1[i], cmap='gray')
+        #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #         ax[1].imshow(proj2[i], cmap='gray')
+        #         ax[1].set_title(title)
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
@@ -1102,7 +1101,8 @@ class tileViewer():
                                                   name='Segmentation [{}, {}]'.format(row, col),
                                                   translate=position,
                                                   level_delta=level_delta,
-                                                  opacity=0.7))
+                                                  opacity=0.7,
+                                                  **kwargs))
 
         # Display layers
         display_layers(layers)
@@ -1181,12 +1181,11 @@ class tileViewer():
 
 
 class tileMerger():
-    def __init__(self, path_database, frame_size, overlap, n_planes, type):
+    def __init__(self, path_database, frame_size, n_planes, type):
 
         self.database = pd.read_csv(path_database)
         self.type = type
         self.frame_size = frame_size
-        self.overlap = overlap
         self.n_planes = n_planes
         self.n_tiles = len(self.database)
         self.n_row = self.database['row'].max()-self.database['row'].min()+1
@@ -1326,8 +1325,8 @@ if __name__=='__main__':
         loaded_tile = tileLoader(tile)
         loaded_tile.compute_registration(tgraph)
         # loaded_tile.activate_mask(threshold=95)
-        # loaded_tile.compute_segmentation(path_classifier=
-                                         # r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
+        loaded_tile.compute_segmentation(path_classifier=
+                                         r'/media/sf_shared_folder_virtualbox/PV_interneurons/classifiers/random_forest_n100.joblib')
     print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
 
     t = time()
@@ -1349,13 +1348,13 @@ if __name__=='__main__':
 
     print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-    viewer = tileViewer(tiles, tgraph, segmentation=False)
+    viewer = tileViewer(tiles, tgraph, segmentation=True)
     coords = []
     for i in range(4):
         for j in range(4):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 10000])
+    viewer.display_tiles(np.array([0,1]), level_delta=-2, contrast_limits=[0, 3000], scale=[3, 1, 1])
 
     cr = []
     for i in range(16):

@@ -74,8 +74,10 @@ def apr_to_napari_Labels(apr: pyapr.APR,
     out : napari.layers.Image
         A Labels layer of the APR that can be viewed in napari.
     """
+    if 'contrast_limits' in kwargs:
+        del kwargs['contrast_limits']
 
-    return Labels(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
+    return Labels(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode='max'),
                   multiscale=False, **kwargs)
 
 

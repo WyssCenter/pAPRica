@@ -12,6 +12,8 @@ import re
 from viewer.pyapr_napari import display_layers, apr_to_napari_Image, apr_to_napari_Labels
 from joblib import load
 from scipy.signal import correlate
+import cv2 as cv
+from skimage.exposure import equalize_adapthist
 
 class tileParser():
     """
@@ -25,6 +27,8 @@ class tileParser():
             print('Type was not given, trying to deduce from files.')
             self.type = self._get_type()
             print('Filetype found: {}'.format(self.type))
+        else:
+            self.type = type
         self.n_tiles = len(self.tiles_list)
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
@@ -239,7 +243,7 @@ class tileLoader():
         if self.type != 'apr':
             self._convert_to_apr()
 
-        # Initialize attributs for segmentation
+        # Initialize attributes for segmentation
         self.path_classifier = None
         self.f_names = None
 
@@ -352,7 +356,7 @@ class tileLoader():
         elif self.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
-            pyapr.io.read(*glob(os.path.join(path, '*0.apr')), apr, parts)
+            pyapr.io.read(*glob(os.path.join(path, '*1.apr')), apr, parts)
             u = (apr, parts)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
@@ -1181,12 +1185,11 @@ class tileViewer():
 
 
 class tileMerger():
-    def __init__(self, path_database, frame_size, overlap, n_planes, type):
+    def __init__(self, path_database, frame_size, n_planes, type):
 
         self.database = pd.read_csv(path_database)
         self.type = type
         self.frame_size = frame_size
-        self.overlap = overlap
         self.n_planes = n_planes
         self.n_tiles = len(self.database)
         self.n_row = self.database['row'].max()-self.database['row'].min()+1
@@ -1201,7 +1204,7 @@ class tileMerger():
         self.level_delta = 0
         self.merged_data = None
 
-    def merge_additive(self):
+    def merge_additive(self, mode='constant'):
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()
@@ -1211,7 +1214,7 @@ class tileMerger():
 
         for i in range(self.n_tiles):
             apr, parts = self._load_tile(i)
-            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta)
+            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
             data = u[:, :, :]
 
             x1 = int(H_pos[i])
@@ -1222,8 +1225,9 @@ class tileMerger():
             z2 = int(D_pos[i] + data.shape[0])
 
             self.merged_data[z1:z2, y1:y2, x1:x2] = self.merged_data[z1:z2, y1:y2, x1:x2] + data
+            self.merged_data = self.merged_data.astype('uint16')
 
-    def merge_max(self):
+    def merge_max(self, mode='constant'):
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()
@@ -1233,7 +1237,7 @@ class tileMerger():
 
         for i in range(self.n_tiles):
             apr, parts = self._load_tile(i)
-            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta)
+            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
             data = u[:, :, :]
 
             x1 = int(H_pos[i])
@@ -1244,6 +1248,51 @@ class tileMerger():
             z2 = int(D_pos[i] + data.shape[0])
 
             self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
+            self.merged_data = self.merged_data.astype('uint16')
+
+    def crop(self, background=0, xlim=None, ylim=None, zlim=None):
+        """
+        Add a black mask around the brain (rather than really cropping which makes the overlays complicated in
+        a later stage).
+
+        """
+        if self.merged_data is None:
+            raise TypeError('Error: please merge data before cropping.')
+
+        if xlim is not None:
+            if xlim[0] != 0:
+                self.merged_data[:, :, :xlim[0]] = background
+            if xlim[1] != self.merged_data.shape[2]:
+                self.merged_data[:, :, xlim[1]:] = background
+        if ylim is not None:
+            if ylim[0] != 0:
+                self.merged_data[:, :ylim[0], :] = background
+            if ylim[1] != self.merged_data.shape[1]:
+                self.merged_data[:, ylim[1]:, :] = background
+        if zlim is not None:
+            if zlim[0] != 0:
+                self.merged_data[:zlim[0], :, :] = background
+            if zlim[1] != self.merged_data.shape[0]:
+                self.merged_data[zlim[1]:, :, :] = background
+
+    def equalize_hist(self, method='opencv'):
+        """
+        Perform histogram equalization to improve the contrast on merged data.
+        Both OpenCV (only 2D) and Skimage (3D but 10 times slower) are available.
+        """
+
+        if self.merged_data is None:
+            raise TypeError('Error: please merge data before equalizing histogram.')
+
+        if method == 'opencv':
+            clahe = cv.createCLAHE(tileGridSize=(8, 8))
+            for i in range(self.merged_data.shape[0]):
+                self.merged_data[i] = clahe.apply(self.merged_data[i])
+        elif method == 'skimage':
+            self.merged_data = equalize_adapthist(self.merged_data)
+        else:
+            raise ValueError('Error: unknown method for adaptive histogram normalization.')
+
 
     def _load_tile(self, i):
         """
@@ -1313,10 +1362,10 @@ class tileMerger():
 
 if __name__=='__main__':
     from time import time
-    path = r'/media/sf_shared_folder_virtualbox/multitile_registration/apr'
+    path = r'/mnt/Data/wholebrain/multitile'
     t = time()
     t_ini = time()
-    tiles = tileParser(path)
+    tiles = tileParser(path, frame_size=2048, overlap=868, type='apr')
     print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
     t = time()
     tgraph = tileGraph(tiles)
@@ -1351,13 +1400,13 @@ if __name__=='__main__':
 
     viewer = tileViewer(tiles, tgraph, segmentation=False)
     coords = []
-    for i in range(4):
-        for j in range(4):
+    for i in range(2):
+        for j in range(2):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 10000])
+    viewer.display_tiles(coords, level_delta=-2, contrast_limits=[0, 5000])
 
     cr = []
-    for i in range(16):
+    for i in range(4):
         cr.append(viewer.loaded_tiles[i][0].computational_ratio())
     print(np.mean(cr))

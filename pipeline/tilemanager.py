@@ -1359,6 +1359,20 @@ class tileMerger():
         z_pos = self.database['ABS_D'].to_numpy()
         return z_pos.max() - z_pos.min() + self.n_planes
 
+class atlas():
+
+    def __init__(self, path, x_downsample, z_downsample, y_downsample=None):
+        self.x_downsample = x_downsample
+        if y_downsample is None:
+            self.y_downsample = x_downsample
+        else:
+            self.y_downsample = y_downsample
+        self.z_downsample = z_downsample
+        self.atlas = imread(path)
+
+    def get_loc_id(self, x, y, z):
+        return self.atlas[int(z/self.z_downsample), int(y/self.y_downsample), int(x/self.x_downsample)]
+
 
 if __name__=='__main__':
     from time import time

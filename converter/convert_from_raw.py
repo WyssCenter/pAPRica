@@ -4,29 +4,37 @@ from glob import glob
 import os
 from skimage.io import imread
 
+def load_raw(path):
+    u = np.fromfile(path, dtype='uint16', count=-1)
+    return u.reshape((-1, 2048, 2048))
+
 # Parameters
-data_path = r'/mnt/wholebrain/'
-compress = True
+data_path = r'/mnt/Data/wholebrain/multitile'
+compress = False
 par = pyapr.APRParameters()
 par.rel_error = 0.2
 par.gradient_smoothing = 2
 par.dx = 1
 par.dy = 1
 par.dz = 1
-par.Ip_th = 700.0
-par.sigma_th = 200.0
-par.grad_th = 65.0
+# par.Ip_th = 700.0
+# par.sigma_th = 200.0
+# par.grad_th = 65.0
+par.Ip_th = 220
+par.sigma_th = 50.0
+par.grad_th = 3.2
 
-files = glob(os.path.join(data_path, '*tif'))
-for f in files[2:]:
-    apr, parts = pyapr.converter.get_apr(imread(f), params=par)
+files = glob(os.path.join(data_path, '*raw'))
+for f in files:
+
+    apr, parts = pyapr.converter.get_apr(load_raw(f), params=par)
 
     if compress:
         parts.set_compression_type(1)
         parts.set_quantization_factor(2)
-        parts.set_background(200)
+        parts.set_background(125)
 
-    pyapr.io.write(f[:-4] + '.apr', apr, parts)
+    pyapr.io.write(f[:-4] + '_no_compression.apr', apr, parts)
 
     if compress:
         # Size of original and compressed APR files in MB

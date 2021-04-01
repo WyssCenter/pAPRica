@@ -1,3 +1,8 @@
+'''
+This script downsample the data with a power of 2 using APR and then interpolate linearly the data on a given resolution
+in order to run the atlasing pipeline (brainreg).
+'''
+
 from tilemanager import tileMerger
 import matplotlib.pyplot as plt
 import os

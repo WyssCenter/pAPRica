@@ -1,0 +1,62 @@
+LIMITED LICENSE AGREEMENT
+
+
+IMPORTANT-READ CAREFULLY: This Limited License Agreement (“LLA) is made between you on behalf of yourself or on behalf of any entity by which you are employed or engaged (collectively referred to in this LLA as "You" or “Licensee”) and the Wyss Center for Bio and Neuro Engineering, a non-profit entity incorporated under the laws of Switzerland having its place of business at Chemin des Mines 9, CH-1202 Genève, Switzerland (the “Wyss Center”).
+
+The Wyss Center materials licensed under this LLA shall mean the software including any associated media, documentation and any software update, upgrade or change make available by the Wyss Center (collectively the “Licensed Materials”).
+
+THE LICENSED MATERIALS ARE LICENSED TO YOU ON THE CONDITION THAT YOU ACCEPT ALL THE TERMS AND CONDITIONS OF THIS LLA. BY CLICKING ON THE "I ACCEPT" BUTTON OR BY INSTALLING, ACCESSING OR OTHERWISE USING THE LICENSED MATERIALS, YOU AGREE TO BE BOUND BY THE TERMS OF THIS LLA. IF YOU DO NOT AGREE WITH ANY CONDITION OF THIS LLA, DO NOT INSTALL, ACCESS OR USE THE LICENSED MATERIALS.
+
+1. LIMITED LICENSE
+
+Subject to the terms and conditions of this LLA and applicable Open Source Terms (as defined hereafter) and during the term of this LLA, the Wyss Center hereby grants You under intellectual property rights owned by the Wyss Center or under which the Wyss Center has the right to grant a license, a worldwide, non-exclusive, non-transferable, royalty-free, license, without the right to sub-license, to use internally the Licensed Materials and to modify the source code form of the Licensed Materials for the sole purpose of performing evaluation, simulation, testing and developing derivatives of the Licensed Materials (“Limited License Purpose”). You acknowledge you are receiving the Licensed Materials under a limited license and not as a purchaser of the Licensed Materials.
+
+2. RESTRICTIONS
+
+You shall not, and shall not permit any third party to: (i) rent, disclose, publish, sell, assign, lease, lend, sublicense, market, transfer, distribute or otherwise provide third parties access to (any portion of) the Licensed Materials; (ii) use the Licensed Materials to create any product that competes with the Licensed Materials; (iii) disclose the results of the Licensed Materials’ performance to any third party; or (vii) otherwise use any portion of the Licensed Materials in any manner not expressly authorized by this LLA.
+
+Other than the limited expressed license granted to You under Article 1 herein, no other rights or licenses are granted, or implied by estoppel or otherwise, under any intellectual property rights of the Wyss Center or a third-party residing in the Licensed Materials and any trademark, trade or brand name, domain name, corporate name of the Wyss Center. You may not use the Licensed Materials for any commercial purpose which includes the use of the Licensed Materials as a standalone product or in a product, to be distributed, marketed or otherwise offered for sale or for rent ultimately.
+
+3. OWNERSHIP, COPYRIGHTS AND TRADEMARKS
+
+The Licensed Materials are and will remain the exclusive property of the Wyss Center. Any and all feedback, changes, reconfigurations, alterations, improvements, translations, transformations, derivative works, and/or enhancements of the Licensed Materials made by You (“Modifications”) shall be owned by the Wyss Center with and all documentation available related to such Modification. You shall not remove, modify or alter any Wyss Center copyright or trademark notice from any part of the Licensed Materials.
+
+4. CONFIDENTIALITY
+
+Confidential information shall include all information provided with the Licensed Materials which (a) is designated as “confidential”, “proprietary” or with a similar legend, (b) is by its own nature of a type which would reasonably be considered confidential and/or (c) is source code (“Confidential Information”) (d) any modification to the source code or any feedback on the Licensed Materials from You. You may only use the Confidential Information for the Limited License Purpose and shall protect the confidentiality of the Confidential Information by using the same degree of care, but not less than a reasonable degree of care, to prevent its unauthorized use, dissemination, or publication as You use to protect your own confidential information of like nature.
+
+The confidentiality obligations shall not apply to Confidential Information, which can be shown by documentary evidence: (i) entered the public domain through no fault of the Licensee; or, (ii) was known to the Licensee prior to receipt from the Wyss Center; or, (iii) was disclosed to the Licensee by a third party having the right to disclose; or, (iv) was independently developed by the Licensee without use of the Licensed Materials or Confidential Information, the onus of proof of independence being on the Licensee.
+
+You shall immediately notify the Wyss Center of any unauthorised use or disclosure of, or of any unauthorised access to, or of any theft or loss of the Licensed Materials or Confidential Information or part thereof, which comes to your notice. These confidentiality obligations shall survive any termination or expiration of the LLA for whatever cause.
+
+5. DISCLAIMER OF WARRANTY
+
+THE LICENSED MATERIALS AND ANY AND ALL PARTS THEREOF ARE PROVIDED “AS IS”. THE WYSS CENTER MAKE NO REPRESENTATIONS OR WARRANTIES WITH RESPECT TO THE LICENSED MATERIALS AND OR PARTS THEREOF WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING BUT NOT LIMITED TO, WARRANTY OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. WITHOUT LIMITING THE GENERALITY OF THE FOREGOING, THE WYSS CENTER MAKE NO REPRESENTATION OR WARRANTY THAT (I) THE USE OF THE LICENSED MATERIALS AND OR PARTS THEREOF WILL BE UNINTERRUPTED OR ERROR FREE, AND OR (II) ANY USE OF THE LICENSED MATERIALS AND OR PARTS THEREOF ARE FREE FROM INFRINGEMENT OF ANY THIRD-PARTY INTELLECTUAL PROPERTY RIGHTS.
+
+6. OPEN SOURCE
+
+Some portion of the Licensed Materials might contain Open Source Software subject to Open Source Terms (as defined below) applicable for each such portion, as further specified in the Licensed Materials. Such Open Source Software is supplied to You under the applicable Open Source Terms and is not subject to the terms of this LLA to the extent the terms of this LLA are in conflict with such applicable Open Source Terms.
+
+Except for Open Source Software, You have no rights under this LLA to, and may not under any circumstances use the Licensed Materials or any parts thereof such that they become subject to any Open Source Terms. These actions include but are not limited to combining the Licensed Materials by means of incorporation or linking or otherwise.
+
+For the purpose of this LLA, “Open Source Terms” shall mean any open source license which requires as part of distribution of software that the source code of such software is distributed therewith, or any other open source license that complies with the Open Source Definition specified at www.opensource.org and any other comparable open source license such as for example GNU General Public License (GPL), Eclipse Public License (EPL), Apache Software License, BSD license and MIT license. “Open Source Software” shall mean any software that is licensed or distributed under Open Source Terms as specified in the Licensed Materials.
+
+7. DISCLAIMER OF DAMAGES
+
+IN NO EVENT SHALL THE WYSS CENTER BE LIABLE FOR ANY INDIRECT, INCIDENTAL, PUNITIVE, SPECIAL OR CONSEQUENTIAL DAMAGES, LOST PROFITS, REVENUES OR SAVINGS, LOSS OF OPPORTUNITY, BUSINESS INTERRUPTION, DAMAGE TO PRODUCT OR EQUIPMENT, LOSS OF DATA OR FOR ANY DAMAGE ASSOCIATED WITH INTELLECTUAL PROPERTY INFRINGEMENT CLAIMS, WHETHER FORESEEABLE OR UNFORESEEABLE AND WHETHER OR NOT SUCH DAMAGES ARE BASED ON WARRANTY, CONTRACT OR ANY OTHER LEGAL THEORY, ARISING OUT OF OR IN CONNECTION WITH THIS LLA – EVEN IF LICENSEE IS AWARE, OF THE POSSIBILITY OF SUCH DAMAGES. THE WYSS CENTER AGGREGATE AND CUMULATIVE LIABILITY TOWARDS LICENSEE UNDER THIS LLA SHALL NOT EXCEED CHF 100 USD (ONE HUNDRED CHF). THE LIMITATIONS SET FORTH ABOVE IN THIS ARTICLE 7 SHALL ONLY APPLY TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW.
+
+8. TERM AND TERMINATION
+
+This LLA shall be valid for an initial period of one year from acceptance by You of this LLA, Thereafter, it shall automatically renew for an unlimited period of time until terminated by either the Wyss Center or Licensee upon one (1) month prior written notice to the other. Notwithstanding the foregoing, Licensee may terminate this LLA at any time by destroying all Licensed Materials, and other Confidential Information or by returning those to the Wyss Center. The Wyss Center may terminate this LLA at any time if (i) You fail to comply with the terms and conditions of this LLA, or (ii) the Wyss Center receives notice of any claim that alleges that the Licensed Materials or Your use of the Licensed Materials infringes any third-party intellectual property rights. Upon termination, You shall delete, destroy, or return to the Wyss Center all Licensed Materials in your possession and You shall stop using the Licensed Materials for any purpose whatsoever. The rights and obligations under Articles from 2 to 9 will survive the termination or expiration of this LLA.
+
+9. MISCELLANEOUS
+
+If a court or agency of competent jurisdiction holds any term of this LLA invalid, illegal, or unenforceable for any reason, the remainder of this LLA shall be valid and enforceable and You and the Wyss Center shall discuss in good faith a substitute, valid, enforceable provision which most nearly effects the parties intent in entering into this LLA.
+
+The failure by the Wyss Center to enforce any provisions of this LLA or to exercise any right in respect thereto shall not be construed as constituting a waiver of its rights thereof.
+
+No agency, partnership or other business organization shall be created or be construed as being created by reason of this LLA. You will not have the right or authority to create any obligation of any nature whatsoever on behalf of the Wyss Center or bind the Wyss Center in any respect. You and the Wyss Center are independent parties. Nothing in this LLA shall be construed as making You an employee, agent or legal representative of the Wyss Center.
+
+Any amendment to this LLA shall be agreed in writing and be duly signed by You and the Wyss Center with reference to this LLA.
+
+This LLA is governed by the laws of Switzerland, without regard to its conflict of law rules. All disputes arising out of or in connection with this LLA shall be finally settled by the competent courts of Geneva, Switzerland. Notwithstanding the aforesaid, nothing in this LLA shall prevent the Wyss Center from seeking any interim or final injunctive or equitable relief by a court of competent jurisdiction.

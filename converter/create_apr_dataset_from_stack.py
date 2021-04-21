@@ -1,5 +1,11 @@
-# This script takes an input stack and divide it in tiles. This is done to be later used with TeraStitcher for
-# testing the Steps 3/4/5 independently.
+"""
+This script takes an input stack and divide it in tiles. This is done to be later used with TeraStitcher for
+testing the Steps 3/4/5 independently.
+
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+"""
 
 import numpy as np
 from skimage.io import imread, imsave

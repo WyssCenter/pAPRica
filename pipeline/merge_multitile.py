@@ -1,7 +1,11 @@
-'''
+"""
 This script downsample the data with a power of 2 using APR and then interpolate linearly the data on a given resolution
 in order to run the atlasing pipeline (brainreg).
-'''
+
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+"""
 
 from tilemanager import tileMerger
 import matplotlib.pyplot as plt

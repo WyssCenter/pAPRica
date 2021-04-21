@@ -1,6 +1,12 @@
-# This approach does not work because the feature space is too small and flann method have a hard time
-# finding good matches because the second neighbor is always close (with a higher
-# number of feature this should not happen)
+"""
+This approach does not work because the feature space is too small and flann method have a hard time
+finding good matches because the second neighbor is always close (with a higher
+number of feature this should not happen)
+
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+"""
 
 import pyapr
 from skimage.io import imread, imsave

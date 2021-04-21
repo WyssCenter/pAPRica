@@ -1,5 +1,11 @@
-# This script demonstrate the possibility of performing registration using max-proj on APR
-# followed by phase cross correlation
+"""
+This script demonstrate the possibility of performing registration using max-proj on APR
+followed by phase cross correlation
+
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+"""
 
 import pyapr
 from skimage.io import imread, imsave

@@ -1,5 +1,12 @@
-# In this script I perform cell clustering on nissl data from 2P. First the data is converted to APR
-# then segmented and clustered.
+"""
+In this script I perform cell clustering on nissl data from 2P. First the data is converted to APR
+then segmented and clustered.
+
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+"""
+
 
 import pyapr
 from skimage.io import imread, imsave

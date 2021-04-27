@@ -14,11 +14,33 @@ from time import time
 
 
 def are_labels_the_same(local_labels):
+    """
+    Determine if manual labels in particle are the same and return the labels
+
+    Parameters
+    ----------
+    local_labels: (array) particle labels
+
+    """
     labels = local_labels[local_labels != 0].flatten()
     return ((labels == labels[0]).all(), labels[0])
 
 
 def compute_gradients(apr, parts, sobel=True):
+    """
+    Compute gradient for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sobel: (bool) use sobel filter to compute the gradient
+
+    Returns
+    -------
+    (dx, dy, dz): (arrays) gradient for each direction
+    """
+
     par = apr.get_parameters()
     dx = pyapr.FloatParticles()
     dy = pyapr.FloatParticles()
@@ -30,42 +52,115 @@ def compute_gradients(apr, parts, sobel=True):
     return dz, dx, dy
 
 
-def compute_laplacian(apr, parts, sobel=True):
+def compute_laplacian(apr, parts, grad=None, sobel=True):
+    """
+    Compute Laplacian for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    grad: (dz, dy, dx) gradient for each direction if precomputed (faster for Laplacian computation)
+    sobel: (bool) use sobel filter to compute the gradient
+
+    Returns
+    -------
+    Laplacian of APR.
+    """
+
     par = apr.get_parameters()
-    dz, dx, dy = compute_gradients(apr, parts, sobel)
+    if grad is None:
+        dz, dx, dy = compute_gradients(apr, parts, sobel)
+    else:
+        dz, dx, dy = grad
     dx2 = pyapr.FloatParticles()
     dy2 = pyapr.FloatParticles()
     dz2 = pyapr.FloatParticles()
     pyapr.numerics.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
     pyapr.numerics.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
     pyapr.numerics.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
-    return dz + dx + dy
+    return dz2 + dx2 + dy2
 
 
 def compute_gradmag(apr, parts, sobel=True):
+    """
+    Compute gradient magnitude directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sobel: (bool) use sobel filter to compute the gradient
+
+    Returns
+    -------
+    Gradient magnitude of APR.
+    """
+
     par = apr.get_parameters()
     gradmag = pyapr.FloatParticles()
-    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=True)
+    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
     return gradmag
 
 
 def gaussian_blur(apr, parts, sigma=1.5, size=11):
-    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, 3, True)
+    """
+    Compute Gaussian blur directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sigma: (float) Gaussian blur standard deviation (kernel radius)
+    size: (int) kernel size (increase with caution, complexity is not linear)
+
+    Returns
+    -------
+    Blurred APR.
+    """
+
+    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
     output = pyapr.FloatParticles()
     pyapr.numerics.filter.convolve_pencil(apr, parts, output, stencil, use_stencil_downsample=True,
                                           normalize_stencil=True, use_reflective_boundary=True)
     return output
 
 
-def particle_levels(apr, normalize=True):
+def particle_levels(apr):
+    """
+    Returns apr level: for each particle the lvl is defined as the size of the particle in pixel.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+
+    Returns
+    -------
+    Particle level.
+    """
+
     lvls = pyapr.ShortParticles(apr.total_number_particles())
     lvls.fill_with_levels(apr)
-    if normalize:
-        lvls *= (1 / apr.level_max())
-    return lvls
+    lvls = np.array(lvls)
+
+    return 2 ** (lvls.max() - lvls)
 
 
 def compute_std(apr, parts, size=5):
+    """
+    Compute local standard deviation directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    size: (int) kernel size
+
+    Returns
+    -------
+    Local standard deviation of APR.
+    """
+
     dims = apr.org_dims()
     box_size = [size if d >= size else 1 for d in dims]
     locstd = pyapr.FloatParticles()
@@ -73,36 +168,18 @@ def compute_std(apr, parts, size=5):
     return locstd
 
 
-def display_segmentation(u, lmap, vdim=2):
-    with napari.gui_qt():
-        viewer = napari.Viewer(ndisplay=vdim)
-        # add the volume
-        viewer.add_image(u, name='Intensity image')
-        # add labels
-        viewer.add_labels(lmap, name='segmentation')
-
-
-def predict_on_APR(clf, x):
-    # Predict on numpy array
-    t = time()
-    y_pred = clf.predict(x)
-    print('Prediction took {} s.\n'.format(time()-t))
-
-    # Transform numpy array to ParticleData
-    parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
-
-    return parts_pred
-
-
 def predict_on_APR_block(clf, x, n_parts=1e7):
     # Predict on numpy array by block to avoid memory issues
     t = time()
     y_pred = np.empty((x.shape[0]))
     n_block = int(np.ceil(x.shape[0]/n_parts))
+    if int(n_parts) != n_parts:
+        raise ValueError('Error: n_parts must be an int.')
+    n_parts = int(n_parts)
 
     clf[1].set_params(n_jobs=-1)
     for i in range(n_block):
-        y_pred[i*n_block:min((i+1)*n_block, x.shape[0])] = clf.predict(x[i*n_block:min((i+1)*n_block, x.shape[0])])
+        y_pred[i*n_parts:min((i+1)*n_parts, x.shape[0])] = clf.predict(x[i*n_parts:min((i+1)*n_parts, x.shape[0])])
 
     print('Blocked prediction took {} s.\n'.format(time()-t))
 
@@ -112,25 +189,9 @@ def predict_on_APR_block(clf, x, n_parts=1e7):
     return parts_pred
 
 
-def predict_and_display(apr, parts, clf, x, save_results=None):
-    data = np.array(pyapr.numerics.reconstruction.recon_pc(apr, parts), copy=False)
-    t = time()
-    y_pred = clf.predict(x)
-    print('Prediction took {} s.\n'.format(time()-t))
-    mask = pyapr.ShortParticles(apr.total_number_particles())
-    for i, elem in enumerate(y_pred):
-        mask[i] = elem
-    labels = np.array(pyapr.numerics.reconstruction.recon_pc(apr, mask), copy=False)
-    if save_results is not None:
-        imsave(save_results, labels.astype('uint8'), check_contrast=False)
-    display_segmentation(data, labels, vdim=2)
-    return y_pred
-
-
 def sample_labels_on_APR(labels, apr, parts_train):
 
     apr_it = apr.iterator()
-    org_dims = apr.org_dims()
 
     for z in range(apr_it.z_num(apr.level_max())):
         for x in range(apr_it.x_num(apr.level_max())):
@@ -149,9 +210,9 @@ def sample_labels_on_APR(labels, apr, parts_train):
                     x_start = x * step_size
                     z_start = z * step_size
 
-                    y_end = min(y_start + step_size, org_dims[0])
-                    x_end = min(x_start + step_size, org_dims[1])
-                    z_end = min(z_start + step_size, org_dims[2])
+                    y_end = min(y_start + step_size, apr.org_dims(0))
+                    x_end = min(x_start + step_size, apr.org_dims(1))
+                    z_end = min(z_start + step_size, apr.org_dims(2))
 
                     local_labels = labels[z_start:z_end, x_start:x_end, y_start:y_end]
 
@@ -168,14 +229,54 @@ def sample_labels_on_APR(labels, apr, parts_train):
                             print('Ambiguous label detected, set it to 0.')
     return parts_train
 
+def analyze_labels(lvl, label):
+
+    label_unique = np.unique(label)
+
+    fig, ax = plt.subplots(1, label_unique.size)
+    for i, l in enumerate(label_unique):
+        lvl_l = lvl[label == l]
+        ax[i].hist(lvl_l, bins=np.unique(lvl_l), log=True, label='Class {}'.format(l))
+        ax[i].set_xlabel('Particle size [pixel]')
+        ax[i].legend()
+
+def filter_manual_labels(ind, label, lvl):
+
+    ind_filtered = []
+    label_filtered = []
+    cnt = 0
+    # Remove cell label if particle is too big
+    for i in np.where(label == 0)[0]:
+        if lvl[i] < 2:
+            ind_filtered.append(ind[i])
+            label_filtered.append(label[i])
+        else:
+            cnt += 1
+    # Remove membrane label if particle is too big
+    for i in np.where(label == 2)[0]:
+        if lvl[i] < 2:
+            ind_filtered.append(ind[i])
+            label_filtered.append(label[i])
+        else:
+            cnt += 1
+    # Do not filter background
+    for i in np.where(label == 1)[0]:
+        ind_filtered.append(ind[i])
+        label_filtered.append(label[i])
+
+    print('Removed {} labels.'.format(cnt))
+
+    return np.array(ind_filtered), np.array(label_filtered)
 
 # Parameters
 compute_sampling = False
-compute_features = True
+compute_features = False
 
 # APR file to segment
 fpath_apr = r'/mnt/Data/wholebrain/multitile/000000/000000_000000/1_25x_tiling_file_t0_c1.apr'
 fpath_labels = r'/mnt/Data/wholebrain/1_25x_tiling_file_t0_c1_Labels.npy'
+# fpath_apr = r'/mnt/Data/Interneurons/output.apr'
+# fpath_labels = r'/mnt/Data/Interneurons/manual_sparse_labels_membrane.npy'
 
 # Instantiate APR and particle objects
 labels = np.load(fpath_labels).squeeze().astype('uint16') # 0: not labeled - 1: cells - 2: background - 3: membrane
@@ -204,7 +305,7 @@ if compute_features:
     # print('Gradient computed.')
 
     gauss = gaussian_blur(apr, parts, sigma=1.5, size=11)
-    print('Gussian computed.')
+    print('Gaussian computed.')
 
     # Compute gradient magnitude (central finite differences)
     grad = compute_gradmag(apr, gauss)
@@ -213,12 +314,12 @@ if compute_features:
     # local_std = compute_std(apr, parts, size=5)
     # print('STD computed.')
     # Compute lvl for each particle
-    lvl = particle_levels(apr, normalize=True)
+    lvl = particle_levels(apr)
     print('Particle level computed.')
     # Compute difference of Gaussian
     dog = gaussian_blur(apr, parts, sigma=3, size=22) - gauss
-    print('Gaussian blur computed.')
-    lapl_of_gaussian = compute_laplacian(apr, gauss)
+    print('DOG computed.')
+    lapl_of_gaussian = compute_laplacian(apr, gauss, )
     print('Laplacian of Gaussian computed.')
 
     print('Features computation took {} s.'.format(time()-t))
@@ -246,55 +347,64 @@ f_names = ['Intensity',
                'laplacian of Gaussian',
                'difference of Gaussian'
            ]
-#
-# # Fetch data that was manually labelled
-# ind_manual_label = (parts_train != 0)
-# x = f[ind_manual_label, :]
-# y = parts_train[ind_manual_label]-1
-#
-# # Train random forest
-# from sklearn import preprocessing
-# from sklearn.pipeline import make_pipeline
-# from sklearn.ensemble import RandomForestClassifier
-#
-# clf = make_pipeline(preprocessing.StandardScaler(with_mean=True, with_std=True),
-#                     RandomForestClassifier(n_estimators=10, class_weight='balanced'))
-# t = time()
-# clf.fit(x, y)
-# print('Training took {} s.\n'.format(time()-t))
-#
-# x_pred = clf.predict(x)
-#
-# print('\n\n****** TRAINING RESULTS ******\n')
-# print('Total accuracy: {:0.2f}%'.format(np.sum(x_pred==y)/y.size*100))
-# print('Cell accuracy: {:0.2f}% ({} cell particles)'.format(np.sum((x_pred==y)*(y==0))/np.sum(y==0)*100, np.sum(y==0)))
-# print('Background accuracy: {:0.2f}% ({} background particles)'.format(np.sum((x_pred==y)*(y==1))/np.sum(y==1)*100, np.sum(y==1)))
-# print('Membrane accuracy: {:0.2f}% ({} membrane particles)'.format(np.sum((x_pred==y)*(y==2))/np.sum(y==2)*100, np.sum(y==2)))
-#
-# # # Apply on whole dataset and display results
-# # # save_results = r'/media/sf_shared_folder_virtualbox/mouse_2P/data1/segmentation_results/labels.tif'
-# # # Predict particle type (cell, membrane or background) for each cell with the trained model
-# parts_pred = predict_on_APR_block(clf, f)
-# print('7')
-# # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
-# parts_cells = (parts_pred == 0)
-# pyapr.viewer.parts_viewer(apr, parts_cells)
 
-# print('8')
-# # Remove small holes to get the misclassified nuclei
-# parts_cells = pyapr.numerics.transform.remove_small_holes(apr, parts_cells, min_volume=500)
-# print('9')
-# # Opening to better separate touching cells
-# pyapr.numerics.transform.opening(apr, parts_cells, radius=1, inplace=True)
-# print('10')
-# # Apply connected component
-# cc = pyapr.ShortParticles()
-# print('11')
-# pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
-# print('12')
-# # Remove small objects
-# pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=200)
-# print('13')
+# Fetch data that was manually labelled
+ind_manual_label = (parts_train != 0)
+y = parts_train[ind_manual_label]-1
+
+# Remove label erased by APR conversion
+ind_manual_label, y = filter_manual_labels(np.where(parts_train != 0)[0], y, f[ind_manual_label, 1])
+x = f[ind_manual_label, :]
+
+# Train random forest
+from sklearn import preprocessing
+from sklearn.pipeline import make_pipeline
+from sklearn.ensemble import RandomForestClassifier
+
+clf = make_pipeline(preprocessing.StandardScaler(with_mean=True, with_std=True),
+                    RandomForestClassifier(n_estimators=10, class_weight='balanced'))
+t = time()
+clf.fit(x, y)
+print('Training took {} s.\n'.format(time()-t))
+
+x_pred = clf.predict(x)
+
+# Display training info
+print('\n\n****** TRAINING RESULTS ******\n')
+print('Total accuracy: {:0.2f}%'.format(np.sum(x_pred==y)/y.size*100))
+print('Cell accuracy: {:0.2f}% ({} cell particles)'.format(np.sum((x_pred==y)*(y==0))/np.sum(y==0)*100, np.sum(y==0)))
+print('Background accuracy: {:0.2f}% ({} background particles)'.format(np.sum((x_pred==y)*(y==1))/np.sum(y==1)*100, np.sum(y==1)))
+print('Membrane accuracy: {:0.2f}% ({} membrane particles)'.format(np.sum((x_pred==y)*(y==2))/np.sum(y==2)*100, np.sum(y==2)))
+
+# # Apply on whole dataset and display results
+# # save_results = r'/media/sf_shared_folder_virtualbox/mouse_2P/data1/segmentation_results/labels.tif'
+# # Predict particle type (cell, membrane or background) for each cell with the trained model
+parts_pred = predict_on_APR_block(clf, f)
+
+# Display inference info
+print('\n\n****** INFERENCE RESULTS ******\n')
+print('{} cell particles ({:0.2f}%)'.format(np.sum(parts_pred==0), np.sum(parts_pred==0)/len(parts_pred)*100))
+print('{} background particles ({:0.2f}%)'.format(np.sum(parts_pred==1), np.sum(parts_pred==1)/len(parts_pred)*100))
+print('{} membrane particles ({:0.2f}%)'.format(np.sum(parts_pred==2), np.sum(parts_pred==2)/len(parts_pred)*100))
+
+# Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
+parts_cells = (parts_pred == 0)
+
+# Use opening to separate touching cells
+pyapr.numerics.transform.opening(apr, parts_cells, binary=True, inplace=True)
+
+# Apply connected component
+cc = pyapr.LongParticles()
+pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
+
+# Remove small and large objects
+pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=4)
+pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=256)
+
+from viewer.pyapr_napari import display_segmentation
+display_segmentation(apr, parts, cc)
+
+
 #
 # # Display results with napari
 # from viewer.pyapr_napari import apr_to_napari_Image, apr_to_napari_Labels

@@ -14,8 +14,6 @@ from skimage.io import imread
 from alive_progress import alive_bar
 from time import time
 import re
-from pathlib import Path
-from shutil import copyfile
 
 def load_sequence(path):
     """
@@ -28,7 +26,7 @@ def load_sequence(path):
     v = np.empty((n_files, *u.shape), dtype='uint16')
     v[0] = u
     files.pop(0)
-    with alive_bar(n_files, force_tty=True) as bar:
+    with alive_bar(n_files, force_tty=True, title='Loading sequence') as bar:
         for i, f in enumerate(files):
             v[i+1] = imread(f)
             bar()
@@ -36,6 +34,9 @@ def load_sequence(path):
     return v
 
 def sort_list(mylist):
+    """
+    Sort the folder list so that we correctly process it.
+    """
 
     mylistsorted = list(range(len(mylist)))
     for i, pathname in enumerate(mylist):
@@ -48,13 +49,13 @@ def sort_list(mylist):
         mylistsorted[n] = pathname
     return mylistsorted
 
-# Parameters
+# Parameters for batch conversion
 data_path = r'/media/jules/ALICe_Ivana/LOC000_20210420_153304/VW0'
-output_dir = r'/home/jules/Desktop/mouse_colm'
+output_dir = r'/home/jules/Desktop/mouse_colm/'
 n_H = 10
 n_V = 10
-overlap = 2048 * 0.2
 
+# Parameters for APR
 compress = True
 par = pyapr.APRParameters()
 par.rel_error = 0.2
@@ -66,45 +67,38 @@ par.Ip_th = 450
 par.sigma_th = 95.0
 par.grad_th = 15.0
 
+# Conversion
 folders = glob(os.path.join(data_path, 'LOC*'))
-# folders = sort_list(folders)
+folders = sort_list(folders)
 loading = []
 conversion = []
 writing = []
-for i, f in enumerate(folders):
+with alive_bar(len(folders), force_tty=True, title='Converting tiles') as bar:
+    for i, f in enumerate(folders):
 
-    t = time()
-    u = load_sequence(f)
-    print('Loading took {:0.2f} s.'.format(time()-t))
-    loading.append(time()-t)
+        t = time()
+        u = load_sequence(f)
+        print('Loading took {:0.2f} s.'.format(time()-t))
+        loading.append(time()-t)
 
-    t = time()
-    apr, parts = pyapr.converter.get_apr(u, params=par)
-    print('Conversion took {:0.2f} s.'. format(time()-t))
-    conversion.append(time()-t)
+        t = time()
+        apr, parts = pyapr.converter.get_apr(u, params=par)
+        print('Conversion took {:0.2f} s.'. format(time()-t))
+        conversion.append(time()-t)
 
-    if compress:
-        parts.set_compression_type(1)
-        parts.set_quantization_factor(1)
-        parts.set_background(180)
+        if compress:
+            parts.set_compression_type(1)
+            parts.set_quantization_factor(1)
+            parts.set_background(180)
 
-    t = time()
-    pyapr.io.write(os.path.join(output_dir, str(i) + '_compressed.apr'), apr, parts, write_tree=False)
-    print('Writing took {:0.2f} s.'. format(time()-t))
-    writing.append(time()-t)
+        t = time()
 
-    print(f)
-    print(i)
+        H = i % n_H
+        V = i // n_V
 
-# Rearange data in TeraStitcher style row and column folders
-files_apr = glob(os.path.join(output_dir, '*apr'))
-with alive_bar(len(files_apr), force_tty=True) as bar:
-    for n, file_apr, f in zip(range(len(files_apr)), files_apr, folders):
-
-        H = n % n_H
-        V = n // n_V
-
-        copyfile(file_apr, os.path.join(output_dir, 'multitile/{}_{}.apr'.format(V, H)))
+        pyapr.io.write(os.path.join(output_dir, '{}_{}.apr'.format(V, H)), apr, parts, write_tree=False)
+        print('Writing took {:0.2f} s.'. format(time()-t))
+        writing.append(time()-t)
         bar()
 
 # Check on a small chunk that the data is correctly parsed and aligned

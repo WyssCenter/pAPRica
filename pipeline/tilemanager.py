@@ -21,100 +21,70 @@ from joblib import load
 from scipy.signal import correlate
 import cv2 as cv
 from skimage.exposure import equalize_adapthist
+from alive_progress import alive_bar
 
 class tileParser():
     """
     Class to handle the data in the same fashion as TeraStitcher, see here:
     https://github.com/abria/TeraStitcher/wiki/Supported-volume-formats#two-level-hierarchy-of-folders
     """
-    def __init__(self, path, type=None, frame_size=None, overlap=None):
+    def __init__(self, path, frame_size, overlap, type):
         self.path = path
+        self.type = type
         self.tiles_list = self._get_tile_list()
-        if type is None:
-            print('Type was not given, trying to deduce from files.')
-            self.type = self._get_type()
-            print('Filetype found: {}'.format(self.type))
-        else:
-            self.type = type
         self.n_tiles = len(self.tiles_list)
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
+        self._sort_tiles()
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.path_list = self._get_path_list()
-        if (frame_size is None) or (overlap is None):
-            print('Frame size or overlap were not given, trying to deduce from files.')
-            self.overlap, self.frame_size = self._get_overlap()
-            print('Frame size found: {}\nOverlap found: {}'.format(self.frame_size, self.overlap))
-        else:
-            self.overlap = overlap
-            self.frame_size = frame_size
-
-    def _get_overlap(self):
-        """
-        Infer the overlap between each tile. This is inferred from the folder names and the frame size.
-        The overlap in H and V are supposed to be the same.
-        """
-        if self.type == 'apr':
-            apr = pyapr.APR()
-            parts = pyapr.ShortParticles()
-            pyapr.io.read(glob(os.path.join(self.tiles_list[0]['path'], '*.apr'))[0], apr, parts)
-            nx = apr.x_num(apr.level_max())
-        else:
-            u = imread(glob(os.path.join(self.tiles_list[0]['path'], '*.tif'))[0])
-            nx = u.shape[1]
-
-        tile1 = self.tiles_list[0]['path']
-        tile2 = self.tiles_list[1]['path']
-
-        str1 = re.findall(r'(\d{6})_(\d{6})', tile1)[0]
-        str2 = re.findall(r'(\d{6})_(\d{6})', tile2)[0]
-
-        if int(str1[0]) - int(str2[0]) != 0:
-            overlap = nx - np.abs((int(str1[0]) - int(str2[0]))/10)
-        elif int(str1[1]) - int(str2[1]) != 0:
-            overlap = nx - np.abs((int(str1[1]) - int(str2[1]))/10)
-        else:
-            raise ValueError('Error: can''t infer overlap.')
-
-        return int(overlap), int(nx)
+        self.overlap = overlap
+        self.frame_size = frame_size
 
     def _get_tile_list(self):
         """
         Returns a list of tiles as a dictionary
         """
-        H_folders = [f.path for f in os.scandir(self.path) if f.is_dir()]
+
+        if self.type == 'apr':
+            # If files are apr then their names are 'row_col.apr'
+            files = glob(os.path.join(self.path, '*.apr'))
+        elif self.type == 'tiff3D':
+            # If files are 3D tiff then their names are 'row_col.tif'
+            files = glob(os.path.join(self.path, '*.apr'))
+        elif self.type == 'tiff2D':
+            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
+            files = [f.path for f in os.scandir(self.path) if f.is_dir()]
+
         tiles = []
-        for i, H_path in enumerate(H_folders):
-            V_folders = [f.path for f in os.scandir(H_path) if f.is_dir()]
-            for ii, v_path in enumerate(V_folders):
-                tile = {'path': v_path,
-                        'row': i,
-                        'col': ii,
-                        }
-                tiles.append(tile)
+        for f in files:
+
+            pattern_search = re.search('/(\d+)_(\d+)', f)
+            if pattern_search:
+                row = int(pattern_search.group(1))
+                col = int(pattern_search.group(2))
+            else:
+                raise TypeError('Couldn''t get the column/row.')
+
+            tile = {'path': f,
+                    'row': row,
+                    'col': col,
+                    }
+            tiles.append(tile)
         return tiles
 
-    def _get_type(self):
-        """
-        Return the type of image files either 'tiff2d', 'tiff3d or 'apr'
-        The type is inferred from the first tile and all tiles are expected to be of the same type.
-        """
-        path = self.tiles_list[0]['path']
+    def _sort_tiles(self):
 
-        # If the number of tiff in each folder is >1 then the type is 'tiff2d' else it's 'tiff3d'
-        # If no tiff files then the type is APR.
-        # TODO: clean this up because it is not robust if new files are added in folders.
-        n_files = len(glob(os.path.join(path, '*.tif')))
-        if n_files > 1:
-            return 'tiff2D'
-        elif n_files == 1:
-            return 'tiff3D'
-        elif n_files == 0:
-            n_files = len(glob(os.path.join(path, '*.apr')))
-            if n_files > 0:
-                return 'apr'
-        else:
-            raise TypeError('Error: no tiff files found in {}.'.format(path))
+        tiles_sorted = []
+        for v in range(self.nrow):
+            for h in range(self.ncol):
+                for i, t in enumerate(self.tiles_list):
+                    if t['col']==h and t['row']==v:
+                        tiles_sorted.append(t)
+                        self.tiles_list.pop(i)
+                        break
+
+        self.tiles_list = tiles_sorted
 
     def _get_ncol(self):
         """
@@ -203,6 +173,7 @@ class tileParser():
         """
         Return tiles, add neighbors information before returning.
         """
+
         e = self.tiles_list[item]
         e['neighbors'] = self.neighbors[e['row']][e['col']]
         neighbors_path = []
@@ -359,11 +330,11 @@ class tileLoader():
             for i, file in enumerate(files):
                 u[i+1] = imread(file)
         elif self.type == 'tiff3D':
-            u = imread(*glob(os.path.join(path, '*.tif')))
+            u = imread(path)
         elif self.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
-            pyapr.io.read(*glob(os.path.join(path, '*1.apr')), apr, parts)
+            pyapr.io.read(path, apr, parts)
             u = (apr, parts)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
@@ -1153,12 +1124,12 @@ class tileViewer():
                 u[i+1] = imread(file)
             return self._get_apr(u)
         elif self.tiles.type == 'tiff3D':
-            u = imread(*glob(os.path.join(path, '*.tif')))
+            u = imread(path)
             return self._get_apr(u)
         elif self.tiles.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
-            pyapr.io.read(*glob(os.path.join(path, '*0.apr')), apr, parts)
+            pyapr.io.read(path, apr, parts)
             u = (apr, parts)
             return u
         else:
@@ -1192,9 +1163,12 @@ class tileViewer():
 
 
 class tileMerger():
-    def __init__(self, path_database, frame_size, n_planes, type):
+    def __init__(self, database, frame_size, n_planes, type):
 
-        self.database = pd.read_csv(path_database)
+        if isinstance(database, str):
+            self.database = pd.read_csv(database)
+        else:
+            self.database = database
         self.type = type
         self.frame_size = frame_size
         self.n_planes = n_planes
@@ -1242,20 +1216,22 @@ class tileMerger():
         D_pos = self.database['ABS_D'].to_numpy()
         D_pos = (D_pos - D_pos.min())/self.downsample
 
-        for i in range(self.n_tiles):
-            apr, parts = self._load_tile(i)
-            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
-            data = u[:, :, :]
+        with alive_bar(total=self.n_tiles, title='Merging', force_tty=True) as bar:
+            for i in range(self.n_tiles):
+                apr, parts = self._load_tile(i)
+                u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
+                data = u[:, :, :]
 
-            x1 = int(H_pos[i])
-            x2 = int(H_pos[i] + data.shape[2])
-            y1 = int(V_pos[i])
-            y2 = int(V_pos[i] + data.shape[1])
-            z1 = int(D_pos[i])
-            z2 = int(D_pos[i] + data.shape[0])
+                x1 = int(H_pos[i])
+                x2 = int(H_pos[i] + data.shape[2])
+                y1 = int(V_pos[i])
+                y2 = int(V_pos[i] + data.shape[1])
+                z1 = int(D_pos[i])
+                z2 = int(D_pos[i] + data.shape[0])
 
-            self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
-            self.merged_data = self.merged_data.astype('uint16')
+                self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
+                bar()
+        self.merged_data = self.merged_data.astype('uint16')
 
     def crop(self, background=0, xlim=None, ylim=None, zlim=None):
         """
@@ -1315,11 +1291,11 @@ class tileMerger():
             for i, file in enumerate(files):
                 u[i+1] = imread(file)
         elif self.type == 'tiff3D':
-            u = imread(*glob(os.path.join(path, '*.tif')))
+            u = imread(path)
         elif self.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
-            pyapr.io.read(*glob(os.path.join(path, '*0.apr')), apr, parts)
+            pyapr.io.read(path, apr, parts)
             u = (apr, parts)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
@@ -1331,9 +1307,9 @@ class tileMerger():
 
         """
 
-        self.nx = int(self._get_nx() / self.downsample)
-        self.ny = int(self._get_ny() / self.downsample)
-        self.nz = int(self._get_nz() / self.downsample)
+        self.nx = int(np.ceil(self._get_nx() / self.downsample))
+        self.ny = int(np.ceil(self._get_ny() / self.downsample))
+        self.nz = int(np.ceil(self._get_nz() / self.downsample))
 
         self.merged_data = np.zeros((self.nz, self.ny, self.nx))
 
@@ -1365,6 +1341,7 @@ class tileMerger():
     def _get_nz(self):
         z_pos = self.database['ABS_D'].to_numpy()
         return z_pos.max() - z_pos.min() + self.n_planes
+
 
 class atlas():
 

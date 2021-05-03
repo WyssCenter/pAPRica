@@ -22,6 +22,17 @@ def load_sequence(path):
 
     files = glob(os.path.join(path, '*tif'))
     n_files = len(files)
+
+    files_sorted = list(range(n_files))
+    for i, pathname in enumerate(files):
+        number_search = re.search('PLN(\d+).tif', pathname)
+        if number_search:
+            n = int(number_search.group(1))
+        else:
+            raise TypeError('Couldn''t get the number')
+
+        files_sorted[n] = pathname
+
     u = imread(files[0])
     v = np.empty((n_files, *u.shape), dtype='uint16')
     v[0] = u
@@ -56,7 +67,7 @@ n_H = 10
 n_V = 10
 
 # Parameters for APR
-compress = True
+compress = False
 par = pyapr.APRParameters()
 par.rel_error = 0.2
 par.gradient_smoothing = 3
@@ -73,33 +84,32 @@ folders = sort_list(folders)
 loading = []
 conversion = []
 writing = []
-with alive_bar(len(folders), force_tty=True, title='Converting tiles') as bar:
-    for i, f in enumerate(folders):
+for i, f in enumerate(folders):
 
-        t = time()
-        u = load_sequence(f)
-        print('Loading took {:0.2f} s.'.format(time()-t))
-        loading.append(time()-t)
+    t = time()
+    u = load_sequence(f)
+    print('Loading took {:0.2f} s.'.format(time()-t))
+    loading.append(time()-t)
 
-        t = time()
-        apr, parts = pyapr.converter.get_apr(u, params=par)
-        print('Conversion took {:0.2f} s.'. format(time()-t))
-        conversion.append(time()-t)
+    t = time()
+    apr, parts = pyapr.converter.get_apr(u, params=par)
+    print('Conversion took {:0.2f} s.'. format(time()-t))
+    conversion.append(time()-t)
 
-        if compress:
-            parts.set_compression_type(1)
-            parts.set_quantization_factor(1)
-            parts.set_background(180)
+    if compress:
+        parts.set_compression_type(1)
+        parts.set_quantization_factor(1)
+        parts.set_background(180)
 
-        t = time()
+    t = time()
 
-        H = i % n_H
-        V = i // n_V
+    H = i % n_H
+    V = i // n_V
 
-        pyapr.io.write(os.path.join(output_dir, '{}_{}.apr'.format(V, H)), apr, parts, write_tree=False)
-        print('Writing took {:0.2f} s.'. format(time()-t))
-        writing.append(time()-t)
-        bar()
+    pyapr.io.write(os.path.join(output_dir, '{}_{}.apr'.format(V, H)), apr, parts, write_tree=False)
+    print('Writing took {:0.2f} s.'. format(time()-t))
+    writing.append(time()-t)
+
 
 # Check on a small chunk that the data is correctly parsed and aligned
 apr = []

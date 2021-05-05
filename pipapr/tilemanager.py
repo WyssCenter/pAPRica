@@ -22,6 +22,8 @@ from scipy.signal import correlate
 import cv2 as cv
 from skimage.exposure import equalize_adapthist
 from alive_progress import alive_bar
+import dill
+from time import time
 
 class tileParser():
     """
@@ -140,6 +142,7 @@ class tileParser():
         Returns the non-redundant neighbors map: neighbors[row][col] gives a list of neighbors and the total
         number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.
         """
+        # TODO: adapt this piece so it is compatible with sparse sampling.
         # Initialize neighbors
         neighbors = [None] * self.ncol
         cnt = 0
@@ -279,43 +282,81 @@ class tileLoader():
             tgraph.relia_V.append(rel[1])
             tgraph.relia_D.append(rel[0])
 
-    def compute_segmentation(self, path_classifier=None):
-        """
-        Compute the segmentation (iLastik like) on the tile. Before attempting this, a model needs to be trained and
-        saved.
+    # def compute_segmentation(self, path_classifier, func_to_compute_features):
+    #     """
+    #     Compute the segmentation (iLastik like) on the tile. Before attempting this, a model needs to be trained and
+    #     saved.
+    #
+    #     Parameters
+    #     ----------
+    #     path_classifier: (str) path to the trained model for the classification.
+    #
+    #     """
+    #
+    #     if path_classifier is None:
+    #         raise ValueError('Error: no classifier path was given.')
+    #
+    #     # Load classifier
+    #     clf = load(path_classifier)
+    #
+    #     # Compute features
+    #     # TODO: is there a way to adapt the computed features to the ones used to train the classifier?
+    #     f = self._compute_features()
+    #     apr = self.data[0]
+    #
+    #     # Predict particle type (cell, membrane or brackground) for each cell with the trained model
+    #     parts_pred = self._predict_on_APR(clf, f)
+    #     # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
+    #     parts_cells = (parts_pred == 0)
+    #     # Remove small holes to get the misclassified nuclei
+    #     parts_cells = pyapr.numerics.transform.remove_small_holes(apr, parts_cells, min_volume=500)
+    #     # Opening to better separate touching cells
+    #     pyapr.numerics.transform.opening(apr, parts_cells, radius=1, inplace=True)
+    #     # Apply connected component
+    #     cc = pyapr.ShortParticles()
+    #     pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
+    #     # Remove small objects
+    #     pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=200)
+    #     # Save segmentation results
+    #     pyapr.io.write(os.path.join(self.path, 'segmentation.apr'), apr, cc)
 
-        Parameters
-        ----------
-        path_classifier: (str) path to the trained model for the classification.
-
-        """
-
-        if path_classifier is None:
-            raise ValueError('Error: no classifier path was given.')
+    def init_segmentation(self, path_classifier, func_to_compute_features, func_to_get_cc):
 
         # Load classifier
-        clf = load(path_classifier)
+        self.clf = load(path_classifier)
 
-        # Compute features
-        # TODO: is there a way to adapt the computed features to the ones used to train the classifier?
-        f = self._compute_features()
+        # Store function to compute features
+        self.func_to_compute_features = func_to_compute_features
+
+        # Store post processing steps
+        self.func_to_get_cc = func_to_get_cc
+
+    def compute_segmentation(self, verbose=False):
+
         apr = self.data[0]
+        parts = self.data[1]
 
-        # Predict particle type (cell, membrane or brackground) for each cell with the trained model
-        parts_pred = self._predict_on_APR(clf, f)
-        # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
-        parts_cells = (parts_pred == 0)
-        # Remove small holes to get the misclassified nuclei
-        parts_cells = pyapr.numerics.transform.remove_small_holes(apr, parts_cells, min_volume=500)
-        # Opening to better separate touching cells
-        pyapr.numerics.transform.opening(apr, parts_cells, radius=1, inplace=True)
-        # Apply connected component
-        cc = pyapr.ShortParticles()
-        pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
-        # Remove small objects
-        pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=200)
-        # Save segmentation results
-        pyapr.io.write(os.path.join(self.path, 'segmentation.apr'), apr, cc)
+        if verbose:
+            t = time()
+            print('Computing features on AP')
+        f = self.func_to_compute_features(apr, parts)
+
+        parts_pred = self._predict_on_APR_block(f, verbose=verbose)
+
+        if verbose:
+            # Display inference info
+            print('\n\n****** INFERENCE RESULTS ******\n')
+            print(
+                '{} cell particles ({:0.2f}%)'.format(np.sum(parts_pred == 0),
+                                                      np.sum(parts_pred == 0) / len(parts_pred) * 100))
+            print('{} background particles ({:0.2f}%)'.format(np.sum(parts_pred == 1),
+                                                              np.sum(parts_pred == 1) / len(parts_pred) * 100))
+            print('{} membrane particles ({:0.2f}%)'.format(np.sum(parts_pred == 2),
+                                                            np.sum(parts_pred == 2) / len(parts_pred) * 100))
+
+        cc = self.func_to_get_cc(apr, parts_pred)
+
+        pyapr.io.write(self.path[:-4] + '_segmentation.apr', apr, cc)
 
     def _load_tile(self, path):
         """
@@ -492,6 +533,34 @@ class tileLoader():
         """
         # Predict on numpy array
         y_pred = clf.predict(x)
+
+        # Transform numpy array to ParticleData
+        parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
+
+        return parts_pred
+
+    def _predict_on_APR_block(self, x, n_parts=1e7, verbose=False):
+        """
+        Predict particle class with the trained classifier clf on the precomputed features f using a
+        blocked strategy to avoid memory segfault.
+        """
+        # Predict on numpy array by block to avoid memory issues
+        if verbose:
+            t = time()
+
+        y_pred = np.empty((x.shape[0]))
+        n_block = int(np.ceil(x.shape[0] / n_parts))
+        if int(n_parts) != n_parts:
+            raise ValueError('Error: n_parts must be an int.')
+        n_parts = int(n_parts)
+
+        self.clf[1].set_params(n_jobs=-1)
+        for i in range(n_block):
+            y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = self.clf.predict(
+                x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+
+        if verbose:
+            print('Blocked prediction took {} s.\n'.format(time() - t))
 
         # Transform numpy array to ParticleData
         parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
@@ -732,7 +801,7 @@ class tileGraph():
     def __init__(self, tiles):
         self.ncol = tiles.ncol
         self.nrow = tiles.nrow
-        self.n_vertex = self.ncol*self.nrow
+        self.n_vertex = tiles.n_tiles
         self.n_edges = tiles.n_edges
         self.overlap = tiles.overlap
         self.frame_size = tiles.frame_size
@@ -940,6 +1009,8 @@ class tileGraph():
         # V
         for x in range(reg_abs_map.shape[2]):
             reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap)
+        # D
+        reg_abs_map[2] = reg_rel_map[2]
         self.registration_map_abs = reg_abs_map
 
         return reg_rel_map, reg_abs_map
@@ -1003,10 +1074,22 @@ class tileGraph():
 
         self.database.to_csv(path)
 
+    def dump_tgraph(self, path):
+        """
+        Use dill to store a tgraph object.
+
+        """
+        if path[-4:] != '.pkl':
+            path = path + '.pkl'
+
+        with open(path, 'wb') as f:
+            dill.dump(self, f)
+
     def _get_ind(self, ind_from, ind_to):
         """
         Returns the ind in the original graph which corresponds to (ind_from, ind_to) in the minimum spanning tree.
         """
+
         ind = None
         for i, f in enumerate(self.cgraph_from):
             if f == ind_from:
@@ -1360,7 +1443,7 @@ class atlas():
 
 if __name__=='__main__':
     from time import time
-    path = r'/mnt/Data/wholebrain/multitile'
+    path = r'/mnt/Data/wholebrain/multitile/c0'
     t = time()
     t_ini = time()
     tiles = tileParser(path, frame_size=2048, overlap=868, type='apr')
@@ -1402,7 +1485,7 @@ if __name__=='__main__':
         for j in range(2):
             coords.append([i, j])
     coords = np.array(coords)
-    viewer.display_tiles(coords, level_delta=-2, contrast_limits=[0, 5000])
+    viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 1000])
 
     cr = []
     for i in range(4):

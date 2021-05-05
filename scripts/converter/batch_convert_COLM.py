@@ -33,12 +33,12 @@ def load_sequence(path):
 
         files_sorted[n] = pathname
 
-    u = imread(files[0])
+    u = imread(files_sorted[0])
     v = np.empty((n_files, *u.shape), dtype='uint16')
     v[0] = u
-    files.pop(0)
+    files_sorted.pop(0)
     with alive_bar(n_files, force_tty=True, title='Loading sequence') as bar:
-        for i, f in enumerate(files):
+        for i, f in enumerate(files_sorted):
             v[i+1] = imread(f)
             bar()
 
@@ -81,6 +81,7 @@ par.grad_th = 15.0
 # Conversion
 folders = glob(os.path.join(data_path, 'LOC*'))
 folders = sort_list(folders)
+folders = folders[96:]
 loading = []
 conversion = []
 writing = []
@@ -103,28 +104,34 @@ for i, f in enumerate(folders):
 
     t = time()
 
-    H = i % n_H
-    V = i // n_V
+    number_search = re.search('LOC(\d+)', f[-10:])
+    if number_search:
+        n = int(number_search.group(1))
+    else:
+        raise TypeError('Couldn''t get the number')
+
+    H = n % n_H
+    V = n // n_V
 
     pyapr.io.write(os.path.join(output_dir, '{}_{}.apr'.format(V, H)), apr, parts, write_tree=False)
     print('Writing took {:0.2f} s.'. format(time()-t))
     writing.append(time()-t)
 
 
-# Check on a small chunk that the data is correctly parsed and aligned
-apr = []
-parts = []
-layers = []
-from viewer.pyapr_napari import display_layers, apr_to_napari_Image
-for i in [4,5,6,7]:
-    apr.append(pyapr.APR())
-    parts.append(pyapr.ShortParticles())
-    pyapr.io.read('/home/jules/Desktop/mouse_colm/multitile/2_{}.apr'.format(i), apr[-1], parts[-1])
-    position = [0, i*(2048*0.75)]
-    layers.append(apr_to_napari_Image(apr[-1], parts[-1],
-                                      mode='constant',
-                                      translate=position,
-                                      opacity=0.7,
-                                      level_delta=0))
-
-display_layers(layers)
+# # Check on a small chunk that the data is correctly parsed and aligned
+# apr = []
+# parts = []
+# layers = []
+# from viewer.pyapr_napari import display_layers, apr_to_napari_Image
+# for i in [4,5,6,7]:
+#     apr.append(pyapr.APR())
+#     parts.append(pyapr.ShortParticles())
+#     pyapr.io.read('/home/jules/Desktop/mouse_colm/multitile/2_{}.apr'.format(i), apr[-1], parts[-1])
+#     position = [0, i*(2048*0.75)]
+#     layers.append(apr_to_napari_Image(apr[-1], parts[-1],
+#                                       mode='constant',
+#                                       translate=position,
+#                                       opacity=0.7,
+#                                       level_delta=0))
+#
+# display_layers(layers)

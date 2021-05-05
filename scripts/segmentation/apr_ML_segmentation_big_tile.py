@@ -229,6 +229,7 @@ def sample_labels_on_APR(labels, apr, parts_train):
                             print('Ambiguous label detected, set it to 0.')
     return parts_train
 
+
 def analyze_labels(lvl, label):
 
     label_unique = np.unique(label)
@@ -239,6 +240,7 @@ def analyze_labels(lvl, label):
         ax[i].hist(lvl_l, bins=np.unique(lvl_l), log=True, label='Class {}'.format(l))
         ax[i].set_xlabel('Particle size [pixel]')
         ax[i].legend()
+
 
 def filter_manual_labels(ind, label, lvl):
 
@@ -268,12 +270,13 @@ def filter_manual_labels(ind, label, lvl):
 
     return np.array(ind_filtered), np.array(label_filtered)
 
+
 # Parameters
 compute_sampling = False
 compute_features = False
 
 # APR file to segment
-fpath_apr = r'/mnt/Data/wholebrain/multitile/000000/000000_000000/1_25x_tiling_file_t0_c1.apr'
+fpath_apr = r'/mnt/Data/wholebrain/multitile/c1/0_0.apr'
 fpath_labels = r'/mnt/Data/wholebrain/1_25x_tiling_file_t0_c1_Labels.npy'
 # fpath_apr = r'/mnt/Data/Interneurons/output.apr'
 # fpath_labels = r'/mnt/Data/Interneurons/manual_sparse_labels_membrane.npy'
@@ -296,8 +299,6 @@ if compute_sampling:
 else:
     parts_train = np.load('parts_train.npy')
 
-# Display sampled particles
-# pyapr.viewer.parts_viewer(apr, parts_train_C)
 if compute_features:
     t = time()
     # Compute gradient along a dimension (Sobel filter). dimension can be 0, 1 or 2
@@ -319,7 +320,7 @@ if compute_features:
     # Compute difference of Gaussian
     dog = gaussian_blur(apr, parts, sigma=3, size=22) - gauss
     print('DOG computed.')
-    lapl_of_gaussian = compute_laplacian(apr, gauss, )
+    lapl_of_gaussian = compute_laplacian(apr, gauss)
     print('Laplacian of Gaussian computed.')
 
     print('Features computation took {} s.'.format(time()-t))
@@ -417,11 +418,12 @@ display_segmentation(apr, parts, cc)
 #     # add labels
 #     viewer.add_layer(lmap)
 #
-# # Save classifier
-# # Note: this method is not perfect and it might break if scikit-learn version is not the same between the
-# # dump and the loading. Use with caution (see https://scikit-learn.org/stable/modules/model_persistence.html)
-# # from joblib import dump
-# # dump(clf, '/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_forest_n100.joblib')
+# Save classifier
+# Note: this method is not perfect and it might break if scikit-learn version is not the same between the
+# dump and the loading. Use with caution (see https://scikit-learn.org/stable/modules/model_persistence.html)
+from joblib import dump
+dump(clf, '/mnt/Data/wholebrain/multitile/c1/random_forest_n10.joblib')
+
 # # To load back use:
 # # from joblib import load
 # # toto = load('/media/sf_shared_folder_virtualbox/mouse_2P/data1/classifiers/random_forest_n100.joblib')

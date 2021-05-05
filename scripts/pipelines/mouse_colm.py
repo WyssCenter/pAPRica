@@ -7,13 +7,14 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 from time import time
-from tilemanager import tileParser, tileGraph, tileViewer, tileLoader, tileMerger
+from pipapr.parser import tileParser
+from pipapr.loader import tileLoader
+from pipapr.stitcher import tileGraph
+from pipapr.viewer import tileViewer
 from alive_progress import alive_bar
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import napari
-from skimage.io import imsave
 
 path = r'/home/jules/Desktop/mouse_colm/multitile'
 t = time()

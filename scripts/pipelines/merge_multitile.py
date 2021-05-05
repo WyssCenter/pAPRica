@@ -1,13 +1,13 @@
 """
 This script downsample the data with a power of 2 using APR and then interpolate linearly the data on a given resolution
-in order to run the atlasing pipeline (brainreg).
+in order to run the atlasing pipapr (brainreg).
 
 By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from tilemanager import tileMerger
+from pipapr.stitcher import tileMerger
 import matplotlib.pyplot as plt
 import os
 import numpy as np
@@ -17,7 +17,7 @@ from skimage.io import imsave
 
 # Parameters
 path = r'/mnt/Data/wholebrain/multitile'
-name= 'merged_downsampled_4x_autofluo.tif'
+name = 'merged_downsampled_4x_autofluo.tif'
 dx = 5.26
 dz = 5
 n_downsample = 4

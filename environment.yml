@@ -1,0 +1,12 @@
+name: evalSlide
+channels:
+- defaults
+- conda-forge
+dependencies:         # everything under this, installed by conda
+- numpy
+- matplotlib
+- scipy
+- opencv
+- scikit-image
+- pip:                # everything under this, installed by pip
+  - alive-progress

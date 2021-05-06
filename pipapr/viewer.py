@@ -13,7 +13,6 @@ import pyapr
 import napari
 from napari.layers import Image, Labels
 
-
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
                         mode: str = 'constant',

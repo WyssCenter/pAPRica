@@ -15,6 +15,7 @@ from skimage.registration import phase_cross_correlation
 from joblib import load
 from scipy.signal import correlate
 from time import time
+from pathlib import Path
 
 class tileLoader():
     """
@@ -177,7 +178,10 @@ class tileLoader():
 
         cc = self.func_to_get_cc(apr, parts_pred)
 
-        pyapr.io.write(self.path[:-4] + '_segmentation.apr', apr, cc)
+        folder, filename = os.path.split(self.path)
+        folder_seg = os.path.join(folder, 'segmentation')
+        Path(folder_seg).mkdir(parents=True, exist_ok=True)
+        pyapr.io.write(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, cc)
 
     def _load_tile(self, path):
         """

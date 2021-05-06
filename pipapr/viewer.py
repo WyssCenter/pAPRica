@@ -9,7 +9,6 @@ from glob import glob
 import os
 from skimage.io import imread
 import numpy as np
-from viewer.pyapr_napari import display_layers, apr_to_napari_Image, apr_to_napari_Labels
 import pyapr
 import napari
 from napari.layers import Image, Labels
@@ -100,6 +99,7 @@ def display_layers(layers):
             viewer.add_layer(layer)
     return viewer
 
+
 def display_segmentation(apr, parts, mask):
     """
     This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel
@@ -122,6 +122,7 @@ def display_segmentation(apr, parts, mask):
         viewer = napari.Viewer()
         viewer.add_layer(image_nap)
         viewer.add_layer(mask_nap)
+
 
 class tileViewer():
     """
@@ -197,8 +198,10 @@ class tileViewer():
         df = self.tgraph.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         apr = pyapr.APR()
-        parts = pyapr.ShortParticles()
-        pyapr.io.read(*glob(os.path.join(path, 'segmentation.apr')), apr, parts)
+        parts = pyapr.LongParticles()
+        folder, filename = os.path.split(path)
+        folder_seg = os.path.join(folder, 'segmentation')
+        pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, parts)
         u = (apr, parts)
         return u
 

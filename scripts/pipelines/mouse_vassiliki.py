@@ -185,6 +185,8 @@ def get_cc_from_features(apr, parts_pred):
     pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=4)
     pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=256)
 
+    return cc
+
 
 path = r'/mnt/Data/wholebrain/multitile/c1'
 t = time()
@@ -224,10 +226,10 @@ print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
 
 print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-viewer = tileViewer(tiles, tgraph, segmentation=False)
-coords = []
-for i in range(2):
-    for j in range(2):
-        coords.append([i, j])
-coords = np.array(coords)
+viewer = tileViewer(tiles, tgraph, segmentation=True)
+coords = np.array([1, 1])
+# for i in range(2):
+#     for j in range(2):
+#         coords.append([i, j])
+# coords = np.array(coords)
 viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 1000])

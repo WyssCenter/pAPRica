@@ -8,5 +8,7 @@ dependencies:         # everything under this, installed by conda
 - scipy
 - opencv
 - scikit-image
+- pandas
 - pip:                # everything under this, installed by pip
   - alive-progress
+  - dill

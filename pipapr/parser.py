@@ -26,6 +26,13 @@ class tileParser():
         self.path_list = self._get_path_list()
         self.overlap = overlap
         self.frame_size = frame_size
+        self._print_info()
+
+    def _print_info(self):
+        print('**********  PARSING DATA **********')
+        print('{} tiles were detected'.format(self.n_tiles))
+        print('{} rows and {} columns'.format(self.nrow, self.ncol))
+        print('************************************')
 
     def _get_tile_list(self):
         """

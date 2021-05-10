@@ -11,23 +11,23 @@ from skimage.io import imread
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
 from scipy.sparse import csr_matrix
-import matplotlib.pyplot as plt
 import pandas as pd
-import pyapr
-import cv2 as cv
+# import cv2 as cv
 from skimage.exposure import equalize_adapthist
 from alive_progress import alive_bar
 import dill
+from pipapr.loader import tileLoader
+from pipapr.parser import tileParser
+import matplotlib.pyplot as plt
+import pyapr
+from skimage.registration import phase_cross_correlation
+from scipy.signal import correlate
 
-
-class tileGraph():
-    """
-    Class object for the graph (sparse matrix) to be build up and optimized.
-
-    To be initialized with a tileParser object.
-
-    """
-    def __init__(self, tiles):
+class tileStitcher():
+    def __init__(self,
+                 tiles: tileParser):
+        
+        self.tiles = tiles
         self.ncol = tiles.ncol
         self.nrow = tiles.nrow
         self.n_vertex = tiles.n_tiles
@@ -59,8 +59,71 @@ class tileGraph():
         self.graph_relia_V = None
         self.graph_relia_D = None
         self.database = None
+        
+        self.mask = False
+        self.threshold = None
 
+    def activate_mask(self, threshold):
+        """
+        Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
+        not taken into account.
 
+        Parameters
+        ----------
+        threshold: (int) threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will
+                    create a mask removing the 5% brightest pixels).
+
+        """
+        self.mask = True
+        self.threshold = threshold
+
+    def deactivate_mask(self):
+        """
+        Deactivate the masked cross-correlation and uses a classical cross correlation.
+
+        """
+        self.mask = False
+        self.threshold = None
+
+    def compute_registration(self):
+        """
+        Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
+        the redundancy).
+
+        Parameters
+        ----------
+        tgraph: (tileGraph object) stores pair-wise registration to further perform the global optimization.
+
+        """
+        for t in self.tiles:
+            tile = tileLoader(t)
+            tile.load_tile()
+            tile.load_neighbors()
+
+            for v, coords in zip(tile.data_neighbors, tile.neighbors):
+                if tile.row == coords[0] and tile.col < coords[1]:
+                    # EAST
+                    reg, rel = self._compute_east_registration(tile.data, v)
+
+                elif tile.col == coords[1] and tile.row < coords[0]:
+                    # SOUTH
+                    reg, rel = self._compute_south_registration(tile.data, v)
+
+                else:
+                    raise TypeError('Error: couldn''t determine registration to perform.')
+
+                self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
+                                                                    dims=(self.nrow, self.ncol)))
+                self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
+                                                                  dims=(self.nrow, self.ncol)))
+                # H=x, V=y, D=z
+                self.dH.append(reg[2])
+                self.dV.append(reg[1])
+                self.dD.append(reg[0])
+                self.relia_H.append(rel[2])
+                self.relia_V.append(rel[1])
+                self.relia_D.append(rel[0])
+    
     def build_sparse_graphs(self):
         """
         Build the sparse graph from the reliability and (row, col). This method needs to be called after the
@@ -332,6 +395,229 @@ class tileGraph():
         if ind is None:
             raise ValueError('Error: can''t find matching vertex pair.')
         return ind
+
+    def _get_proj_shifts(self, proj1, proj2, upsample_factor=1):
+        """
+        This function computes shifts from max-projections on overlapping areas. It uses the phase cross-correlation
+        to compute the shifts.
+
+        Parameters
+        ----------
+        proj1: (list of arrays) max-projections for tile 1
+        proj2: (list of arrays) max-projections for tile 2
+
+        Returns
+        -------
+        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
+
+        """
+        # Compute phase cross-correlation to extract shifts
+        dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
+                                                   return_error=True, upsample_factor=upsample_factor)
+        dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
+                                                   return_error=True, upsample_factor=upsample_factor)
+        dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
+                                                   return_error=True, upsample_factor=upsample_factor)
+
+        # Keep only the most reliable registration
+        # D/z
+        if error_zx < error_zy:
+            dz = dzx[0]
+            rz = error_zx
+        else:
+            dz = dzy[0]
+            rz = error_zy
+
+        # H/x
+        if error_zx < error_yx:
+            dx = dzx[1]
+            rx = error_zx
+        else:
+            dx = dyx[1]
+            rx = error_yx
+
+        # V/y
+        if error_yx < error_zy:
+            dy = dyx[0]
+            ry = error_yx
+        else:
+            dy = dzy[1]
+            ry = error_zy
+
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+        #
+        # if self.row==0 and self.col==0:
+        #     print('ok')
+
+        return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+    def _get_masked_proj_shifts(self, proj1, proj2, upsample_factor=1):
+        """
+        This function computes shifts from max-projections on overlapping areas with mask on brightest area.
+        It uses the phase cross-correlation to compute the shifts.
+
+        Parameters
+        ----------
+        proj1: (list of arrays) max-projections for tile 1
+        proj2: (list of arrays) max-projections for tile 2
+
+        Returns
+        -------
+        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
+
+        """
+        # Compute mask to discard very bright area that are likely bubbles or artefacts
+        mask_ref = []
+        mask_move = []
+        for i in range(3):
+            vmax = np.percentile(proj1[i], self.threshold)
+            mask_ref.append(proj1[i] < vmax)
+            vmax = np.percentile(proj2[i], self.threshold)
+            mask_move.append(proj2[i] < vmax)
+
+        # Compute phase cross-correlation to extract shifts
+        dzy = phase_cross_correlation(proj1[0], proj2[0],
+                                      return_error=True, upsample_factor=upsample_factor,
+                                      reference_mask=mask_ref[0], moving_mask=mask_move[0])
+        error_zy = self._get_registration_error(proj1[0], proj2[0])
+        dzx = phase_cross_correlation(proj1[1], proj2[1],
+                                      return_error=True, upsample_factor=upsample_factor,
+                                      reference_mask=mask_ref[1], moving_mask=mask_move[1])
+        error_zx = self._get_registration_error(proj1[1], proj2[1])
+        dyx = phase_cross_correlation(proj1[2], proj2[2],
+                                      return_error=True, upsample_factor=upsample_factor,
+                                      reference_mask=mask_ref[2], moving_mask=mask_move[2])
+        error_yx = self._get_registration_error(proj1[2], proj2[2])
+
+        # Keep only the most reliable registration
+        # D/z
+        if error_zx < error_zy:
+            dz = dzx[0]
+            rz = error_zx
+        else:
+            dz = dzy[0]
+            rz = error_zy
+
+        # H/x
+        if error_zx < error_yx:
+            dx = dzx[1]
+            rx = error_zx
+        else:
+            dx = dyx[1]
+            rx = error_yx
+
+        # V/y
+        if error_yx < error_zy:
+            dy = dyx[0]
+            ry = error_yx
+        else:
+            dy = dzy[1]
+            ry = error_zy
+
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+        #
+        # if self.row==0 and self.col==0:
+        #     print('ok')
+
+        return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+    def _get_registration_error(self, proj1, proj2):
+        return np.sqrt(1-correlate(proj1, proj2).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
+
+    def _get_max_proj_apr(self, apr, parts, patch, plot=False):
+        """
+        Get the maximum projection from 3D APR data.
+        """
+        proj = []
+        for d in range(3):
+            # dim=0: project along Y to produce a ZY plane
+            # dim=1: project along X to produce a ZX plane
+            # dim=2: project along Z to produce an YX plane
+            proj.append(pyapr.numerics.transform.projection.maximum_projection_patch(apr, parts, dim=d, patch=patch))
+
+        if plot:
+            fig, ax = plt.subplots(1, 3)
+            for i, title in enumerate(['ZY', 'ZX', 'YX']):
+                ax[i].imshow(proj[i], cmap='gray')
+                ax[i].set_title(title)
+
+        return proj[0], proj[1], proj[2]
+
+    def _compute_east_registration(self, u, v):
+        """
+        Compute the registration between the current tile and its eastern neighbor.
+        """
+        apr_1, parts_1 = u
+        apr_2, parts_2 = v
+
+        patch = pyapr.ReconPatch()
+        patch.y_begin = self.frame_size - self.overlap
+        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
+
+        patch = pyapr.ReconPatch()
+        patch.y_end = self.overlap
+        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
+
+        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('EAST')
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+
+        # if self.row==0 and self.col==1:
+        #     print('ok')
+
+        if self.mask:
+            return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
+        else:
+            return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
+
+    def _compute_south_registration(self, u, v):
+        """
+        Compute the registration between the current tile and its southern neighbor.
+        """
+        apr_1, parts_1 = u
+        apr_2, parts_2 = v
+
+        patch = pyapr.ReconPatch()
+        patch.x_begin = self.frame_size - self.overlap
+        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
+
+        patch = pyapr.ReconPatch()
+        patch.x_end = self.overlap
+        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
+
+        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('EAST')
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
+
+        # if self.row==0 and self.col==1:
+        #     print('ok')
+
+        if self.mask:
+            return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
+        else:
+            return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                         [proj_zy2, proj_zx2, proj_yx2])
 
 
 class tileMerger():

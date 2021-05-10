@@ -1,5 +1,4 @@
 """
-Script to process the 2x2 Vassiliki data.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -8,9 +7,9 @@ By using this code you agree to the terms of the software license agreement.
 
 from time import time
 from pipapr.parser import tileParser
-from pipapr.loader import tileLoader
-from pipapr.stitcher import tileGraph
+from pipapr.stitcher import tileStitcher
 from pipapr.viewer import tileViewer
+from pipapr.segmenter import tileSegmenter
 import os
 import numpy as np
 import pyapr
@@ -188,48 +187,40 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 
-path = r'/mnt/Data/wholebrain/multitile/c1'
+path = r'../data'
+path_classifier=r'../Data/random_forest_n100.joblib'
 t = time()
 t_ini = time()
-tiles = tileParser(path, frame_size=2048, overlap=868, type='apr')
+tiles = tileParser(path, frame_size=512, overlap=128, type='apr')
 print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
 t = time()
-tgraph = tileGraph(tiles)
-print('Elapsed time init tgraph: {:.2f} ms.'.format((time() - t)*1000))
-t = time()
-for tile in tiles:
-    loaded_tile = tileLoader(tile)
-    loaded_tile.activate_mask(threshold=95)
-    loaded_tile.compute_registration(tgraph)
-    loaded_tile.init_segmentation(path_classifier=r'/mnt/Data/wholebrain/multitile/c1/random_forest_n10.joblib',
-                                  func_to_compute_features=compute_features,
-                                  func_to_get_cc=get_cc_from_features)
-    loaded_tile.compute_segmentation(verbose=True)
+stitcher = tileStitcher(tiles)
+stitcher.activate_mask(99)
+stitcher.compute_registration()
 print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
-
 t = time()
-tgraph.build_sparse_graphs()
+stitcher.build_sparse_graphs()
 print('Elapsed time build sparse graph: {:.2f} ms.'.format((time() - t)*1000))
 t = time()
-tgraph.optimize_sparse_graphs()
+stitcher.optimize_sparse_graphs()
 print('Elapsed time optimize graph: {:.2f} ms.'.format((time() - t)*1000))
-tgraph.plot_min_trees(annotate=True)
+stitcher.plot_min_trees(annotate=True)
 t = time()
-reg_rel_map, reg_abs_map = tgraph.produce_registration_map()
+reg_rel_map, reg_abs_map = stitcher.produce_registration_map()
 print('Elapsed time reg map: {:.2f} ms.'.format((time() - t)*1000))
 t = time()
-tgraph.build_database(tiles)
+stitcher.build_database(tiles)
 print('Elapsed time build database: {:.2f} ms.'.format((time() - t)*1000))
 t = time()
-tgraph.save_database(os.path.join(path, 'registration_results.csv'))
+stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
 
 print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-viewer = tileViewer(tiles, tgraph, segmentation=True)
-coords = np.array([1, 1])
-# for i in range(2):
-#     for j in range(2):
-#         coords.append([i, j])
-# coords = np.array(coords)
+viewer = tileViewer(tiles, stitcher, segmentation=False)
+coords= []
+for i in range(4):
+    for j in range(4):
+        coords.append([i, j])
+coords = np.array(coords)
 viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 1000])

@@ -12,6 +12,8 @@ import numpy as np
 import pyapr
 import napari
 from napari.layers import Image, Labels
+from pipapr.parser import tileParser
+from pipapr.stitcher import tileStitcher
 
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
@@ -50,8 +52,10 @@ def apr_to_napari_Image(apr: pyapr.APR,
         cmin = apr.level_min() if mode == 'level' else parts.min()
         cmax = apr.level_max() if mode == 'level' else parts.max()
         contrast_limits = [cmin, cmax]
+    par = apr.get_parameters()
     return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
-                 rgb=False, multiscale=False, contrast_limits=contrast_limits, **kwargs)
+                 rgb=False, multiscale=False, contrast_limits=contrast_limits,
+                 scale=[par.dz, par.dx, par.dy], **kwargs)
 
 
 def apr_to_napari_Labels(apr: pyapr.APR,
@@ -86,9 +90,9 @@ def apr_to_napari_Labels(apr: pyapr.APR,
     """
     if 'contrast_limits' in kwargs:
         del kwargs['contrast_limits']
-
+    par = apr.get_parameters()
     return Labels(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode='max'),
-                  multiscale=False, **kwargs)
+                  multiscale=False, scale=[par.dz, par.dx, par.dy], **kwargs)
 
 
 def display_layers(layers):
@@ -127,9 +131,12 @@ class tileViewer():
     """
     Class to display the registration and segmentation using Napari.
     """
-    def __init__(self, tiles, tgraph, segmentation=False):
+    def __init__(self,
+                 tiles: tileParser,
+                 stitcher: tileStitcher,
+                 segmentation: bool=False):
         self.tiles = tiles
-        self.tgraph = tgraph
+        self.stitcher = stitcher
         self.nrow = tiles.nrow
         self.ncol = tiles.ncol
         self.loaded_ind = []
@@ -194,7 +201,7 @@ class tileViewer():
         """
         Load the segmentation for tile at position [row, col].
         """
-        df = self.tgraph.database
+        df = self.stitcher.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         apr = pyapr.APR()
         parts = pyapr.LongParticles()
@@ -215,7 +222,7 @@ class tileViewer():
         """
         Load the tile at position [row, col].
         """
-        df = self.tgraph.database
+        df = self.stitcher.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         if self.tiles.type == 'tiff2D':
             files = glob(os.path.join(path, '*.tif'))
@@ -256,7 +263,7 @@ class tileViewer():
         """
         Parse tile position in the database.
         """
-        df = self.tgraph.database
+        df = self.stitcher.database
         tile_df = df[(df['row'] == row) & (df['col'] == col)]
         px = tile_df['ABS_H'].values[0]
         py = tile_df['ABS_V'].values[0]

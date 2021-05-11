@@ -19,6 +19,20 @@ def are_labels_the_same(local_labels):
 
 
 def compute_gradients(apr, parts, sobel=True):
+    """
+    Compute gradient for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sobel: (bool) use sobel filter to compute the gradient
+
+    Returns
+    -------
+    (dx, dy, dz): (arrays) gradient for each direction
+    """
+
     par = apr.get_parameters()
     dx = pyapr.FloatParticles()
     dy = pyapr.FloatParticles()
@@ -30,47 +44,131 @@ def compute_gradients(apr, parts, sobel=True):
     return dz, dx, dy
 
 
-def compute_laplacian(apr, parts, sobel=True):
+def compute_laplacian(apr, parts, grad=None, sobel=True):
+    """
+    Compute Laplacian for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    grad: (dz, dy, dx) gradient for each direction if precomputed (faster for Laplacian computation)
+    sobel: (bool) use sobel filter to compute the gradient
+
+    Returns
+    -------
+    Laplacian of APR.
+    """
+
     par = apr.get_parameters()
-    dz, dx, dy = compute_gradients(apr, parts, sobel)
+    if grad is None:
+        dz, dx, dy = compute_gradients(apr, parts, sobel)
+    else:
+        dz, dx, dy = grad
     dx2 = pyapr.FloatParticles()
     dy2 = pyapr.FloatParticles()
     dz2 = pyapr.FloatParticles()
     pyapr.numerics.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
     pyapr.numerics.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
     pyapr.numerics.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
-    return dz + dx + dy
+    return dz2 + dx2 + dy2
 
 
 def compute_gradmag(apr, parts, sobel=True):
+    """
+    Compute gradient magnitude directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sobel: (bool) use sobel filter to compute the gradient
+
+    Returns
+    -------
+    Gradient magnitude of APR.
+    """
+
     par = apr.get_parameters()
     gradmag = pyapr.FloatParticles()
-    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=True)
+    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
     return gradmag
 
 
 def gaussian_blur(apr, parts, sigma=1.5, size=11):
-    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, 3, True)
+    """
+    Compute Gaussian blur directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sigma: (float) Gaussian blur standard deviation (kernel radius)
+    size: (int) kernel size (increase with caution, complexity is not linear)
+
+    Returns
+    -------
+    Blurred APR.
+    """
+
+    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
     output = pyapr.FloatParticles()
     pyapr.numerics.filter.convolve_pencil(apr, parts, output, stencil, use_stencil_downsample=True,
                                           normalize_stencil=True, use_reflective_boundary=True)
     return output
 
 
-def particle_levels(apr, normalize=True):
+def particle_levels(apr):
+    """
+    Returns apr level: for each particle the lvl is defined as the size of the particle in pixel.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+
+    Returns
+    -------
+    Particle level.
+    """
+
     lvls = pyapr.ShortParticles(apr.total_number_particles())
     lvls.fill_with_levels(apr)
-    if normalize:
-        lvls *= (1 / apr.level_max())
-    return lvls
+    lvls = np.array(lvls)
+
+    return 2 ** (lvls.max() - lvls)
 
 
-def compute_std(apr, parts, size=5):
-    dims = apr.org_dims()
-    box_size = [size if d >= size else 1 for d in dims]
-    locstd = pyapr.FloatParticles()
-    pyapr.numerics.local_std(apr, parts, locstd, size=box_size)
-    return locstd
+def compute_features(apr, parts):
+    gauss = gaussian_blur(apr, parts, sigma=1.5, size=11)
+    print('Gaussian computed.')
+
+    # Compute gradient magnitude (central finite differences)
+    grad = compute_gradmag(apr, gauss)
+    print('Gradient magnitude computed.')
+    # Compute local standard deviation around each particle
+    # local_std = compute_std(apr, parts, size=5)
+    # print('STD computed.')
+    # Compute lvl for each particle
+    lvl = particle_levels(apr)
+    print('Particle level computed.')
+    # Compute difference of Gaussian
+    dog = gaussian_blur(apr, parts, sigma=3, size=22) - gauss
+    print('DOG computed.')
+    lapl_of_gaussian = compute_laplacian(apr, gauss)
+    print('Laplacian of Gaussian computed.')
+
+    print('Features computation took {} s.'.format(time()-t))
+
+    # Aggregate filters in a feature array
+    f = np.vstack((np.array(parts, copy=True),
+                   lvl,
+                   gauss,
+                   grad,
+                   lapl_of_gaussian,
+                   dog
+                   )).T
+
+    return f
 
 
 def display_segmentation(u, lmap, vdim=2):
@@ -93,23 +191,6 @@ def predict_on_APR(clf, x):
 
     return parts_pred
 
-def predict_on_APR_block(clf, x, n_parts=1e7):
-    # Predict on numpy array
-    t = time()
-    y_pred = np.empty((x.shape[0]))
-    n_block = int(np.ceil(x.shape[0]/n_parts))
-
-    clf[1].set_params(n_jobs=-1)
-    for i in range(n_block):
-        y_pred[i*n_block:min((i+1)*n_block, x.shape[0])] = clf.predict(x[i*n_block:min((i+1)*n_block, x.shape[0])])
-
-    print('Blocked prediction took {} s.\n'.format(time()-t))
-
-    # Transform numpy array to ParticleData
-    parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
-
-    return parts_pred
-
 
 def predict_and_display(apr, parts, clf, x, save_results=None):
     data = np.array(pyapr.numerics.reconstruction.recon_pc(apr, parts), copy=False)
@@ -126,10 +207,30 @@ def predict_and_display(apr, parts, clf, x, save_results=None):
     return y_pred
 
 
+def predict_on_APR_block(clf, x, n_parts=1e7):
+    # Predict on numpy array by block to avoid memory issues
+    t = time()
+    y_pred = np.empty((x.shape[0]))
+    n_block = int(np.ceil(x.shape[0]/n_parts))
+    if int(n_parts) != n_parts:
+        raise ValueError('Error: n_parts must be an int.')
+    n_parts = int(n_parts)
+
+    clf[1].set_params(n_jobs=-1)
+    for i in range(n_block):
+        y_pred[i*n_parts:min((i+1)*n_parts, x.shape[0])] = clf.predict(x[i*n_parts:min((i+1)*n_parts, x.shape[0])])
+
+    print('Blocked prediction took {} s.\n'.format(time()-t))
+
+    # Transform numpy array to ParticleData
+    parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
+
+    return parts_pred
+
+
 def sample_labels_on_APR(labels, apr, parts_train):
 
     apr_it = apr.iterator()
-    org_dims = apr.org_dims()
 
     for z in range(apr_it.z_num(apr.level_max())):
         for x in range(apr_it.x_num(apr.level_max())):
@@ -148,9 +249,9 @@ def sample_labels_on_APR(labels, apr, parts_train):
                     x_start = x * step_size
                     z_start = z * step_size
 
-                    y_end = min(y_start + step_size, org_dims[0])
-                    x_end = min(x_start + step_size, org_dims[1])
-                    z_end = min(z_start + step_size, org_dims[2])
+                    y_end = min(y_start + step_size, apr.org_dims(0))
+                    x_end = min(x_start + step_size, apr.org_dims(1))
+                    z_end = min(z_start + step_size, apr.org_dims(2))
 
                     local_labels = labels[z_start:z_end, x_start:x_end, y_start:y_end]
 
@@ -169,8 +270,8 @@ def sample_labels_on_APR(labels, apr, parts_train):
 
 
 # APR file to segment
-fpath_apr = r'/mnt/Data/wholebrain/multitile/000000/000000_000000/1_25x_tiling_file_t0_c1_0.apr'
-fpath_labels = r'/mnt/Data/wholebrain/1_25x_tiling_file_t0_c1_Labels.npy'
+fpath_apr = r'/mnt/Data/Interneurons/output.apr'
+fpath_labels = r'/mnt/Data/Interneurons/manual_sparse_labels_membrane.npy'
 
 # Instantiate APR and particle objects
 apr = pyapr.APR()
@@ -187,56 +288,21 @@ del labels
 print('Labels sampled on APR.')
 parts_train = np.array(parts_train_C, copy=False)
 
-# Display sampled particles
-# pyapr.viewer.parts_viewer(apr, parts_train_C)
-
 t = time()
 # Compute gradient along a dimension (Sobel filter). dimension can be 0, 1 or 2
 grad_x, grad_y, grad_z = compute_gradients(apr, parts)
 print('g')
 
-# Compute gradient magnitude (central finite differences)
-grad = compute_gradmag(apr, parts)
-print('h')
-# Compute local standard deviation around each particle
-local_std = compute_std(apr, parts, size=5)
-print('i')
-# Compute lvl for each particle
-lvl = particle_levels(apr, normalize=True)
-print('j')
-# Compute difference of Gaussian
-dog = gaussian_blur(apr, parts, sigma=3, size=22) - gaussian_blur(apr, parts, sigma=1.5, size=11)
-print('Features computation took {} s.'.format(time()-t))
-
-# Aggregate filters in a feature array
-f = np.vstack((np.array(parts, copy=True),
-               lvl,
-               grad_x,
-               grad_y,
-               grad_z,
-               grad,
-               local_std,
-               dog
-               )).T
-
-f_names = ['Intensity',
-               'lvl',
-               'grad_x',
-               'grad_y',
-               'grad_z',
-               'grad_mag',
-               'local_std',
-               'dog'
-           ]
+f = compute_features(apr, parts)
 
 # plt.figure()
-print('k')
+# print('k')
 # plt.imshow(np.corrcoef(f.T), cmap='jet')
 # plt.colorbar()
 # plt.xticks(np.arange(len(f_names)), f_names, rotation=45)
 # plt.yticks(np.arange(len(f_names)), f_names)
 # plt.tight_layout()
-print('1')
+# print('1')
 
 # Fetch data that was manually labelled
 ind_manual_label = (parts_train != 0)
@@ -298,7 +364,7 @@ pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=200)
 print('13')
 
 # Display results with napari
-from viewer.pyapr_napari import apr_to_napari_Image, apr_to_napari_Labels
+from pipapr.viewer import apr_to_napari_Image, apr_to_napari_Labels
 data = apr_to_napari_Image(apr, parts, name='Intensity image')
 lmap = apr_to_napari_Labels(apr, cc, name='Segmentation')
 with napari.gui_qt():

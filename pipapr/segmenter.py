@@ -18,14 +18,29 @@ from pathlib import Path
 class tileSegmenter():
 
     def __init__(self,
-                 tile: tileLoader):
+                 tile: tileLoader,
+                 path_classifier, func_to_compute_features, func_to_get_cc):
+        """
 
-        self.data = tile.data
+        Parameters
+        ----------
+        tile: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
+        path_classifier: (str) path to pre-trained classifier
+        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
+                                        as the one used to train the classifier.
+        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
+                                        a unique id)
+        """
+
         self.path = tile.path
-
-        self.clf = None
-        self.func_to_get_cc = None
-        self.func_to_compute_features = None
+        self.data = tile.data
+        self.is_tile_loaded = tile.data is not None
+        # Load classifier
+        self.clf = load(path_classifier)
+        # Store function to compute features
+        self.func_to_compute_features = func_to_compute_features
+        # Store post processing steps
+        self.func_to_get_cc = func_to_get_cc
 
     def _predict_on_APR_block(self, x, n_parts=1e7, verbose=False):
         """
@@ -48,40 +63,12 @@ class tileSegmenter():
                 x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
 
         if verbose:
-            print('Blocked prediction took {} s.\n'.format(time() - t))
+            print('Blocked prediction took {:0.3f} s.\n'.format(time() - t))
 
         # Transform numpy array to ParticleData
         parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
 
         return parts_pred
-
-
-    def init_segmentation(self, path_classifier, func_to_compute_features, func_to_get_cc):
-        """
-        Initialize segmentation with a classifier, a function to compute features and a fonction to
-        obtain the final connected component from the classification result (mask)
-
-        Parameters
-        ----------
-        path_classifier: (str) path to pre-trained classifier
-        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
-                                        as the one used to train the classifier.
-        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
-                                        a unique id)
-
-        Returns
-        -------
-        None
-        """
-
-        # Load classifier
-        self.clf = load(path_classifier)
-
-        # Store function to compute features
-        self.func_to_compute_features = func_to_compute_features
-
-        # Store post processing steps
-        self.func_to_get_cc = func_to_get_cc
 
     def compute_segmentation(self, verbose=False):
         """
@@ -103,12 +90,14 @@ class tileSegmenter():
             t = time()
             print('Computing features on AP')
         f = self.func_to_compute_features(apr, parts)
+        if verbose:
+            print('Features computation took {:0.2f} s.'.format(time()-t))
 
         parts_pred = self._predict_on_APR_block(f, verbose=verbose)
 
         if verbose:
             # Display inference info
-            print('\n\n****** INFERENCE RESULTS ******\n')
+            print('\n****** INFERENCE RESULTS ******')
             print(
                 '{} cell particles ({:0.2f}%)'.format(np.sum(parts_pred == 0),
                                                       np.sum(parts_pred == 0) / len(parts_pred) * 100))
@@ -116,6 +105,7 @@ class tileSegmenter():
                                                               np.sum(parts_pred == 1) / len(parts_pred) * 100))
             print('{} membrane particles ({:0.2f}%)'.format(np.sum(parts_pred == 2),
                                                             np.sum(parts_pred == 2) / len(parts_pred) * 100))
+            print('*******************************')
 
         cc = self.func_to_get_cc(apr, parts_pred)
 

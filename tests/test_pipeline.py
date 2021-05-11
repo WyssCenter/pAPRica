@@ -142,9 +142,6 @@ def compute_features(apr, parts):
     # Compute gradient magnitude (central finite differences)
     grad = compute_gradmag(apr, gauss)
     print('Gradient magnitude computed.')
-    # Compute local standard deviation around each particle
-    # local_std = compute_std(apr, parts, size=5)
-    # print('STD computed.')
     # Compute lvl for each particle
     lvl = particle_levels(apr)
     print('Particle level computed.')
@@ -153,8 +150,6 @@ def compute_features(apr, parts):
     print('DOG computed.')
     lapl_of_gaussian = compute_laplacian(apr, gauss)
     print('Laplacian of Gaussian computed.')
-
-    print('Features computation took {} s.'.format(time()-t))
 
     # Aggregate filters in a feature array
     f = np.vstack((np.array(parts, copy=True),
@@ -174,21 +169,20 @@ def get_cc_from_features(apr, parts_pred):
     parts_cells = (parts_pred == 0)
 
     # Use opening to separate touching cells
-    pyapr.numerics.transform.opening(apr, parts_cells, binary=True, inplace=True)
+    pyapr.numerics.transform.opening(apr, parts_cells, radius=1, binary=True, inplace=True)
 
     # Apply connected component
     cc = pyapr.LongParticles()
     pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
 
-    # Remove small and large objects
-    pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=4)
-    pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=256)
+    # Remove small objects
+    # cc = pyapr.numerics.transform.remove_small_objects(apr, cc, 128)
 
     return cc
 
 
 path = r'../data'
-path_classifier=r'../Data/random_forest_n100.joblib'
+path_classifier=r'../data/random_forest_n100.joblib'
 t = time()
 t_ini = time()
 tiles = tileParser(path, frame_size=512, overlap=128, type='apr')
@@ -196,6 +190,7 @@ print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
 t = time()
 stitcher = tileStitcher(tiles)
 stitcher.activate_mask(99)
+stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
 stitcher.compute_registration()
 print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
 t = time()
@@ -217,10 +212,11 @@ print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
 
 print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-viewer = tileViewer(tiles, stitcher, segmentation=False)
+viewer = tileViewer(tiles, stitcher, segmentation=True)
 coords= []
 for i in range(4):
     for j in range(4):
         coords.append([i, j])
 coords = np.array(coords)
-viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 1000])
+coords=np.array([0, 3])
+viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 3000])

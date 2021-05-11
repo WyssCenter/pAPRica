@@ -18,6 +18,7 @@ from alive_progress import alive_bar
 import dill
 from pipapr.loader import tileLoader
 from pipapr.parser import tileParser
+from pipapr.segmenter import tileSegmenter
 import matplotlib.pyplot as plt
 import pyapr
 from skimage.registration import phase_cross_correlation
@@ -63,6 +64,41 @@ class tileStitcher():
         self.mask = False
         self.threshold = None
 
+        self.segment = False
+
+    def activate_segmentation(self, path_classifier, func_to_compute_features,
+                              func_to_get_cc, verbose=False):
+        """
+        Activate the segmentation. When a tile is loaded it is segmented before the stitching is done.
+
+        Parameters
+        ----------
+        tile: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
+        path_classifier: (str) path to pre-trained classifier
+        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
+                                        as the one used to train the classifier.
+        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
+                                        a unique id)
+        """
+
+        self.segment = True
+        self.segmentation_verbose = verbose
+        # Load classifier
+        self.path_classifier = path_classifier
+        # Store function to compute features
+        self.func_to_compute_features = func_to_compute_features
+        # Store post processing steps
+        self.func_to_get_cc = func_to_get_cc
+
+
+    def deactivate_segmentation(self):
+        """
+        Deactivate tile segmentation.
+
+        """
+
+        self.segment = False
+
     def activate_mask(self, threshold):
         """
         Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
@@ -99,6 +135,13 @@ class tileStitcher():
             tile = tileLoader(t)
             tile.load_tile()
             tile.load_neighbors()
+
+            if self.segment:
+                segmenter = tileSegmenter(tile,
+                                          self.path_classifier,
+                                          self.func_to_compute_features,
+                                          self.func_to_get_cc)
+                segmenter.compute_segmentation(verbose=self.segmentation_verbose)
 
             for v, coords in zip(tile.data_neighbors, tile.neighbors):
                 if tile.row == coords[0] and tile.col < coords[1]:
@@ -366,7 +409,7 @@ class tileStitcher():
 
         self.database.to_csv(path)
 
-    def dump_tgraph(self, path):
+    def dump_stitcher(self, path):
         """
         Use dill to store a tgraph object.
 
@@ -716,7 +759,7 @@ class tileMerger():
             if zlim[1] != self.merged_data.shape[0]:
                 self.merged_data[zlim[1]:, :, :] = background
 
-    def equalize_hist(self, method='opencv'):
+    def equalize_hist(self, method='skimage'):
         """
         Perform histogram equalization to improve the contrast on merged data.
         Both OpenCV (only 2D) and Skimage (3D but 10 times slower) are available.
@@ -726,14 +769,14 @@ class tileMerger():
             raise TypeError('Error: please merge data before equalizing histogram.')
 
         if method == 'opencv':
-            clahe = cv.createCLAHE(tileGridSize=(8, 8))
-            for i in range(self.merged_data.shape[0]):
-                self.merged_data[i] = clahe.apply(self.merged_data[i])
+            # clahe = cv.createCLAHE(tileGridSize=(8, 8))
+            # for i in range(self.merged_data.shape[0]):
+                # self.merged_data[i] = clahe.apply(self.merged_data[i])
+            print('opencv not currently supported due to incompatibility with pyqt5')
         elif method == 'skimage':
             self.merged_data = equalize_adapthist(self.merged_data)
         else:
             raise ValueError('Error: unknown method for adaptive histogram normalization.')
-
 
     def _load_tile(self, i):
         """

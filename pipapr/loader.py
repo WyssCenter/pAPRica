@@ -35,6 +35,7 @@ class tileLoader():
         self.data = None
         self.data_neighbors = None
         self.data_segmentation = None
+        self.data_neighbors_segmentation = None
 
     def _load_data(self, path):
         """
@@ -99,7 +100,26 @@ class tileLoader():
         else:
             print('Tile cc already loaded.')
 
-        self.segmentation = u
+        self.data_segmentation = u
+
+    def load_neighbors_segmentation(self):
+        """
+        Load the current tile neighbors cc.
+        """
+
+        if self.data_neighbors_segmentation is None:
+            u = []
+            for path_neighbor in self.neighbors_path:
+                apr = pyapr.APR()
+                cc = pyapr.LongParticles()
+                folder, filename = os.path.split(path_neighbor)
+                folder_seg = os.path.join(folder, 'segmentation')
+                pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, cc)
+                u.append(apr, cc)
+        else:
+            print('Tile neighbors already loaded.')
+
+        self.data_neighbors_segmentation = u
 
     def _convert_to_apr(self):
         """

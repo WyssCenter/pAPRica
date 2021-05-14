@@ -144,6 +144,7 @@ class tileStitcher():
                 segmenter.compute_segmentation(verbose=self.segmentation_verbose)
 
             for v, coords in zip(tile.data_neighbors, tile.neighbors):
+
                 if tile.row == coords[0] and tile.col < coords[1]:
                     # EAST
                     reg, rel = self._compute_east_registration(tile.data, v)

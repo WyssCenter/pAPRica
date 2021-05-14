@@ -145,7 +145,6 @@ v_size = [apr1.org_dims(2), apr1.org_dims(1), apr1.org_dims(0)]
 overlap_i = r2
 overlap_f = np.min((r1 + v_size, r2+v_size), axis=0)
 
-
 # Retrieve cell centers
 cells1 = pyapr.numerics.transform.find_label_centers(apr1, cc1, parts1)
 cells1 += r1

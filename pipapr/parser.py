@@ -8,6 +8,7 @@ By using this code you agree to the terms of the software license agreement.
 from glob import glob
 import os
 import re
+import numpy as np
 
 class tileParser():
     """
@@ -22,6 +23,7 @@ class tileParser():
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
         self._sort_tiles()
+        self.tiles_pattern, self.tile_pattern_path = self._get_tiles_pattern()
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.path_list = self._get_path_list()
         self.overlap = overlap
@@ -32,7 +34,7 @@ class tileParser():
         print('**********  PARSING DATA **********')
         print('{} tiles were detected'.format(self.n_tiles))
         print('{} rows and {} columns'.format(self.nrow, self.ncol))
-        print('************************************')
+        print('***********************************')
 
     def _get_tile_list(self):
         """
@@ -67,7 +69,10 @@ class tileParser():
         return tiles
 
     def _sort_tiles(self):
+        """
+        Sort tiles so that they are arranged in columns and rows (read from left to right and top to bottom).
 
+        """
         tiles_sorted = []
         for v in range(self.nrow):
             for h in range(self.ncol):
@@ -98,6 +103,18 @@ class tileParser():
             if tile['row'] > nrow:
                 nrow = tile['row']
         return nrow+1
+
+    def _get_tiles_pattern(self):
+        """
+        Return the tile pattern (0 = no tile, 1 = tile)
+
+        """
+        tiles_pattern = np.zeros((self.nrow, self.ncol))
+        tiles_pattern_path = np.empty((self.nrow, self.ncol), dtype=object)
+        for tile in self.tiles_list:
+            tiles_pattern[tile['row'], tile['col']] = 1
+            tiles_pattern_path[tile['row'], tile['col']] = tile['path']
+        return tiles_pattern, tiles_pattern_path
 
     def _get_total_neighbors_map(self):
         """
@@ -130,28 +147,29 @@ class tileParser():
 
     def _get_neighbors_map(self):
         """
-        Returns the non-redundant neighbors map: neighbors[row][col] gives a list of neighbors and the total
+        Returns the non-redundant neighbors map: neighbors[row, col] gives a list of neighbors and the total
         number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.
         """
-        # TODO: adapt this piece so it is compatible with sparse sampling.
+
         # Initialize neighbors
-        neighbors = [None] * self.ncol
+        neighbors = np.empty((self.nrow, self.ncol), dtype=object)
         cnt = 0
         for x in range(self.ncol):
-            # Create new dimension
-            neighbors[x] = [None] * self.nrow
             for y in range(self.nrow):
+                if self.tiles_pattern[y, x] == 0:
+                    pass
                 # Fill up 2D list
                 tmp = []
-                if x < self.ncol-1:
+                if x < self.ncol-1 and self.tiles_pattern[y, x+1] == 1:
                     # SOUTH
-                    tmp.append([x+1, y])
+                    tmp.append([y, x+1])
                     cnt += 1
-                if y < self.nrow-1:
+                if y < self.nrow-1 and self.tiles_pattern[y+1, x] == 1:
                     # EAST
-                    tmp.append([x, y+1])
+                    tmp.append([y+1, x])
                     cnt += 1
-                neighbors[x][y] = tmp
+                neighbors[y, x] = tmp
+
         return neighbors, cnt
 
     def _get_path_list(self):
@@ -169,10 +187,11 @@ class tileParser():
         """
 
         e = self.tiles_list[item]
-        e['neighbors'] = self.neighbors[e['row']][e['col']]
+        e['neighbors'] = self.neighbors[e['row'], e['col']]
         neighbors_path = []
-        for x, y in e['neighbors']:
-            neighbors_path.append(self.path_list[y + x * self.nrow])
+        for row, col in e['neighbors']:
+            if self.tiles_pattern[row, col]:
+                neighbors_path.append(self.tile_pattern_path[row, col])
         e['neighbors_path'] = neighbors_path
         e['type'] = self.type
         e['overlap'] = self.overlap

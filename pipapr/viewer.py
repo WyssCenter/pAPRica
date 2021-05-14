@@ -7,13 +7,15 @@ By using this code you agree to the terms of the software license agreement.
 
 from glob import glob
 import os
+import pandas as pd
 from skimage.io import imread
 import numpy as np
 import pyapr
 import napari
-from napari.layers import Image, Labels
+from napari.layers import Image, Labels, Points
 from pipapr.parser import tileParser
 from pipapr.stitcher import tileStitcher
+from pipapr.loader import tileLoader
 
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
@@ -133,16 +135,76 @@ class tileViewer():
     """
     def __init__(self,
                  tiles: tileParser,
-                 stitcher: tileStitcher,
-                 segmentation: bool=False):
+                 database: (tileStitcher, pd.DataFrame, str),
+                 segmentation: bool=False,
+                 cells=None):
         self.tiles = tiles
-        self.stitcher = stitcher
+
+        if isinstance(database, tileStitcher):
+            self.database = database.database
+        elif isinstance(database, pd.DataFrame):
+            self.database = database
+        elif isinstance(database, str):
+            self.database = pd.read_csv(database)
+        else:
+            raise TypeError('Error: unknown type for database.')
+
         self.nrow = tiles.nrow
         self.ncol = tiles.ncol
         self.loaded_ind = []
         self.loaded_tiles = {}
         self.segmentation = segmentation
         self.loaded_segmentation = {}
+        self.cells = cells
+
+    def display_all_tiles(self, level_delta=0, **kwargs):
+        """
+        Display all parsed tiles.
+        """
+
+        # Compute layers to be displayed by Napari
+        layers = []
+        for t in self.tiles:
+            tile = tileLoader(t)
+            # Load tile if not loaded, else use cached tile
+            ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
+            if self._is_tile_loaded(tile.row, tile.col):
+                apr, parts = self.loaded_tiles[ind]
+                if self.segmentation:
+                    mask = self.loaded_segmentation[ind]
+            else:
+                tile.load_tile()
+                apr, parts = tile.data
+                self.loaded_ind.append(ind)
+                self.loaded_tiles[ind] = apr, parts
+                if self.segmentation:
+                    tile.load_segmentation()
+                    apr, mask = tile.data_segmentation
+                    self.loaded_segmentation[ind] = mask
+
+            position = self._get_tile_position(tile.row, tile.col)
+            if level_delta != 0:
+                position = [x/level_delta**2 for x in position]
+            layers.append(apr_to_napari_Image(apr, parts,
+                                               mode='constant',
+                                               name='Tile [{}, {}]'.format(tile.row, tile.col),
+                                               translate=position,
+                                               opacity=0.7,
+                                               level_delta=level_delta,
+                                               **kwargs))
+            if self.segmentation:
+                layers.append(apr_to_napari_Labels(apr, mask,
+                                                  mode='constant',
+                                                  name='Segmentation [{}, {}]'.format(tile.row, tile.col),
+                                                  translate=position,
+                                                  level_delta=level_delta,
+                                                  opacity=0.7))
+        if self.cells is not None:
+            par = apr.get_parameters()
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center', scale=[par.dz, par.dx, par.dy]))
+
+        # Display layers
+        display_layers(layers)
 
     def display_tiles(self, coords, level_delta=0, **kwargs):
         """
@@ -193,6 +255,9 @@ class tileViewer():
                                                   translate=position,
                                                   level_delta=level_delta,
                                                   opacity=0.7))
+        if self.cells is not None:
+            par = apr.get_parameters()
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center', scale=[par.dz, par.dx, par.dy]))
 
         # Display layers
         display_layers(layers)
@@ -201,7 +266,7 @@ class tileViewer():
         """
         Load the segmentation for tile at position [row, col].
         """
-        df = self.stitcher.database
+        df = self.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         apr = pyapr.APR()
         parts = pyapr.LongParticles()
@@ -222,7 +287,7 @@ class tileViewer():
         """
         Load the tile at position [row, col].
         """
-        df = self.stitcher.database
+        df = self.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
         if self.tiles.type == 'tiff2D':
             files = glob(os.path.join(path, '*.tif'))
@@ -263,7 +328,7 @@ class tileViewer():
         """
         Parse tile position in the database.
         """
-        df = self.stitcher.database
+        df = self.database
         tile_df = df[(df['row'] == row) & (df['col'] == col)]
         px = tile_df['ABS_H'].values[0]
         py = tile_df['ABS_V'].values[0]

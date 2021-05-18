@@ -167,8 +167,13 @@ class tileStitcher():
                 self.relia_H.append(rel[2])
                 self.relia_V.append(rel[1])
                 self.relia_D.append(rel[0])
-    
-    def build_sparse_graphs(self):
+
+        self._build_sparse_graphs()
+        self._optimize_sparse_graphs()
+        _, _ = self._produce_registration_map()
+        self.build_database()
+
+    def _build_sparse_graphs(self):
         """
         Build the sparse graph from the reliability and (row, col). This method needs to be called after the
         pair-wise registration has been performed for all neighbors pair.
@@ -182,7 +187,7 @@ class tileStitcher():
         self.graph_relia_D = csr_matrix((self.relia_D, (self.cgraph_from, self.cgraph_to)),
                                         shape=(self.n_edges, self.n_edges))
 
-    def optimize_sparse_graphs(self):
+    def _optimize_sparse_graphs(self):
         """
         Optimize the sparse graph by computing the minimum spanning tree for each direction (H, D, V). This
         method needs to be called after the sparse graphs have been built.
@@ -284,7 +289,7 @@ class tileStitcher():
                 ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko-', markerfacecolor='r', linewidth=2)
             ax[i].set_title(d + ' tree')
 
-    def produce_registration_map(self):
+    def _produce_registration_map(self):
         """
         Produce the registration map where reg_rel_map[d, row, col] (d = H,V,D) is the relative tile
         position in pixel from the expected one. This method needs to be called after the optimization has been done.
@@ -368,7 +373,7 @@ class tileStitcher():
             ax[1, i].imshow(self.registration_map_abs[i], cmap='gray')
             ax[1, i].set_title('Abs reg. map ' + d)
 
-    def build_database(self, tiles):
+    def build_database(self):
         """
         Build the database for storing the registration parameters. This method needs to be called after
         the registration map has been produced.
@@ -388,9 +393,9 @@ class tileStitcher():
                                             'ABS_V',
                                             'ABS_D'])
         for i in range(self.n_vertex):
-            row = tiles[i]['row']
-            col = tiles[i]['col']
-            self.database.loc[i] = [tiles[i]['path'], row, col,
+            row = self.tiles[i]['row']
+            col = self.tiles[i]['col']
+            self.database.loc[i] = [self.tiles[i]['path'], row, col,
                                     self.registration_map_rel[0, row, col],
                                     self.registration_map_rel[1, row, col],
                                     self.registration_map_rel[2, row, col],
@@ -779,30 +784,6 @@ class tileMerger():
         else:
             raise ValueError('Error: unknown method for adaptive histogram normalization.')
 
-    def _load_tile(self, i):
-        """
-        Load the current tile.
-        """
-        path = self.database['path'].loc[i]
-        if self.type == 'tiff2D':
-            files = glob(os.path.join(path, '*.tif'))
-            im = imread(files[0])
-            u = np.zeros((len(files), *im.shape))
-            u[0] = im
-            files.pop(0)
-            for i, file in enumerate(files):
-                u[i+1] = imread(file)
-        elif self.type == 'tiff3D':
-            u = imread(path)
-        elif self.type == 'apr':
-            apr = pyapr.APR()
-            parts = pyapr.ShortParticles()
-            pyapr.io.read(path, apr, parts)
-            u = (apr, parts)
-        else:
-            raise TypeError('Error: image type {} not supported.'.format(self.type))
-        return u
-
     def initialize_merged_array(self):
         """
         Initialize the merged array in accordance with the asked downsampling.
@@ -832,6 +813,30 @@ class tileMerger():
         self.downsample = downsample
         self.level_delta = int(-np.log2(self.downsample))
 
+    def _load_tile(self, i):
+        """
+        Load the current tile.
+        """
+        path = self.database['path'].loc[i]
+        if self.type == 'tiff2D':
+            files = glob(os.path.join(path, '*.tif'))
+            im = imread(files[0])
+            u = np.zeros((len(files), *im.shape))
+            u[0] = im
+            files.pop(0)
+            for i, file in enumerate(files):
+                u[i+1] = imread(file)
+        elif self.type == 'tiff3D':
+            u = imread(path)
+        elif self.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(path, apr, parts)
+            u = (apr, parts)
+        else:
+            raise TypeError('Error: image type {} not supported.'.format(self.type))
+        return u
+
     def _get_nx(self):
         x_pos = self.database['ABS_H'].to_numpy()
         return x_pos.max() - x_pos.min() + self.frame_size
@@ -843,18 +848,3 @@ class tileMerger():
     def _get_nz(self):
         z_pos = self.database['ABS_D'].to_numpy()
         return z_pos.max() - z_pos.min() + self.n_planes
-
-
-class atlas():
-
-    def __init__(self, path, x_downsample, z_downsample, y_downsample=None):
-        self.x_downsample = x_downsample
-        if y_downsample is None:
-            self.y_downsample = x_downsample
-        else:
-            self.y_downsample = y_downsample
-        self.z_downsample = z_downsample
-        self.atlas = imread(path)
-
-    def get_loc_id(self, x, y, z):
-        return self.atlas[int(z/self.z_downsample), int(y/self.y_downsample), int(x/self.x_downsample)]

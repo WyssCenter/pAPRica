@@ -15,6 +15,7 @@ from joblib import load
 from time import time
 from pathlib import Path
 import cv2 as cv
+from skimage.io import imread
 
 class tileSegmenter():
 
@@ -143,6 +144,7 @@ class tileCells():
         self.frame_size = tiles.frame_size
 
         self.cells = None
+        self.atlas = None
 
     def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5):
         
@@ -160,6 +162,8 @@ class tileCells():
             else:
                 self._merge_cells(tile, apr, cc, parts, lowe_ratio=lowe_ratio, distance_max=distance_max)
 
+    def save_cells(self, output_path):
+        pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
 
     def _merge_cells(self, tile, apr, cc, parts, lowe_ratio, distance_max):
 

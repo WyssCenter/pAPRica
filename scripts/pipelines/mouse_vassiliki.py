@@ -9,11 +9,14 @@ By using this code you agree to the terms of the software license agreement.
 from time import time
 import pandas as pd
 from pipapr.parser import tileParser
-from pipapr.stitcher import tileStitcher
+from pipapr.stitcher import tileStitcher, tileMerger
 from pipapr.viewer import tileViewer
+from pipapr.atlaser import tileAtlaser
+from pipapr.segmenter import tileCells
 import os
 import numpy as np
 import pyapr
+import matplotlib.pyplot as plt
 
 
 def compute_gradients(apr, parts, sobel=True):
@@ -187,52 +190,78 @@ def get_cc_from_features(apr, parts_pred):
 
     return cc
 
-
+# Parameters
 path = r'/mnt/Data/wholebrain/multitile/c1'
 path_classifier = r'/mnt/Data/wholebrain/multitile/c1/random_forest_n10.joblib'
-t = time()
 t_ini = time()
+
+# Parse data
 tiles = tileParser(path, frame_size=2048, overlap=868, type='apr')
-# print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
-# t = time()
-# print('Elapsed time init tgraph: {:.2f} ms.'.format((time() - t)*1000))
-# t = time()
-# stitcher = tileStitcher(tiles)
+
+# Stitch and segment data
+t = time()
+stitcher = tileStitcher(tiles)
 # stitcher.activate_mask(95)
 # stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
-# stitcher.compute_registration()
-# print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
-# t = time()
-# stitcher.build_sparse_graphs()
-# print('Elapsed time build sparse graph: {:.2f} ms.'.format((time() - t)*1000))
-# t = time()
-# stitcher.optimize_sparse_graphs()
-# print('Elapsed time optimize graph: {:.2f} ms.'.format((time() - t)*1000))
-# stitcher.plot_min_trees(annotate=True)
-# t = time()
-# reg_rel_map, reg_abs_map = stitcher.produce_registration_map()
-# print('Elapsed time reg map: {:.2f} ms.'.format((time() - t)*1000))
-# t = time()
-# stitcher.build_database(tiles)
-# print('Elapsed time build database: {:.2f} ms.'.format((time() - t)*1000))
-# t = time()
-# stitcher.save_database(os.path.join(path, 'registration_results.csv'))
-# print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
-#
-# print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
-#
-# database = pd.read_csv(os.path.join(path, 'registration_results.csv'))
+stitcher.compute_registration()
+stitcher.plot_min_trees(annotate=True)
+stitcher.save_database(os.path.join(path, 'registration_results.csv'))
+print('\n\nTOTAL elapsed time for parsing, stitching and segmenting: {:.2f} s.'.format(time() - t_ini))
 
+# Display registered tiles
+viewer = tileViewer(tiles, stitcher.database)
+viewer.display_all_tiles(level_delta=0, contrast_limits=[0, 1000])
 
+# Merge data
 database = pd.read_csv(os.path.join(path, 'registration_results.csv'))
-from pipapr.segmenter import tileCells
+merger = tileMerger(database, frame_size=2048, n_planes=2008, type='apr')
+merger.set_downsample(4)
+merger.initialize_merged_array()
+merger.merge_max(mode='constant')
+merger.equalize_hist(method='opencv')
+merger.crop(background=167, ylim=[0, 733])
+
+# Display merged data
+fig, ax = plt.subplots(1, 3)
+ax[0].imshow(merger.merged_data[250], cmap='gray')
+ax[0].set_title('YX')
+ax[1].imshow(merger.merged_data[:, 400, :], cmap='gray')
+ax[1].set_title('ZX')
+ax[2].imshow(merger.merged_data[:, :, 400], cmap='gray')
+ax[2].set_title('ZY')
+
+
+# Register merged data to the atlas
+pixel_size = [5, 5.26, 5.26]
+# atlaser = tileAtlaser(merger, pixel_size)
+# atlasing_param = {"atlas": "allen_mouse_25um",
+#                   "affine-n-steps": 6,
+#                   "affine-use-n-steps": 5,
+#                   "freeform-n-steps": 6,
+#                   "freeform-use-n-steps": 4,
+#                   "bending-energy-weight": 0.95,
+#                   "grid-spacing": -10,
+#                   "smoothing-sigma-reference": -1.0,
+#                   "smoothing-sigma-floating": -1.0,
+#                   "histogram-n-bins-floating": 128,
+#                   "histogram-n-bins-reference": 128,
+#                   "n-free-cpus": 4,
+#                   "debug": ''}
+# atlaser.register_to_atlas(output_dir='/home/jules/Desktop/test_atlasing',
+#                           orientation='spr',
+#                           **atlasing_param)
+
+# Merge cells and create a database of the full volume
+database = pd.read_csv(os.path.join(path, 'registration_results.csv'))
 cells = tileCells(tiles, database)
 cells.extract_and_merge_cells()
 
-viewer = tileViewer(tiles, database, cells=cells.cells)
-coords = []
-for i in range(2):
-    for j in range(2):
-        coords.append([i, j])
-coords = np.array(coords)
-viewer.display_tiles(coords, level_delta=0, contrast_limits=[0, 1000])
+atlaser = tileAtlaser.from_atlas(atlas= '/home/jules/Desktop/test_atlasing/atlas/registered_atlas.tiff',
+                                 original_pixel_size=pixel_size,
+                                 downsample=4)
+cells_id = atlaser.get_cells_id(cells)
+cells_per_regions = atlaser.get_ontology_mapping(cells_id, 0)
+
+ncell = atlaser.get_cells_number_per_region(cells_id)
+dcell = atlaser.get_cells_density_per_region(cells_id)
+dcell2 = atlaser.get_cells_density(cells.cells, 5)

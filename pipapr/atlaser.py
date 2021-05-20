@@ -5,35 +5,59 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
+import pandas as pd
 from skimage.io import imread, imsave
 from pipapr.stitcher import tileMerger
 import numpy as np
 import os
 from pathlib import Path
+from allensdk.core.reference_space_cache import ReferenceSpaceCache
 
 class tileAtlaser():
 
     def __init__(self,
                  original_pixel_size: (np.array, list),
-                 merger: (tileMerger, None) = None,
-                 downsample = None):
+                 downsample: int,
+                 atlas=None,
+                 merger=None):
 
-        if merger is not None:
-            # Instantiating with a merger object for atlasing
-            self.downsample = merger.downsample
-            self.level_delta = merger.level_delta
-            self.merged_data = merger.merged_data
-            self.merger = merger
-        else:
-            # Instantiating without a merger for loading an atlas
-            if downsample is None:
-                raise ValueError('Error: instantiating tileAtlaser without a merger requires to pass the downsampling that was used.')
-            self.downsample = downsample
-
+        self.downsample = downsample
         self.pixel_size_registered_atlas = np.array([25, 25, 25])
         self.pixel_size_data = np.array(original_pixel_size) # Z Y X
+        self.merger = merger
+        self.z_downsample = self.pixel_size_registered_atlas[0] / self.pixel_size_data[0]
+        self.y_downsample = self.pixel_size_registered_atlas[1] / self.pixel_size_data[1]
+        self.x_downsample = self.pixel_size_registered_atlas[2] / self.pixel_size_data[2]
 
-        self.atlas = None
+        if atlas is not None:
+            if isinstance(atlas, str):
+                self.load_atlas(atlas)
+            elif isinstance(atlas, np.array):
+                self.atlas = atlas
+            else:
+                raise TypeError('Error: atlas must be a path or a numpy array.')
+
+    @classmethod
+    def from_merger(cls,
+                   merger: tileMerger,
+                   original_pixel_size: (np.array, list)):
+
+        return cls(original_pixel_size=original_pixel_size,
+                   downsample=merger.downsample,
+                   atlas=None,
+                   merger=merger)
+
+    @classmethod
+    def from_atlas(cls,
+                  atlas: (np.array, str),
+                  downsample,
+                  original_pixel_size: (np.array, list)):
+
+        return cls(original_pixel_size=original_pixel_size,
+                   downsample=downsample,
+                   atlas=atlas,
+                   merger=None)
+
 
     def load_atlas(self, path):
         """
@@ -50,9 +74,7 @@ class tileAtlaser():
 
         self.atlas = imread(path)
         self.atlas = np.swapaxes(self.atlas, 0, 1)
-        self.z_downsample = self.pixel_size_registered_atlas[0] / self.pixel_size_data[0]
-        self.y_downsample = self.pixel_size_registered_atlas[1] / self.pixel_size_data[1]
-        self.x_downsample = self.pixel_size_registered_atlas[2] / self.pixel_size_data[2]
+        self.atlas = np.flip(self.atlas, 1)
 
     def register_to_atlas(self,
                           output_dir='./',
@@ -97,15 +119,15 @@ class tileAtlaser():
         # Execute brainreg
         os.system(command)
 
-        self.atlas = self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tif'))
+        self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tif'))
 
     def get_cells_id(self, cells):
 
-        ids = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
+        labels = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 1]/self.y_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 2]/self.x_downsample).astype('uint64')]
 
-        return ids
+        return labels
 
     def get_loc_id(self, x, y, z):
         """
@@ -123,3 +145,112 @@ class tileAtlaser():
         """
 
         return self.atlas[int(z / self.z_downsample), int(y / self.y_downsample), int(x / self.x_downsample)]
+
+    def get_ontology_mapping(self, labels, n=0):
+        """
+        Get the mapping between area ID and name with Allen SDK.
+
+        Parameters
+        ----------
+        labels: (array) array of labels to group by ID and fetch area name.
+        n: (int) number of parent area to group for.
+
+        Returns
+        -------
+        area_count: (dict) area names with the counts.
+        """
+        rspc = ReferenceSpaceCache(25, 'annotation/ccf_2017', manifest='manifest.json')
+        tree = rspc.get_structure_tree(structure_graph_id=1)
+        name_map = tree.get_name_map()
+        ancestor_map = tree.get_ancestor_id_map()
+        area_count = {}
+        n_not_found = 0
+        area_unknown = {}
+        id_count = {}
+        for l in labels:
+            try:
+                ids = ancestor_map[int(l)]
+            except KeyError:
+                n_not_found += 1
+                if 'unknown' not in area_count:
+                    area_count['unknown'] = 1
+                else:
+                    area_count['unknown'] += 1
+                if int(l) not in area_unknown:
+                    area_unknown[int(l)] = 1
+                else:
+                    area_unknown[int(l)] += 1
+                continue
+
+            if len(ids) <= 2:
+                id = ids[0]
+            elif len(ids) <= n:
+                id = ids[-2]
+            else:
+                id = ids[n if n < len(ids) - 1 else n - 1]
+
+            # Get the name and store it
+            name = name_map[id]
+            if name not in area_count:
+                area_count[name] = 1
+            else:
+                area_count[name] += 1
+
+        # Display summary
+        if n == 0:
+            if n_not_found > 0:
+                print('\nUnknown ontology ID found for {} objects ({:0.2f}%).'.format(n_not_found,
+                                                                                      n_not_found/len(labels)*100))
+                print('Unknown ontology IDs and occurrences:\n')
+                print(area_unknown)
+            else:
+                print('\nAll objects were assigned to an atlas ontology category.\n')
+
+        return pd.DataFrame.from_dict(area_count, orient='index')
+
+    def get_cells_number_per_region(self, cells_id):
+
+        # Remove 0s
+        cells_id = np.delete(cells_id, cells_id==0)
+        id_count = {}
+        for id in cells_id:
+            if id not in id_count:
+                id_count[id] = 1
+            else:
+                id_count[id] += 1
+
+        heatmap = np.zeros_like(self.atlas)
+        for id, counts in id_count.items():
+            heatmap[self.atlas==id] = counts
+
+        return heatmap
+
+    def get_cells_density_per_region(self, cells_id):
+
+        # Remove 0s
+        cells_id = np.delete(cells_id, cells_id == 0)
+        id_count = {}
+        for id in cells_id:
+            if id not in id_count:
+                id_count[id] = 1
+            else:
+                id_count[id] += 1
+
+        heatmap = np.zeros_like(self.atlas, dtype='float64')
+        for id, counts in id_count.items():
+            tmp = (self.atlas == id)
+            heatmap[tmp] = counts/np.sum(tmp)
+
+        return heatmap
+
+    def get_cells_density(self, cells, kernel_size):
+
+        heatmap = np.zeros((self.atlas.shape)).astype(int)
+        for i in range(cells.shape[0]):
+            z = int(cells[i, 0]/self.z_downsample)
+            y = int(cells[i, 1]/self.y_downsample)
+            x = int(cells[i, 2]/self.x_downsample)
+            heatmap[z, y, x] = 1
+
+        from skimage.filters import gaussian
+        return gaussian(heatmap, sigma=kernel_size)

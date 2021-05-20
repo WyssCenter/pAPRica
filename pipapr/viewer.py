@@ -16,6 +16,8 @@ from napari.layers import Image, Labels, Points
 from pipapr.parser import tileParser
 from pipapr.stitcher import tileStitcher
 from pipapr.loader import tileLoader
+from matplotlib.colors import LogNorm
+import matplotlib.pyplot as plt
 
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
@@ -129,6 +131,30 @@ def display_segmentation(apr, parts, mask):
         viewer.add_layer(mask_nap)
 
 
+def display_heatmap(u, atlas=None, data=None, log=False):
+
+    # If u is 2D then use matplotlib so we have a scale bar
+    if u.ndim == 2:
+        fig, ax = plt.subplots()
+        if log:
+            h = ax.imshow(u, norm=LogNorm(), cmap='jet')
+        else:
+            h = ax.imshow(u, cmap='jet')
+        cbar = fig.colorbar(h, ax=ax)
+        cbar.set_label('Number of detected cells')
+        ax.set_xticks([])
+        ax.set_yticks([])
+    # If u is 3D then use napari but no colorbar for now
+    elif u.ndim == 3:
+        with napari.gui_qt():
+            viewer = napari.Viewer()
+            viewer.add_image(u, colormap='inferno', name='Heatmap', blending='additive', opacity=0.7)
+            if atlas is not None:
+                viewer.add_labels(atlas, name='Atlas regions')
+            if data is not None:
+                viewer.add_image(data, name='Intensity data', blending='additive', scale=np.array(u.shape)/np.array(data.shape))
+
+
 class tileViewer():
     """
     Class to display the registration and segmentation using Napari.
@@ -137,7 +163,9 @@ class tileViewer():
                  tiles: tileParser,
                  database: (tileStitcher, pd.DataFrame, str),
                  segmentation: bool=False,
-                 cells=None):
+                 cells=None,
+                 atlaser=None):
+
         self.tiles = tiles
 
         if isinstance(database, tileStitcher):
@@ -156,6 +184,7 @@ class tileViewer():
         self.segmentation = segmentation
         self.loaded_segmentation = {}
         self.cells = cells
+        self.atlaser = atlaser
 
     def display_all_tiles(self, level_delta=0, **kwargs):
         """
@@ -202,6 +231,10 @@ class tileViewer():
         if self.cells is not None:
             par = apr.get_parameters()
             layers.append(Points(self.cells, opacity=0.7, name='Cells center', scale=[par.dz, par.dx, par.dy]))
+
+        if self.atlaser is not None:
+            layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
+                                 scale=[self.atlaser.z_downsample, self.atlaser.y_downsample, self.atlaser.x_downsample]))
 
         # Display layers
         display_layers(layers)

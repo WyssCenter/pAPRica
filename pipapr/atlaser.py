@@ -1,4 +1,5 @@
 """
+Module containing classes and functions relative to Atlasing.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -14,12 +15,28 @@ from pathlib import Path
 from allensdk.core.reference_space_cache import ReferenceSpaceCache
 
 class tileAtlaser():
+    """
+    Class used for registering a dataset to the Atlas and do some post processing using the Atlas (e.g count cells
+    per region).
+
+    It can be instantiated using a tileMerger object (for registration using Brainreg) or directly with a
+    previously registered Atlas.
+    """
 
     def __init__(self,
                  original_pixel_size: (np.array, list),
                  downsample: int,
                  atlas=None,
                  merger=None):
+        """
+        Parameters
+        ----------
+        original_pixel_size: (np.array, list) pixel size in µm on the original data
+        downsample: (int) downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
+                            for registration to the Atlas.
+        atlas: (np.array, str) atlas data or path for loading the atlas data
+        merger: (tileMerger) tileMerger object
+        """
 
         self.downsample = downsample
         self.pixel_size_registered_atlas = np.array([25, 25, 25])
@@ -41,6 +58,19 @@ class tileAtlaser():
     def from_merger(cls,
                    merger: tileMerger,
                    original_pixel_size: (np.array, list)):
+        """
+        Constructor from a tileMerger object. Typically to perform the registration to the Atlas on
+        autofluorescence data.
+
+        Parameters
+        ----------
+        merger: (tileMerger) tileMerger object
+        original_pixel_size: (np.array, list) pixel size in µm on the original data
+
+        Returns
+        -------
+        tileAtlaser object
+        """
 
         return cls(original_pixel_size=original_pixel_size,
                    downsample=merger.downsample,
@@ -52,6 +82,21 @@ class tileAtlaser():
                   atlas: (np.array, str),
                   downsample,
                   original_pixel_size: (np.array, list)):
+        """
+        Constructor from a previously computed Atlas. Typically to perform postprocessing using an Atlas (e.g.
+        count cells per brain region).
+
+        Parameters
+        ----------
+        atlas: (np.array, str) atlas data or path for loading the atlas data
+        downsample: (int) downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
+                            for registration to the Atlas.
+        original_pixel_size: (np.array, list) pixel size in µm on the original data
+
+        Returns
+        -------
+
+        """
 
         return cls(original_pixel_size=original_pixel_size,
                    downsample=downsample,

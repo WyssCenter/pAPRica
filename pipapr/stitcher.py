@@ -1,4 +1,5 @@
 """
+Module containing classes and functions relative to Stitching.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -25,8 +26,29 @@ from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
 
 class tileStitcher():
+    """
+    Class used to perform the stitching. The stitching is performed in 4 steps:
+
+    1. The pairwise registration parameters of each neighboring tile is computed on the max-projection
+    2. A sparse graph (edges = tiles and vertex = registration between neighboring tiles) is constructed to store
+       the registration parameters (displacements and reliability)
+    3. The sparse graph is optimized to satisfy the constraints (every loop in the graph should sum to 0) using the
+       maximum spanning tree on the reliability estimation.
+    4. The maximum spanning tree is parsed to extract optimal tile positions solution.
+
+    The beauty of this method is that it scales well with increasing dataset sizes and because the final optimization
+    is very fast and does not require to reload the data.
+
+    """
+    # TODO: store the max-proj to avoid loading apr data twice.
     def __init__(self,
                  tiles: tileParser):
+        """
+
+        Parameters
+        ----------
+        tiles: (tileParser) tileParser object containing the dataset to stitch.
+        """
         
         self.tiles = tiles
         self.ncol = tiles.ncol
@@ -126,10 +148,6 @@ class tileStitcher():
         Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
         the redundancy).
 
-        Parameters
-        ----------
-        tgraph: (tileGraph object) stores pair-wise registration to further perform the global optimization.
-
         """
         for t in self.tiles:
             tile = tileLoader(t)
@@ -217,6 +235,10 @@ class tileStitcher():
         Plot the graph for each direction (H, D, V). This method needs to be called after the graph
         optimization.
 
+        Parameters
+        ----------
+        annotate: (bool) control if annotation are drawn on the graph
+
         """
 
         if self.graph_relia_H is None:
@@ -265,6 +287,10 @@ class tileStitcher():
         """
         Plot the minimum spanning tree for each direction (H, D, V). This method needs to be called after the graph
         optimization.
+
+        Parameters
+        ----------
+        annotate: (bool) control if annotation are drawn on the graph
 
         """
 
@@ -384,26 +410,6 @@ class tileStitcher():
             raise TypeError('Error: database can''t be build if the registration map has not been computed.'
                             ' Please use produce_registration_map() method first.')
 
-        # self.database = pd.DataFrame(columns=['path',
-        #                                     'row',
-        #                                     'col',
-        #                                     'dH',
-        #                                     'dV',
-        #                                     'dD',
-        #                                     'ABS_H',
-        #                                     'ABS_V',
-        #                                     'ABS_D'])
-        # for i in range(self.n_vertex):
-        #     row = self.tiles[i]['row']
-        #     col = self.tiles[i]['col']
-        #     self.database.loc[i] = [self.tiles[i]['path'], row, col,
-        #                             self.registration_map_rel[0, row, col],
-        #                             self.registration_map_rel[1, row, col],
-        #                             self.registration_map_rel[2, row, col],
-        #                             self.registration_map_abs[0, row, col],
-        #                             self.registration_map_abs[1, row, col],
-        #                             self.registration_map_abs[2, row, col]]
-
         database_dict = {}
         for i in range(self.n_vertex):
             row = self.tiles[i]['row']
@@ -428,6 +434,10 @@ class tileStitcher():
         """
         Save database at the given path. The database must be built before calling this method.
 
+        Parameters
+        ----------
+        path: (str) path to save the database.
+
         """
 
         if self.database is None:
@@ -440,6 +450,10 @@ class tileStitcher():
         """
         Use dill to store a tgraph object.
 
+        Parameters
+        ----------
+        path: (str) path to save the database.
+
         """
         if path[-4:] != '.pkl':
             path = path + '.pkl'
@@ -450,6 +464,16 @@ class tileStitcher():
     def _get_ind(self, ind_from, ind_to):
         """
         Returns the ind in the original graph which corresponds to (ind_from, ind_to) in the minimum spanning tree.
+
+        Parameters
+        ----------
+        ind_from: (int) starting node in the directed graph
+        ind_to: (int) ending node in the directed graph
+
+        Returns
+        ----------
+        (int) corresponding ind in the original graph
+
         """
 
         ind = None
@@ -473,8 +497,9 @@ class tileStitcher():
 
         Parameters
         ----------
-        proj1: (list of arrays) max-projections for tile 1
-        proj2: (list of arrays) max-projections for tile 2
+        proj1: (list of np.array) max-projections for tile 1
+        proj2: (list of np.array) max-projections for tile 2
+        upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
 
         Returns
         -------
@@ -514,14 +539,13 @@ class tileStitcher():
             dy = dzy[1]
             ry = error_zy
 
-        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #     ax[0].imshow(proj1[i], cmap='gray')
-        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-        #     ax[1].imshow(proj2[i], cmap='gray')
-        #     ax[1].set_title(title)
-        #
         # if self.row==0 and self.col==0:
+        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #         ax[0].imshow(proj1[i], cmap='gray')
+        #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #         ax[1].imshow(proj2[i], cmap='gray')
+        #         ax[1].set_title(title)
         #     print('ok')
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
@@ -535,6 +559,7 @@ class tileStitcher():
         ----------
         proj1: (list of arrays) max-projections for tile 1
         proj2: (list of arrays) max-projections for tile 2
+        upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
 
         Returns
         -------
@@ -589,24 +614,48 @@ class tileStitcher():
             dy = dzy[1]
             ry = error_zy
 
-        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #     ax[0].imshow(proj1[i], cmap='gray')
-        #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-        #     ax[1].imshow(proj2[i], cmap='gray')
-        #     ax[1].set_title(title)
-        #
         # if self.row==0 and self.col==0:
+        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #         ax[0].imshow(proj1[i], cmap='gray')
+        #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+        #         ax[1].imshow(proj2[i], cmap='gray')
+        #         ax[1].set_title(title)
         #     print('ok')
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
     def _get_registration_error(self, proj1, proj2):
+        """
+        Return registration error estimate using the peak height.
+
+        Parameters
+        ----------
+        proj1: (np.array) first projection
+        proj2: (np.array) second projection
+
+        Returns
+        -------
+        (float) registration error estimate
+
+        """
         return np.sqrt(1-correlate(proj1, proj2).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
 
     def _get_max_proj_apr(self, apr, parts, patch, plot=False):
         """
-        Get the maximum projection from 3D APR data.
+        Compute maximum projection on 3D APR data.
+
+        Parameters
+        ----------
+        apr: (pyapr.APR) apr tree
+        parts: (pyapr.ParticlData) apr particle
+        patch: (pyapr.patch) patch for computing the projection only on the overlapping area.
+        plot: (bool) control data plotting
+
+        Returns
+        -------
+        (list of np.array) maximum intensity projection in each 3 dimension.
+
         """
         proj = []
         for d in range(3):
@@ -626,7 +675,18 @@ class tileStitcher():
     def _compute_east_registration(self, u, v):
         """
         Compute the registration between the current tile and its eastern neighbor.
+
+        Parameters
+        ----------
+        u: (list) current tile
+        v: (list) neighboring tile
+
+        Returns
+        -------
+        None
+
         """
+
         apr_1, parts_1 = u
         apr_2, parts_2 = v
 
@@ -638,15 +698,14 @@ class tileStitcher():
         patch.y_end = self.overlap
         proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
-        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
-        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #     ax[0].imshow(proj1[i], cmap='gray')
-        #     ax[0].set_title('EAST')
-        #     ax[1].imshow(proj2[i], cmap='gray')
-        #     ax[1].set_title(title)
-
         # if self.row==0 and self.col==1:
+        #     proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #         ax[0].imshow(proj1[i], cmap='gray')
+        #         ax[0].set_title('EAST')
+        #         ax[1].imshow(proj2[i], cmap='gray')
+        #         ax[1].set_title(title)
         #     print('ok')
 
         if self.mask:
@@ -659,6 +718,16 @@ class tileStitcher():
     def _compute_south_registration(self, u, v):
         """
         Compute the registration between the current tile and its southern neighbor.
+
+        Parameters
+        ----------
+        u: (list) current tile
+        v: (list) neighboring tile
+
+        Returns
+        -------
+        None
+
         """
         apr_1, parts_1 = u
         apr_2, parts_2 = v
@@ -671,16 +740,15 @@ class tileStitcher():
         patch.x_end = self.overlap
         proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
-        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
-        # for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #     ax[0].imshow(proj1[i], cmap='gray')
-        #     ax[0].set_title('EAST')
-        #     ax[1].imshow(proj2[i], cmap='gray')
-        #     ax[1].set_title(title)
-
         # if self.row==0 and self.col==1:
         #     print('ok')
+        #     proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #         ax[0].imshow(proj1[i], cmap='gray')
+        #         ax[0].set_title('EAST')
+        #         ax[1].imshow(proj2[i], cmap='gray')
+        #         ax[1].set_title(title)
 
         if self.mask:
             return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
@@ -691,7 +759,20 @@ class tileStitcher():
 
 
 class tileMerger():
+    """
+    Class to merge tiles and create a stitched volume. Typically used at a lower resolution for registering
+    the sample to an Atlas.
+
+    """
     def __init__(self, tiles, database, n_planes):
+        """
+
+        Parameters
+        ----------
+        tiles:  (tileParser) tileParser object containing the dataset to merge.
+        database: (pd.DataFrame, str) database or path to the database containing the registered tile position
+        n_planes: (int) number of planes per files.
+        """
 
         if isinstance(database, str):
             self.database = pd.read_csv(database)
@@ -715,6 +796,19 @@ class tileMerger():
         self.merged_data = None
 
     def merge_additive(self, mode='constant'):
+        """
+        Perform merging with an additive algorithm for overlapping area. Maximum merging should be prefered to
+        avoid integer overflowing and higher signals and the overlapping areas.
+
+        Parameters
+        ----------
+        mode: (str) APR reconstruction type among ('constant', 'smooth', 'level')
+
+        Returns
+        -------
+        None
+
+        """
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()
@@ -738,6 +832,18 @@ class tileMerger():
             self.merged_data = self.merged_data.astype('uint16')
 
     def merge_max(self, mode='constant'):
+        """
+        Perform merging with a maximum algorithm for overlapping area.
+
+        Parameters
+        ----------
+        mode: (str) APR reconstruction type among ('constant', 'smooth', 'level')
+
+        Returns
+        -------
+        None
+
+        """
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()
@@ -769,7 +875,18 @@ class tileMerger():
         Add a black mask around the brain (rather than really cropping which makes the overlays complicated in
         a later stage).
 
+        Parameters
+        ----------
+        background: (int) constant value to replace the cropped area with.
+        xlim: (list) x limits for cropping
+        ylim: (list) y limits for cropping
+        zlim: (list) z limits for cropping
+
+        Returns
+        -------
+        None
         """
+
         if self.merged_data is None:
             raise TypeError('Error: please merge data before cropping.')
 
@@ -793,6 +910,14 @@ class tileMerger():
         """
         Perform histogram equalization to improve the contrast on merged data.
         Both OpenCV (only 2D) and Skimage (3D but 10 times slower) are available.
+
+        Parameters
+        ----------
+        method: (str) method for performing histogram equalization among 'skimage' and 'opencv'.
+
+        Returns
+        -------
+        None
         """
 
         if self.merged_data is None:
@@ -812,6 +937,9 @@ class tileMerger():
         """
         Initialize the merged array in accordance with the asked downsampling.
 
+        Returns
+        -------
+        None
         """
 
         self.nx = int(np.ceil(self._get_nx() / self.downsample))
@@ -828,6 +956,10 @@ class tileMerger():
         ----------
         downsample: (int) downsample factor
 
+        Returns
+        -------
+        None
+
         """
 
         # TODO: find a more rigorous way of enforcing this. (Probably requires that the APR is loaded).
@@ -838,13 +970,34 @@ class tileMerger():
         self.level_delta = int(-np.log2(self.downsample))
 
     def _get_nx(self):
+        """
+        Compute the merged array size for x dimension.
+
+        Returns
+        -------
+        (int) x size for merged array
+        """
         x_pos = self.database['ABS_H'].to_numpy()
         return x_pos.max() - x_pos.min() + self.frame_size
 
     def _get_ny(self):
+        """
+        Compute the merged array size for y dimension.
+
+        Returns
+        -------
+        (int) y size for merged array
+        """
         y_pos = self.database['ABS_V'].to_numpy()
         return y_pos.max() - y_pos.min() + self.frame_size
 
     def _get_nz(self):
+        """
+        Compute the merged array size for y dimension.
+
+        Returns
+        -------
+        (int) y size for merged array
+        """
         z_pos = self.database['ABS_D'].to_numpy()
         return z_pos.max() - z_pos.min() + self.n_planes

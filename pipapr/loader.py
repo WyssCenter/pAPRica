@@ -1,4 +1,5 @@
 """
+Module containing classes and functions relative to data loading.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -14,8 +15,7 @@ import pyapr
 
 class tileLoader():
     """
-    Class to load each tile and neighboring tiles data, perform the registration and segmentation.
-    A tileGraph object must be initialized and passed for computing the registration.
+    Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.
 
     Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """

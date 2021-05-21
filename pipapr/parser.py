@@ -1,4 +1,5 @@
 """
+Module containing classes and functions relative to Parsing.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -12,10 +13,11 @@ import numpy as np
 
 class tileParser():
     """
-    Class to parse the data.
+    Class used to parse the data.
     """
     def __init__(self, path, frame_size, overlap, ftype):
         self.path = path
+        # TODO: automatically determine data type and automatically convert if not APR.
         self.type = ftype
         self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
@@ -27,7 +29,6 @@ class tileParser():
         self.path_list = self._get_path_list()
         self.overlap = overlap
         self.frame_size = frame_size
-        self.multichannel = False
         self._print_info()
 
     def _print_info(self):

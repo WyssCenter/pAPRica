@@ -1,4 +1,5 @@
 """
+Module containing classes and functions relative to Viewing.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -100,6 +101,17 @@ def apr_to_napari_Labels(apr: pyapr.APR,
 
 
 def display_layers(layers):
+    """
+    Display a list of layers using Napari.
+
+    Parameters
+    ----------
+    layers: (list) list of layers to display
+
+    Returns
+    -------
+    napari viewer.
+    """
     with napari.gui_qt():
         viewer = napari.Viewer()
         for layer in layers:
@@ -116,11 +128,11 @@ def display_segmentation(apr, parts, mask):
     ----------
     apr: (APR) apr object
     parts: (ParticleData) particle object representing the image
-    mask: (ParticleData) particle object reprenting the segmentation mask/connected component
+    mask: (ParticleData) particle object representing the segmentation mask/connected component
 
     Returns
     -------
-
+    None
     """
     image_nap = apr_to_napari_Image(apr, parts, name='APR')
     mask_nap = apr_to_napari_Labels(apr, mask, name='Segmentation')
@@ -131,29 +143,42 @@ def display_segmentation(apr, parts, mask):
         viewer.add_layer(mask_nap)
 
 
-def display_heatmap(u, atlas=None, data=None, log=False):
+def display_heatmap(heatmap, atlas=None, data=None, log=False):
+    """
+    Display a heatmap (e.g. cell density) that can be overlaid on intensity data and atlas.
+    Parameters
+    ----------
+    heatmap: (np.array) array containing the heatmap to be displayed
+    atlas: (np.array) array containing the atlas which will be automatically scaled to the heatmap
+    data: (np.array) array containing the data.
+    log: (bool) plot in logscale (only used for 2D).
+
+    Returns
+    -------
+    None
+    """
 
     # If u is 2D then use matplotlib so we have a scale bar
-    if u.ndim == 2:
+    if heatmap.ndim == 2:
         fig, ax = plt.subplots()
         if log:
-            h = ax.imshow(u, norm=LogNorm(), cmap='jet')
+            h = ax.imshow(heatmap, norm=LogNorm(), cmap='jet')
         else:
-            h = ax.imshow(u, cmap='jet')
+            h = ax.imshow(heatmap, cmap='jet')
         cbar = fig.colorbar(h, ax=ax)
         cbar.set_label('Number of detected cells')
         ax.set_xticks([])
         ax.set_yticks([])
     # If u is 3D then use napari but no colorbar for now
-    elif u.ndim == 3:
+    elif heatmap.ndim == 3:
         with napari.gui_qt():
             viewer = napari.Viewer()
-            viewer.add_image(u, colormap='inferno', name='Heatmap', blending='additive', opacity=0.7)
+            viewer.add_image(heatmap, colormap='inferno', name='Heatmap', blending='additive', opacity=0.7)
             if atlas is not None:
                 viewer.add_labels(atlas, name='Atlas regions', opacity=0.7)
             if data is not None:
                 viewer.add_image(data, name='Intensity data', blending='additive',
-                                 scale=np.array(u.shape)/np.array(data.shape), opacity=0.7)
+                                 scale=np.array(heatmap.shape)/np.array(data.shape), opacity=0.7)
 
 
 class tileViewer():
@@ -161,11 +186,21 @@ class tileViewer():
     Class to display the registration and segmentation using Napari.
     """
     def __init__(self,
-                 tiles: (tileParser, list),
+                 tiles: (tileParser),
                  database: (tileStitcher, pd.DataFrame, str),
                  segmentation: bool=False,
                  cells=None,
                  atlaser=None):
+        """
+
+        Parameters
+        ----------
+        tiles: (tileParser) tileParser object containing the dataset to be displayed.
+        database: database containing the tile positions.
+        segmentation: (bool) option to also display the segmentation (connected component) data.
+        cells: (np.array) cells center to be displayed.
+        atlaser: (tileAtlaser) tileAtlaser object containing the Atlas to be displayed.
+        """
 
         self.tiles = tiles
 
@@ -190,6 +225,16 @@ class tileViewer():
     def display_all_tiles(self, level_delta=0, **kwargs):
         """
         Display all parsed tiles.
+
+        Parameters
+        ----------
+        level_delta: (int) down sampling parameter for APRSlicer
+                            (0: full resolution, -1: 2x downsampling, -2: 4x downsampling..etc)
+        kwargs: (dict) dictionnary passed to Napari for custom option
+
+        Returns
+        -------
+        None
         """
 
         # Compute layers to be displayed by Napari
@@ -242,7 +287,18 @@ class tileViewer():
 
     def display_tiles(self, coords, level_delta=0, **kwargs):
         """
-        Display the tiles with coordinates given in coords (np array).
+        Display tiles only for coordinates specified in coords.
+
+        Parameters
+        ----------
+        coords: (np.array) array containing the coords of tiles to be displayed.
+        level_delta: (int) down sampling parameter for APRSlicer
+                            (0: full resolution, -1: 2x downsampling, -2: 4x downsampling..etc)
+        kwargs: (dict) dictionnary passed to Napari for custom option
+
+        Returns
+        -------
+        None
         """
         # Check that coords is (n, 2) or (2, n)
         if coords.size == 2:
@@ -343,20 +399,6 @@ class tileViewer():
             return u
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
-
-    def _get_apr(self, u):
-        # TODO: remove this by saving APR at previous steps?
-        # Parameters are hardcoded for now
-        par = pyapr.APRParameters()
-        par.auto_parameters = False  # really heuristic and not working
-        par.sigma_th = 26.0
-        par.grad_th = 3.0
-        par.Ip_th = 253.0
-        par.rel_error = 0.2
-        par.gradient_smoothing = 2
-
-        # Convert data to APR
-        return pyapr.converter.get_apr(image=u, params=par, verbose=False)
 
     def _get_tile_position(self, row, col):
         """

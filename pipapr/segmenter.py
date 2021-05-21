@@ -1,4 +1,5 @@
 """
+Module containing classes and functions relative to Segmentation.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -18,6 +19,12 @@ import cv2 as cv
 from skimage.io import imread
 
 class tileSegmenter():
+    """
+    Class used to segment tiles. It is instantiated with a tileLoader object, a previously trained classifier,
+    a function to compute features (the same features used to train the classifier and a function to get the
+    post processed connected component for the classifier output.
+
+    """
 
     def __init__(self,
                  tile: tileLoader,
@@ -36,7 +43,7 @@ class tileSegmenter():
 
         self.path = tile.path
         self.data = tile.data
-        self.is_tile_loaded = tile.data is not None
+        self.is_tile_loaded = (tile.data is not None)
         # Load classifier
         self.clf = load(path_classifier)
         # Store function to compute features
@@ -48,7 +55,18 @@ class tileSegmenter():
         """
         Predict particle class with the trained classifier clf on the precomputed features f using a
         blocked strategy to avoid memory segfault.
+
+        Parameters
+        ----------
+        x: (np.array) features (n_particle, n_features) for particle prediction
+        n_parts: (int) number of particles in the batch to predict
+        verbose: (bool) control function verbosity
+
+        Returns
+        -------
+        Class prediction for each particle.
         """
+
         # Predict on numpy array by block to avoid memory issues
         if verbose:
             t = time()
@@ -117,10 +135,24 @@ class tileSegmenter():
         pyapr.io.write(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, cc)
 
 class tileCells():
+    """
+    Class for storing the high level cell information (e.g. cell center position).
+    It allows to extract cells position and merge them across multiple tiles taking into account the precomputed
+    registration.
+    """
 
     def __init__(self,
                  tiles: tileParser,
                  database: (str, pd.DataFrame)):
+        """
+
+        Parameters
+        ----------
+        tiles: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
+        database (pd.DataFrame, str) dataframe (or path to the csv file) containing the registration parameters
+                        to correctly place each tile.
+
+        """
 
         # If database is a path then load database, if it's a DataFrame keep it as it is.
         if isinstance(database, str):
@@ -147,6 +179,21 @@ class tileCells():
         self.atlas = None
 
     def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5):
+        """
+        Function to extract cell positions in each tile and merging across all tiles.
+        Identical cells on overlapping area are automatically detected using Flann method.
+
+        Parameters
+        ----------
+        lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
+                            above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
+                            a second detection on the neighboring tile.
+        distance_max: (float) maximum distance in pixel for two cells to be considered the same.
+
+        Returns
+        -------
+        None
+        """
         
         for t in self.tiles:
             tile = tileLoader(t)
@@ -164,9 +211,39 @@ class tileCells():
                 self._merge_cells(tile, apr, cc, parts, lowe_ratio=lowe_ratio, distance_max=distance_max)
 
     def save_cells(self, output_path):
+        """
+        Save cells as a CSV file.
+
+        Parameters
+        ----------
+        output_path: (str) path for saving the CSV file.
+
+        Returns
+        -------
+        None
+        """
+
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
 
     def _merge_cells(self, tile, apr, cc, parts, lowe_ratio, distance_max):
+        """
+        Function to merge cells on a tile to the final cells list and remove duplicate.
+
+        Parameters
+        ----------
+        tile: (tileLoader) tile from which to merge cells
+        apr: (pyapr.APR) apr tree of the tile
+        cc: (pyapr.LongParticle) connected component particle data of the tile file
+        parts: (pyapr.ShortParticle, pyapr.FloatParticle) particle data of the tile file
+        lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
+                            above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
+                            a second detection on the neighboring tile.
+        distance_max: (float) maximum distance in pixel for two cells to be considered the same.
+
+        Returns
+        -------
+        None
+        """
 
         r1 = np.max(self.cells, axis=0)
         r2 = self._get_tile_position(tile.row, tile.col)
@@ -213,8 +290,18 @@ class tileCells():
 
     def _get_tile_position(self, row, col):
         """
-        Parse tile position in the database.
+        Function to get the absolute tile position defined by it's coordinate in the multitile set.
+
+        Parameters
+        ----------
+        row: (int) row number
+        col: (int) column number
+
+        Returns
+        -------
+        (np.array) tile absolute position
         """
+
         df = self.database
         tile_df = df[(df['row'] == row) & (df['col'] == col)]
         px = tile_df['ABS_H'].values[0]
@@ -224,6 +311,23 @@ class tileCells():
         return np.array([pz, py, px])
 
     def _filter_cells_flann(self, c1, c2, lowe_ratio=0.7, distance_max=5, verbose=False):
+        """
+        Remove cells duplicate using Flann criteria and distance threshold.
+
+        Parameters
+        ----------
+        c1: (np.array) array containing the first set cells coordinates
+        c2: (np.array) array containing the second set cells coordinates
+        lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
+                            above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
+                            a second detection on the neighboring tile.
+        distance_max: (float) maximum distance in pixel for two cells to be considered the same.
+        verbose: (bool) control function verbosity
+
+        Returns
+        -------
+        (np.array) array containing the merged sets without the duplicates.
+        """
 
         if lowe_ratio < 0 or lowe_ratio > 1:
             raise ValueError('Lowe ratio is {}, expected between 0 and 1.'.format(lowe_ratio))

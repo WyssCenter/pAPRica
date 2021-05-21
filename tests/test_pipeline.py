@@ -10,6 +10,7 @@ from pipapr.parser import tileParser
 from pipapr.stitcher import tileStitcher
 from pipapr.viewer import tileViewer
 from pipapr.segmenter import tileSegmenter
+from pipapr.segmenter import tileCells
 import os
 import numpy as np
 import pyapr
@@ -180,46 +181,27 @@ def get_cc_from_features(apr, parts_pred):
 
     return cc
 
-
+# Parameters
 path = r'../data'
 path_classifier=r'../data/random_forest_n100.joblib'
-t = time()
+
+# Parse data
 t_ini = time()
 tiles = tileParser(path, frame_size=512, overlap=128, type='apr')
-print('Elapsed time parse data: {:.2f} ms.'.format((time() - t)*1000))
 t = time()
+
+# Stitch and segment
 stitcher = tileStitcher(tiles)
 stitcher.activate_mask(99)
-# stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
+stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
 stitcher.compute_registration()
-print('Elapsed time load, segment, and compute pairwise reg: {:.2f} s.'.format(time() - t))
-t = time()
-stitcher.build_sparse_graphs()
-print('Elapsed time build sparse graph: {:.2f} ms.'.format((time() - t)*1000))
-t = time()
-stitcher.optimize_sparse_graphs()
-print('Elapsed time optimize graph: {:.2f} ms.'.format((time() - t)*1000))
-stitcher.plot_min_trees(annotate=True)
-t = time()
-reg_rel_map, reg_abs_map = stitcher.produce_registration_map()
-print('Elapsed time reg map: {:.2f} ms.'.format((time() - t)*1000))
-t = time()
-stitcher.build_database(tiles)
-print('Elapsed time build database: {:.2f} ms.'.format((time() - t)*1000))
-t = time()
 stitcher.save_database(os.path.join(path, 'registration_results.csv'))
-print('Elapsed time save database: {:.2f} ms.'.format((time() - t)*1000))
-
 print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
-#
-# from pipapr.segmenter import tileCells
-# cells = tileCells(tiles, stitcher.database)
-# cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=50)
-#
-viewer = tileViewer(tiles, stitcher.database)
-coords= []
-for i in range(4):
-    for j in range(4):
-        coords.append([i, j])
-coords = np.array(coords)
+
+# Extract cell position and merge across the whole volume.
+cells = tileCells(tiles, stitcher.database)
+cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
+
+# Display result
+viewer = tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
 viewer.display_all_tiles(level_delta=0, contrast_limits=[0, 3000])

@@ -171,7 +171,7 @@ class tileStitcher():
         self._build_sparse_graphs()
         self._optimize_sparse_graphs()
         _, _ = self._produce_registration_map()
-        self.build_database()
+        self._build_database()
 
     def _build_sparse_graphs(self):
         """
@@ -373,7 +373,7 @@ class tileStitcher():
             ax[1, i].imshow(self.registration_map_abs[i], cmap='gray')
             ax[1, i].set_title('Abs reg. map ' + d)
 
-    def build_database(self):
+    def _build_database(self):
         """
         Build the database for storing the registration parameters. This method needs to be called after
         the registration map has been produced.
@@ -383,25 +383,46 @@ class tileStitcher():
         if self.registration_map_rel is None:
             raise TypeError('Error: database can''t be build if the registration map has not been computed.'
                             ' Please use produce_registration_map() method first.')
-        self.database = pd.DataFrame(columns=['path',
-                                            'row',
-                                            'col',
-                                            'dH',
-                                            'dV',
-                                            'dD',
-                                            'ABS_H',
-                                            'ABS_V',
-                                            'ABS_D'])
+
+        # self.database = pd.DataFrame(columns=['path',
+        #                                     'row',
+        #                                     'col',
+        #                                     'dH',
+        #                                     'dV',
+        #                                     'dD',
+        #                                     'ABS_H',
+        #                                     'ABS_V',
+        #                                     'ABS_D'])
+        # for i in range(self.n_vertex):
+        #     row = self.tiles[i]['row']
+        #     col = self.tiles[i]['col']
+        #     self.database.loc[i] = [self.tiles[i]['path'], row, col,
+        #                             self.registration_map_rel[0, row, col],
+        #                             self.registration_map_rel[1, row, col],
+        #                             self.registration_map_rel[2, row, col],
+        #                             self.registration_map_abs[0, row, col],
+        #                             self.registration_map_abs[1, row, col],
+        #                             self.registration_map_abs[2, row, col]]
+
+        database_dict = {}
         for i in range(self.n_vertex):
             row = self.tiles[i]['row']
             col = self.tiles[i]['col']
-            self.database.loc[i] = [self.tiles[i]['path'], row, col,
-                                    self.registration_map_rel[0, row, col],
-                                    self.registration_map_rel[1, row, col],
-                                    self.registration_map_rel[2, row, col],
-                                    self.registration_map_abs[0, row, col],
-                                    self.registration_map_abs[1, row, col],
-                                    self.registration_map_abs[2, row, col]]
+            database_dict[i] = {'path': self.tiles[i]['path'],
+                                'row': row,
+                                'col': col,
+                                'dH': self.registration_map_rel[0, row, col],
+                                'dV': self.registration_map_rel[1, row, col],
+                                'dD': self.registration_map_rel[2, row, col],
+                                'ABS_H': self.registration_map_abs[0, row, col],
+                                'ABS_V': self.registration_map_abs[1, row, col],
+                                'ABS_D': self.registration_map_abs[2, row, col]}
+
+        self.database = pd.DataFrame.from_dict(database_dict, orient='index')
+
+        # Finally set the origin so that tile on the edge have coordinate 0 (rather than negative):
+        for i, d in enumerate(['ABS_D', 'ABS_V', 'ABS_H']):
+            self.database[d] = self.database[d] - self.database[d].min()
 
     def save_database(self, path):
         """
@@ -670,18 +691,19 @@ class tileStitcher():
 
 
 class tileMerger():
-    def __init__(self, database, frame_size, n_planes, type):
+    def __init__(self, tiles, database, n_planes):
 
         if isinstance(database, str):
             self.database = pd.read_csv(database)
         else:
             self.database = database
-        self.type = type
-        self.frame_size = frame_size
+        self.tiles = tiles
+        self.type = tiles.type
+        self.frame_size = tiles.frame_size
         self.n_planes = n_planes
-        self.n_tiles = len(self.database)
-        self.n_row = self.database['row'].max()-self.database['row'].min()+1
-        self.n_col = self.database['col'].max()-self.database['col'].min()+1
+        self.n_tiles = tiles.n_tiles
+        self.n_row = tiles.nrow
+        self.n_col = tiles.ncol
 
         # Size of the merged array (to be defined when the merged array is initialized).
         self.nx = None
@@ -724,8 +746,10 @@ class tileMerger():
         D_pos = (D_pos - D_pos.min())/self.downsample
 
         with alive_bar(total=self.n_tiles, title='Merging', force_tty=True) as bar:
-            for i in range(self.n_tiles):
-                apr, parts = self._load_tile(i)
+            for i, t in enumerate(self.tiles):
+                tile = tileLoader(t)
+                tile.load_tile()
+                apr, parts = tile.data
                 u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
                 data = u[:, :, :]
 
@@ -812,30 +836,6 @@ class tileMerger():
 
         self.downsample = downsample
         self.level_delta = int(-np.log2(self.downsample))
-
-    def _load_tile(self, i):
-        """
-        Load the current tile.
-        """
-        path = self.database['path'].loc[i]
-        if self.type == 'tiff2D':
-            files = glob(os.path.join(path, '*.tif'))
-            im = imread(files[0])
-            u = np.zeros((len(files), *im.shape))
-            u[0] = im
-            files.pop(0)
-            for i, file in enumerate(files):
-                u[i+1] = imread(file)
-        elif self.type == 'tiff3D':
-            u = imread(path)
-        elif self.type == 'apr':
-            apr = pyapr.APR()
-            parts = pyapr.ShortParticles()
-            pyapr.io.read(path, apr, parts)
-            u = (apr, parts)
-        else:
-            raise TypeError('Error: image type {} not supported.'.format(self.type))
-        return u
 
     def _get_nx(self):
         x_pos = self.database['ABS_H'].to_numpy()

@@ -150,9 +150,10 @@ def display_heatmap(u, atlas=None, data=None, log=False):
             viewer = napari.Viewer()
             viewer.add_image(u, colormap='inferno', name='Heatmap', blending='additive', opacity=0.7)
             if atlas is not None:
-                viewer.add_labels(atlas, name='Atlas regions')
+                viewer.add_labels(atlas, name='Atlas regions', opacity=0.7)
             if data is not None:
-                viewer.add_image(data, name='Intensity data', blending='additive', scale=np.array(u.shape)/np.array(data.shape))
+                viewer.add_image(data, name='Intensity data', blending='additive',
+                                 scale=np.array(u.shape)/np.array(data.shape), opacity=0.7)
 
 
 class tileViewer():
@@ -160,7 +161,7 @@ class tileViewer():
     Class to display the registration and segmentation using Napari.
     """
     def __init__(self,
-                 tiles: tileParser,
+                 tiles: (tileParser, list),
                  database: (tileStitcher, pd.DataFrame, str),
                  segmentation: bool=False,
                  cells=None,

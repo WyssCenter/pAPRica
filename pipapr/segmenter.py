@@ -163,12 +163,6 @@ class tileCells():
             else:
                 self._merge_cells(tile, apr, cc, parts, lowe_ratio=lowe_ratio, distance_max=distance_max)
 
-        # # Finally add a shift to account for tiles that might be in a negative part of the space
-        # # (without this we would create a shift when atlasing)
-        # for i, d in enumerate(['ABS_D', 'ABS_V', 'ABS_H']):
-        #     shift = np.min(self.database[d])
-        #     self.cells[:, i] = self.cells[:, i] - shift
-
     def save_cells(self, output_path):
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
 

@@ -191,49 +191,50 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 # Parameters
-path = r'/mnt/Data/wholebrain/multitile/c1'
+path_autofluo = '/mnt/Data/wholebrain/multitile/autofluo'
+path_cells= '/mnt/Data/wholebrain/multitile/c1'
 path_classifier = r'/mnt/Data/wholebrain/multitile/c1/random_forest_n10.joblib'
 t_ini = time()
 
 # Parse data
-tiles = tileParser(path, frame_size=2048, overlap=868, type='apr')
+tiles_autofluo = tileParser(path_autofluo, frame_size=2048, overlap=868, ftype='apr')
+tiles_cells = tileParser(path_cells, frame_size=2048, overlap=868, ftype='apr')
 
 # Stitch and segment data
 t = time()
-stitcher = tileStitcher(tiles)
+stitcher = tileStitcher(tiles_autofluo)
 # stitcher.activate_mask(95)
 # stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
 stitcher.compute_registration()
 stitcher.plot_min_trees(annotate=True)
-stitcher.save_database(os.path.join(path, 'registration_results.csv'))
+stitcher.save_database(os.path.join(path_autofluo, 'registration_results.csv'))
 print('\n\nTOTAL elapsed time for parsing, stitching and segmenting: {:.2f} s.'.format(time() - t_ini))
 
 # Display registered tiles
-viewer = tileViewer(tiles, stitcher.database)
-viewer.display_all_tiles(level_delta=0, contrast_limits=[0, 1000])
+# viewer = tileViewer(tiles_autofluo, stitcher.database)
+# viewer.display_all_tiles(level_delta=0, contrast_limits=[0, 1000])
 
-# Merge data
-database = pd.read_csv(os.path.join(path, 'registration_results.csv'))
-merger = tileMerger(database, frame_size=2048, n_planes=2008, type='apr')
-merger.set_downsample(4)
-merger.initialize_merged_array()
-merger.merge_max(mode='constant')
-merger.equalize_hist(method='opencv')
-merger.crop(background=167, ylim=[0, 733])
-
-# Display merged data
-fig, ax = plt.subplots(1, 3)
-ax[0].imshow(merger.merged_data[250], cmap='gray')
-ax[0].set_title('YX')
-ax[1].imshow(merger.merged_data[:, 400, :], cmap='gray')
-ax[1].set_title('ZX')
-ax[2].imshow(merger.merged_data[:, :, 400], cmap='gray')
-ax[2].set_title('ZY')
+# Merge autofluo data
+# merger = tileMerger(tiles_autofluo, stitcher.database, n_planes=2008)
+# merger.set_downsample(4)
+# merger.initialize_merged_array()
+# merger.merge_max(mode='constant')
+# merger.equalize_hist(method='opencv')
+# merger.crop(background=167, ylim=[0, 733])
+#
+# # Display merged data
+# fig, ax = plt.subplots(1, 3)
+# ax[0].imshow(merger.merged_data[250], cmap='gray')
+# ax[0].set_title('YX')
+# ax[1].imshow(merger.merged_data[:, 400, :], cmap='gray')
+# ax[1].set_title('ZX')
+# ax[2].imshow(merger.merged_data[:, :, 400], cmap='gray')
+# ax[2].set_title('ZY')
 
 
 # Register merged data to the atlas
 pixel_size = [5, 5.26, 5.26]
-# atlaser = tileAtlaser(merger, pixel_size)
+# atlaser = tileAtlaser.from_merger(merger, pixel_size)
 # atlasing_param = {"atlas": "allen_mouse_25um",
 #                   "affine-n-steps": 6,
 #                   "affine-use-n-steps": 5,
@@ -250,18 +251,29 @@ pixel_size = [5, 5.26, 5.26]
 # atlaser.register_to_atlas(output_dir='/home/jules/Desktop/test_atlasing',
 #                           orientation='spr',
 #                           **atlasing_param)
-
-# Merge cells and create a database of the full volume
-database = pd.read_csv(os.path.join(path, 'registration_results.csv'))
-cells = tileCells(tiles, database)
-cells.extract_and_merge_cells()
-
-atlaser = tileAtlaser.from_atlas(atlas= '/home/jules/Desktop/test_atlasing/atlas/registered_atlas.tiff',
+# Load a previously computed atlas
+atlaser = tileAtlaser.from_atlas(atlas='/home/jules/Desktop/test_atlasing/atlas/registered_atlas.tiff',
                                  original_pixel_size=pixel_size,
                                  downsample=4)
+
+# Merge cells and create a database of the full volume
+cells = tileCells(tiles_cells, stitcher.database)
+cells.extract_and_merge_cells()
+
 cells_id = atlaser.get_cells_id(cells)
 cells_per_regions = atlaser.get_ontology_mapping(cells_id, 0)
 
 ncell = atlaser.get_cells_number_per_region(cells_id)
 dcell = atlaser.get_cells_density_per_region(cells_id)
-dcell2 = atlaser.get_cells_density(cells.cells, 5)
+dcell2 = atlaser.get_cells_density(cells.cells, 2)
+
+
+# Merge c1 data
+merger = tileMerger(tiles_cells, stitcher.database, n_planes=2008)
+merger.set_downsample(4)
+merger.initialize_merged_array()
+merger.merge_max(mode='constant')
+
+
+from pipapr.viewer import display_heatmap
+display_heatmap(dcell2, atlas=atlaser, data=merger.merged_data)

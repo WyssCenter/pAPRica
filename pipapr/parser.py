@@ -12,12 +12,11 @@ import numpy as np
 
 class tileParser():
     """
-    Class to handle the data in the same fashion as TeraStitcher, see here:
-    https://github.com/abria/TeraStitcher/wiki/Supported-volume-formats#two-level-hierarchy-of-folders
+    Class to parse the data.
     """
-    def __init__(self, path, frame_size, overlap, type):
+    def __init__(self, path, frame_size, overlap, ftype):
         self.path = path
-        self.type = type
+        self.type = ftype
         self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
         self.ncol = self._get_ncol()
@@ -28,6 +27,7 @@ class tileParser():
         self.path_list = self._get_path_list()
         self.overlap = overlap
         self.frame_size = frame_size
+        self.multichannel = False
         self._print_info()
 
     def _print_info(self):
@@ -203,3 +203,14 @@ class tileParser():
         Returns the number of tiles.
         """
         return self.n_tiles
+
+
+class tileParserMultiChannel(tileParser):
+    """
+    Class to parse multichannel data.
+    """
+
+    def __init__(self, path, frame_size, overlap, ftype):
+        super().__init__(path, frame_size, overlap, ftype)
+        self.multichannel = True
+

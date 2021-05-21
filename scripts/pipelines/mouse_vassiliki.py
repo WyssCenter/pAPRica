@@ -9,7 +9,7 @@ By using this code you agree to the terms of the software license agreement.
 from time import time
 import pandas as pd
 from pipapr.parser import tileParser
-from pipapr.stitcher import tileStitcher, tileMerger
+from pipapr.stitcher import tileStitcher, tileMerger, channelStitcher
 from pipapr.viewer import tileViewer
 from pipapr.atlaser import tileAtlaser
 from pipapr.segmenter import tileCells
@@ -206,9 +206,12 @@ stitcher = tileStitcher(tiles_autofluo)
 # stitcher.activate_mask(95)
 # stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
 stitcher.compute_registration()
-stitcher.plot_min_trees(annotate=True)
-stitcher.save_database(os.path.join(path_autofluo, 'registration_results.csv'))
+# stitcher.plot_min_trees(annotate=True)
+# stitcher.save_database(os.path.join(path_autofluo, 'registration_results.csv'))
 print('\n\nTOTAL elapsed time for parsing, stitching and segmenting: {:.2f} s.'.format(time() - t_ini))
+
+channel_stitcher = channelStitcher(stitcher, tiles_autofluo, tiles_cells)
+channel_stitcher.compute_rigid_registration()
 
 # Display registered tiles
 # viewer = tileViewer(tiles_autofluo, stitcher.database)
@@ -233,7 +236,7 @@ print('\n\nTOTAL elapsed time for parsing, stitching and segmenting: {:.2f} s.'.
 
 
 # Register merged data to the atlas
-pixel_size = [5, 5.26, 5.26]
+# pixel_size = [5, 5.26, 5.26]
 # atlaser = tileAtlaser.from_merger(merger, pixel_size)
 # atlasing_param = {"atlas": "allen_mouse_25um",
 #                   "affine-n-steps": 6,
@@ -251,29 +254,29 @@ pixel_size = [5, 5.26, 5.26]
 # atlaser.register_to_atlas(output_dir='/home/jules/Desktop/test_atlasing',
 #                           orientation='spr',
 #                           **atlasing_param)
-# Load a previously computed atlas
-atlaser = tileAtlaser.from_atlas(atlas='/home/jules/Desktop/test_atlasing/atlas/registered_atlas.tiff',
-                                 original_pixel_size=pixel_size,
-                                 downsample=4)
-
-# Merge cells and create a database of the full volume
-cells = tileCells(tiles_cells, stitcher.database)
-cells.extract_and_merge_cells()
-
-cells_id = atlaser.get_cells_id(cells)
-cells_per_regions = atlaser.get_ontology_mapping(cells_id, 0)
-
-ncell = atlaser.get_cells_number_per_region(cells_id)
-dcell = atlaser.get_cells_density_per_region(cells_id)
-dcell2 = atlaser.get_cells_density(cells.cells, 2)
-
-
-# Merge c1 data
-merger = tileMerger(tiles_cells, stitcher.database, n_planes=2008)
-merger.set_downsample(4)
-merger.initialize_merged_array()
-merger.merge_max(mode='constant')
-
-
-from pipapr.viewer import display_heatmap
-display_heatmap(dcell2, atlas=atlaser, data=merger.merged_data)
+# # Load a previously computed atlas
+# atlaser = tileAtlaser.from_atlas(atlas='/home/jules/Desktop/test_atlasing/atlas/registered_atlas.tiff',
+#                                  original_pixel_size=pixel_size,
+#                                  downsample=4)
+#
+# # Merge cells and create a database of the full volume
+# cells = tileCells(tiles_cells, stitcher.database)
+# cells.extract_and_merge_cells()
+#
+# cells_id = atlaser.get_cells_id(cells)
+# cells_per_regions = atlaser.get_ontology_mapping(cells_id, 0)
+#
+# ncell = atlaser.get_cells_number_per_region(cells_id)
+# dcell = atlaser.get_cells_density_per_region(cells_id)
+# dcell2 = atlaser.get_cells_density(cells.cells, 2)
+#
+#
+# # Merge c1 data
+# merger = tileMerger(tiles_cells, stitcher.database, n_planes=2008)
+# merger.set_downsample(4)
+# merger.initialize_merged_array()
+# merger.merge_max(mode='constant')
+#
+#
+# from pipapr.viewer import display_heatmap
+# display_heatmap(dcell2, atlas=atlaser, data=merger.merged_data)

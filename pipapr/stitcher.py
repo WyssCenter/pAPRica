@@ -6,9 +6,6 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from glob import glob
-import os
-from skimage.io import imread
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
 from scipy.sparse import csr_matrix
@@ -25,7 +22,249 @@ import pyapr
 from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
 
-class tileStitcher():
+
+def _get_max_proj_apr(apr, parts, patch, plot=False):
+    """
+    Compute maximum projection on 3D APR data.
+
+    Parameters
+    ----------
+    apr: (pyapr.APR) apr tree
+    parts: (pyapr.ParticlData) apr particle
+    patch: (pyapr.patch) patch for computing the projection only on the overlapping area.
+    plot: (bool) control data plotting
+
+    Returns
+    -------
+    (list of np.array) maximum intensity projection in each 3 dimension.
+
+    """
+    proj = []
+    for d in range(3):
+        # dim=0: project along Y to produce a ZY plane
+        # dim=1: project along X to produce a ZX plane
+        # dim=2: project along Z to produce an YX plane
+        proj.append(pyapr.numerics.transform.projection.maximum_projection_patch(apr, parts, dim=d, patch=patch))
+
+    if plot:
+        fig, ax = plt.subplots(1, 3)
+        for i, title in enumerate(['ZY', 'ZX', 'YX']):
+            ax[i].imshow(proj[i], cmap='gray')
+            ax[i].set_title(title)
+
+    return proj[0], proj[1], proj[2]
+
+
+def _get_proj_shifts(proj1, proj2, upsample_factor=1):
+    """
+    This function computes shifts from max-projections on overlapping areas. It uses the phase cross-correlation
+    to compute the shifts.
+
+    Parameters
+    ----------
+    proj1: (list of np.array) max-projections for tile 1
+    proj2: (list of np.array) max-projections for tile 2
+    upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
+
+    Returns
+    -------
+    shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
+
+    """
+    # Compute phase cross-correlation to extract shifts
+    dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
+                                               return_error=True, upsample_factor=upsample_factor)
+    dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
+                                               return_error=True, upsample_factor=upsample_factor)
+    dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
+                                               return_error=True, upsample_factor=upsample_factor)
+
+    # Keep only the most reliable registration
+    # D/z
+    if error_zx < error_zy:
+        dz = dzx[0]
+        rz = error_zx
+    else:
+        dz = dzy[0]
+        rz = error_zy
+
+    # H/x
+    if error_zx < error_yx:
+        dx = dzx[1]
+        rx = error_zx
+    else:
+        dx = dyx[1]
+        rx = error_yx
+
+    # V/y
+    if error_yx < error_zy:
+        dy = dyx[0]
+        ry = error_yx
+    else:
+        dy = dzy[1]
+        ry = error_zy
+
+    # if self.row==0 and self.col==0:
+    #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+    #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+    #         ax[0].imshow(proj1[i], cmap='gray')
+    #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+    #         ax[1].imshow(proj2[i], cmap='gray')
+    #         ax[1].set_title(title)
+    #     print('ok')
+
+    return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+
+def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
+    """
+    This function computes shifts from max-projections on overlapping areas with mask on brightest area.
+    It uses the phase cross-correlation to compute the shifts.
+
+    Parameters
+    ----------
+    proj1: (list of arrays) max-projections for tile 1
+    proj2: (list of arrays) max-projections for tile 2
+    upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
+
+    Returns
+    -------
+    shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
+
+    """
+    # Compute mask to discard very bright area that are likely bubbles or artefacts
+    mask_ref = []
+    mask_move = []
+    for i in range(3):
+        vmax = np.percentile(proj1[i], threshold)
+        mask_ref.append(proj1[i] < vmax)
+        vmax = np.percentile(proj2[i], threshold)
+        mask_move.append(proj2[i] < vmax)
+
+    # Compute phase cross-correlation to extract shifts
+    dzy = phase_cross_correlation(proj1[0], proj2[0],
+                                  return_error=True, upsample_factor=upsample_factor,
+                                  reference_mask=mask_ref[0], moving_mask=mask_move[0])
+    error_zy = _get_registration_error(proj1[0], proj2[0])
+    dzx = phase_cross_correlation(proj1[1], proj2[1],
+                                  return_error=True, upsample_factor=upsample_factor,
+                                  reference_mask=mask_ref[1], moving_mask=mask_move[1])
+    error_zx = _get_registration_error(proj1[1], proj2[1])
+    dyx = phase_cross_correlation(proj1[2], proj2[2],
+                                  return_error=True, upsample_factor=upsample_factor,
+                                  reference_mask=mask_ref[2], moving_mask=mask_move[2])
+    error_yx = _get_registration_error(proj1[2], proj2[2])
+
+    # Keep only the most reliable registration
+    # D/z
+    if error_zx < error_zy:
+        dz = dzx[0]
+        rz = error_zx
+    else:
+        dz = dzy[0]
+        rz = error_zy
+
+    # H/x
+    if error_zx < error_yx:
+        dx = dzx[1]
+        rx = error_zx
+    else:
+        dx = dyx[1]
+        rx = error_yx
+
+    # V/y
+    if error_yx < error_zy:
+        dy = dyx[0]
+        ry = error_yx
+    else:
+        dy = dzy[1]
+        ry = error_zy
+
+    # if self.row==0 and self.col==0:
+    #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
+    #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+    #         ax[0].imshow(proj1[i], cmap='gray')
+    #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+    #         ax[1].imshow(proj2[i], cmap='gray')
+    #         ax[1].set_title(title)
+    #     print('ok')
+
+    return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+
+def _get_registration_error(proj1, proj2):
+    """
+    Return registration error estimate using the peak height.
+
+    Parameters
+    ----------
+    proj1: (np.array) first projection
+    proj2: (np.array) second projection
+
+    Returns
+    -------
+    (float) registration error estimate
+
+    """
+    return np.sqrt(1-correlate(proj1, proj2).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
+
+
+class baseStitcher():
+    def __init__(self,
+                 tiles: tileParser):
+
+        self.tiles = tiles
+        self.ncol = tiles.ncol
+        self.nrow = tiles.nrow
+        self.n_vertex = tiles.n_tiles
+        self.n_edges = tiles.n_edges
+        self.overlap = tiles.overlap
+        self.frame_size = tiles.frame_size
+
+        self.mask = False
+        self.threshold = None
+
+    def activate_mask(self, threshold):
+        """
+        Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
+        not taken into account.
+
+        Parameters
+        ----------
+        threshold: (int) threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will
+                    create a mask removing the 5% brightest pixels).
+
+        """
+        self.mask = True
+        self.threshold = threshold
+
+    def deactivate_mask(self):
+        """
+        Deactivate the masked cross-correlation and uses a classical cross correlation.
+
+        """
+        self.mask = False
+        self.threshold = None
+
+    def save_database(self, path):
+        """
+        Save database at the given path. The database must be built before calling this method.
+
+        Parameters
+        ----------
+        path: (str) path to save the database.
+
+        """
+
+        if self.database is None:
+            raise TypeError('Error: database can''t be saved because it was not created. '
+                            'Please call build_database() first.')
+
+        self.database.to_csv(path)
+
+
+
+class tileStitcher(baseStitcher):
     """
     Class used to perform the stitching. The stitching is performed in 4 steps:
 
@@ -49,14 +288,9 @@ class tileStitcher():
         ----------
         tiles: (tileParser) tileParser object containing the dataset to stitch.
         """
-        
-        self.tiles = tiles
-        self.ncol = tiles.ncol
-        self.nrow = tiles.nrow
-        self.n_vertex = tiles.n_tiles
-        self.n_edges = tiles.n_edges
-        self.overlap = tiles.overlap
-        self.frame_size = tiles.frame_size
+
+        super().__init__(tiles)
+
         self.cgraph_from = []
         self.cgraph_to = []
         self.relia_H = []
@@ -82,9 +316,6 @@ class tileStitcher():
         self.graph_relia_V = None
         self.graph_relia_D = None
         self.database = None
-        
-        self.mask = False
-        self.threshold = None
 
         self.segment = False
 
@@ -121,27 +352,7 @@ class tileStitcher():
 
         self.segment = False
 
-    def activate_mask(self, threshold):
-        """
-        Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
-        not taken into account.
 
-        Parameters
-        ----------
-        threshold: (int) threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will
-                    create a mask removing the 5% brightest pixels).
-
-        """
-        self.mask = True
-        self.threshold = threshold
-
-    def deactivate_mask(self):
-        """
-        Deactivate the masked cross-correlation and uses a classical cross correlation.
-
-        """
-        self.mask = False
-        self.threshold = None
 
     def compute_registration(self):
         """
@@ -190,45 +401,6 @@ class tileStitcher():
         self._optimize_sparse_graphs()
         _, _ = self._produce_registration_map()
         self._build_database()
-
-    def _build_sparse_graphs(self):
-        """
-        Build the sparse graph from the reliability and (row, col). This method needs to be called after the
-        pair-wise registration has been performed for all neighbors pair.
-
-        """
-
-        self.graph_relia_H = csr_matrix((self.relia_H, (self.cgraph_from, self.cgraph_to)),
-                                        shape=(self.n_edges, self.n_edges))
-        self.graph_relia_V = csr_matrix((self.relia_V, (self.cgraph_from, self.cgraph_to)),
-                                        shape=(self.n_edges, self.n_edges))
-        self.graph_relia_D = csr_matrix((self.relia_D, (self.cgraph_from, self.cgraph_to)),
-                                        shape=(self.n_edges, self.n_edges))
-
-    def _optimize_sparse_graphs(self):
-        """
-        Optimize the sparse graph by computing the minimum spanning tree for each direction (H, D, V). This
-        method needs to be called after the sparse graphs have been built.
-
-        """
-
-        if self.graph_relia_H is None:
-            raise TypeError('Error: sparse graph not build yet, please use build_sparse_graph() before trying to'
-                            'perform the optimization.')
-
-        for g in ['graph_relia_H', 'graph_relia_V', 'graph_relia_D']:
-            graph = getattr(self, g)
-            # Minimum spanning tree
-            min_tree = minimum_spanning_tree(graph)
-
-            # Get the "true" neighbors
-            min_tree = min_tree.tocoo()
-            setattr(self, 'min_tree_' + g[-1], min_tree)
-            ctree_from = min_tree.row
-            setattr(self, 'ctree_from_' + g[-1], ctree_from)
-
-            ctree_to = min_tree.col
-            setattr(self, 'ctree_to_' + g[-1], ctree_to)
 
     def plot_graph(self, annotate=False):
         """
@@ -315,6 +487,77 @@ class tileStitcher():
                 ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko-', markerfacecolor='r', linewidth=2)
             ax[i].set_title(d + ' tree')
 
+    def plot_registration_map(self):
+        """
+        Display the registration map using matplotlib.
+
+        """
+
+        if self.registration_map_abs is None:
+            raise TypeError('Error: registration map not computed yet, please use produce_registration_map()'
+                            'before trying to display the registration map.')
+
+        fig, ax = plt.subplots(2, 3)
+        for i, d in enumerate(['H', 'V', 'D']):
+            ax[0, i].imshow(self.registration_map_rel[i], cmap='gray')
+            ax[0, i].set_title('Rel reg. map ' + d)
+            ax[1, i].imshow(self.registration_map_abs[i], cmap='gray')
+            ax[1, i].set_title('Abs reg. map ' + d)
+
+    def dump_stitcher(self, path):
+        """
+        Use dill to store a tgraph object.
+
+        Parameters
+        ----------
+        path: (str) path to save the database.
+
+        """
+        if path[-4:] != '.pkl':
+            path = path + '.pkl'
+
+        with open(path, 'wb') as f:
+            dill.dump(self, f)
+
+    def _build_sparse_graphs(self):
+        """
+        Build the sparse graph from the reliability and (row, col). This method needs to be called after the
+        pair-wise registration has been performed for all neighbors pair.
+
+        """
+
+        self.graph_relia_H = csr_matrix((self.relia_H, (self.cgraph_from, self.cgraph_to)),
+                                        shape=(self.n_edges, self.n_edges))
+        self.graph_relia_V = csr_matrix((self.relia_V, (self.cgraph_from, self.cgraph_to)),
+                                        shape=(self.n_edges, self.n_edges))
+        self.graph_relia_D = csr_matrix((self.relia_D, (self.cgraph_from, self.cgraph_to)),
+                                        shape=(self.n_edges, self.n_edges))
+
+    def _optimize_sparse_graphs(self):
+        """
+        Optimize the sparse graph by computing the minimum spanning tree for each direction (H, D, V). This
+        method needs to be called after the sparse graphs have been built.
+
+        """
+
+        if self.graph_relia_H is None:
+            raise TypeError('Error: sparse graph not build yet, please use build_sparse_graph() before trying to'
+                            'perform the optimization.')
+
+        for g in ['graph_relia_H', 'graph_relia_V', 'graph_relia_D']:
+            graph = getattr(self, g)
+            # Minimum spanning tree
+            min_tree = minimum_spanning_tree(graph)
+
+            # Get the "true" neighbors
+            min_tree = min_tree.tocoo()
+            setattr(self, 'min_tree_' + g[-1], min_tree)
+            ctree_from = min_tree.row
+            setattr(self, 'ctree_from_' + g[-1], ctree_from)
+
+            ctree_to = min_tree.col
+            setattr(self, 'ctree_to_' + g[-1], ctree_to)
+
     def _produce_registration_map(self):
         """
         Produce the registration map where reg_rel_map[d, row, col] (d = H,V,D) is the relative tile
@@ -382,23 +625,6 @@ class tileStitcher():
 
         return reg_rel_map, reg_abs_map
 
-    def plot_registration_map(self):
-        """
-        Display the registration map using matplotlib.
-
-        """
-
-        if self.registration_map_abs is None:
-            raise TypeError('Error: registration map not computed yet, please use produce_registration_map()'
-                            'before trying to display the registration map.')
-
-        fig, ax = plt.subplots(2, 3)
-        for i, d in enumerate(['H', 'V', 'D']):
-            ax[0, i].imshow(self.registration_map_rel[i], cmap='gray')
-            ax[0, i].set_title('Rel reg. map ' + d)
-            ax[1, i].imshow(self.registration_map_abs[i], cmap='gray')
-            ax[1, i].set_title('Abs reg. map ' + d)
-
     def _build_database(self):
         """
         Build the database for storing the registration parameters. This method needs to be called after
@@ -430,37 +656,6 @@ class tileStitcher():
         for i, d in enumerate(['ABS_D', 'ABS_V', 'ABS_H']):
             self.database[d] = self.database[d] - self.database[d].min()
 
-    def save_database(self, path):
-        """
-        Save database at the given path. The database must be built before calling this method.
-
-        Parameters
-        ----------
-        path: (str) path to save the database.
-
-        """
-
-        if self.database is None:
-            raise TypeError('Error: database can''t be saved because it was not created. '
-                            'Please call build_database() first.')
-
-        self.database.to_csv(path)
-
-    def dump_stitcher(self, path):
-        """
-        Use dill to store a tgraph object.
-
-        Parameters
-        ----------
-        path: (str) path to save the database.
-
-        """
-        if path[-4:] != '.pkl':
-            path = path + '.pkl'
-
-        with open(path, 'wb') as f:
-            dill.dump(self, f)
-
     def _get_ind(self, ind_from, ind_to):
         """
         Returns the ind in the original graph which corresponds to (ind_from, ind_to) in the minimum spanning tree.
@@ -490,188 +685,6 @@ class tileStitcher():
             raise ValueError('Error: can''t find matching vertex pair.')
         return ind
 
-    def _get_proj_shifts(self, proj1, proj2, upsample_factor=1):
-        """
-        This function computes shifts from max-projections on overlapping areas. It uses the phase cross-correlation
-        to compute the shifts.
-
-        Parameters
-        ----------
-        proj1: (list of np.array) max-projections for tile 1
-        proj2: (list of np.array) max-projections for tile 2
-        upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
-
-        Returns
-        -------
-        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
-
-        """
-        # Compute phase cross-correlation to extract shifts
-        dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
-                                                   return_error=True, upsample_factor=upsample_factor)
-        dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
-                                                   return_error=True, upsample_factor=upsample_factor)
-        dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
-                                                   return_error=True, upsample_factor=upsample_factor)
-
-        # Keep only the most reliable registration
-        # D/z
-        if error_zx < error_zy:
-            dz = dzx[0]
-            rz = error_zx
-        else:
-            dz = dzy[0]
-            rz = error_zy
-
-        # H/x
-        if error_zx < error_yx:
-            dx = dzx[1]
-            rx = error_zx
-        else:
-            dx = dyx[1]
-            rx = error_yx
-
-        # V/y
-        if error_yx < error_zy:
-            dy = dyx[0]
-            ry = error_yx
-        else:
-            dy = dzy[1]
-            ry = error_zy
-
-        # if self.row==0 and self.col==0:
-        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #         ax[0].imshow(proj1[i], cmap='gray')
-        #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-        #         ax[1].imshow(proj2[i], cmap='gray')
-        #         ax[1].set_title(title)
-        #     print('ok')
-
-        return np.array([dz, dy, dx]), np.array([rz, ry, rx])
-
-    def _get_masked_proj_shifts(self, proj1, proj2, upsample_factor=1):
-        """
-        This function computes shifts from max-projections on overlapping areas with mask on brightest area.
-        It uses the phase cross-correlation to compute the shifts.
-
-        Parameters
-        ----------
-        proj1: (list of arrays) max-projections for tile 1
-        proj2: (list of arrays) max-projections for tile 2
-        upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
-
-        Returns
-        -------
-        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
-
-        """
-        # Compute mask to discard very bright area that are likely bubbles or artefacts
-        mask_ref = []
-        mask_move = []
-        for i in range(3):
-            vmax = np.percentile(proj1[i], self.threshold)
-            mask_ref.append(proj1[i] < vmax)
-            vmax = np.percentile(proj2[i], self.threshold)
-            mask_move.append(proj2[i] < vmax)
-
-        # Compute phase cross-correlation to extract shifts
-        dzy = phase_cross_correlation(proj1[0], proj2[0],
-                                      return_error=True, upsample_factor=upsample_factor,
-                                      reference_mask=mask_ref[0], moving_mask=mask_move[0])
-        error_zy = self._get_registration_error(proj1[0], proj2[0])
-        dzx = phase_cross_correlation(proj1[1], proj2[1],
-                                      return_error=True, upsample_factor=upsample_factor,
-                                      reference_mask=mask_ref[1], moving_mask=mask_move[1])
-        error_zx = self._get_registration_error(proj1[1], proj2[1])
-        dyx = phase_cross_correlation(proj1[2], proj2[2],
-                                      return_error=True, upsample_factor=upsample_factor,
-                                      reference_mask=mask_ref[2], moving_mask=mask_move[2])
-        error_yx = self._get_registration_error(proj1[2], proj2[2])
-
-        # Keep only the most reliable registration
-        # D/z
-        if error_zx < error_zy:
-            dz = dzx[0]
-            rz = error_zx
-        else:
-            dz = dzy[0]
-            rz = error_zy
-
-        # H/x
-        if error_zx < error_yx:
-            dx = dzx[1]
-            rx = error_zx
-        else:
-            dx = dyx[1]
-            rx = error_yx
-
-        # V/y
-        if error_yx < error_zy:
-            dy = dyx[0]
-            ry = error_yx
-        else:
-            dy = dzy[1]
-            ry = error_zy
-
-        # if self.row==0 and self.col==0:
-        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #         ax[0].imshow(proj1[i], cmap='gray')
-        #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-        #         ax[1].imshow(proj2[i], cmap='gray')
-        #         ax[1].set_title(title)
-        #     print('ok')
-
-        return np.array([dz, dy, dx]), np.array([rz, ry, rx])
-
-    def _get_registration_error(self, proj1, proj2):
-        """
-        Return registration error estimate using the peak height.
-
-        Parameters
-        ----------
-        proj1: (np.array) first projection
-        proj2: (np.array) second projection
-
-        Returns
-        -------
-        (float) registration error estimate
-
-        """
-        return np.sqrt(1-correlate(proj1, proj2).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
-
-    def _get_max_proj_apr(self, apr, parts, patch, plot=False):
-        """
-        Compute maximum projection on 3D APR data.
-
-        Parameters
-        ----------
-        apr: (pyapr.APR) apr tree
-        parts: (pyapr.ParticlData) apr particle
-        patch: (pyapr.patch) patch for computing the projection only on the overlapping area.
-        plot: (bool) control data plotting
-
-        Returns
-        -------
-        (list of np.array) maximum intensity projection in each 3 dimension.
-
-        """
-        proj = []
-        for d in range(3):
-            # dim=0: project along Y to produce a ZY plane
-            # dim=1: project along X to produce a ZX plane
-            # dim=2: project along Z to produce an YX plane
-            proj.append(pyapr.numerics.transform.projection.maximum_projection_patch(apr, parts, dim=d, patch=patch))
-
-        if plot:
-            fig, ax = plt.subplots(1, 3)
-            for i, title in enumerate(['ZY', 'ZX', 'YX']):
-                ax[i].imshow(proj[i], cmap='gray')
-                ax[i].set_title(title)
-
-        return proj[0], proj[1], proj[2]
-
     def _compute_east_registration(self, u, v):
         """
         Compute the registration between the current tile and its eastern neighbor.
@@ -692,11 +705,11 @@ class tileStitcher():
 
         patch = pyapr.ReconPatch()
         patch.y_begin = self.frame_size - self.overlap
-        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
+        proj_zy1, proj_zx1, proj_yx1 = _get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
         patch = pyapr.ReconPatch()
         patch.y_end = self.overlap
-        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
+        proj_zy2, proj_zx2, proj_yx2 = _get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
         # if self.row==0 and self.col==1:
         #     proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
@@ -709,11 +722,12 @@ class tileStitcher():
         #     print('ok')
 
         if self.mask:
-            return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
-                                         [proj_zy2, proj_zx2, proj_yx2])
+            return _get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                           [proj_zy2, proj_zx2, proj_yx2],
+                                           threshold=self.threshold)
         else:
-            return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
-                                         [proj_zy2, proj_zx2, proj_yx2])
+            return _get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                    [proj_zy2, proj_zx2, proj_yx2])
 
     def _compute_south_registration(self, u, v):
         """
@@ -734,11 +748,11 @@ class tileStitcher():
 
         patch = pyapr.ReconPatch()
         patch.x_begin = self.frame_size - self.overlap
-        proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
+        proj_zy1, proj_zx1, proj_yx1 = _get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
         patch = pyapr.ReconPatch()
         patch.x_end = self.overlap
-        proj_zy2, proj_zx2, proj_yx2 = self._get_max_proj_apr(apr_2, parts_2, patch, plot=False)
+        proj_zy2, proj_zx2, proj_yx2 = _get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
         # if self.row==0 and self.col==1:
         #     print('ok')
@@ -751,11 +765,72 @@ class tileStitcher():
         #         ax[1].set_title(title)
 
         if self.mask:
-            return self._get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
-                                         [proj_zy2, proj_zx2, proj_yx2])
+            return _get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                           [proj_zy2, proj_zx2, proj_yx2],
+                                           threshold=self.threshold)
         else:
-            return self._get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
-                                         [proj_zy2, proj_zx2, proj_yx2])
+            return _get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
+                                    [proj_zy2, proj_zx2, proj_yx2])
+
+
+class channelStitcher(baseStitcher):
+    """
+    Class used to perform the stitching between different channels. The registration must be performed first a single
+    channel (typically auto-fluorescence)
+
+    The stitching is performed between each corresponding tile and the relative displacement is added to the previously
+    determined stitching parameters.
+
+    The number and position of tile should matched for bot dataset.
+    """
+
+    def __init__(self,
+                 stitcher: tileStitcher,
+                 tiles_stitched: tileParser,
+                 tiles_channel: tileParser):
+        """
+
+        Parameters
+        ----------
+        stitcher: (tileStitcher) tileStitcher object with the multitile registration parameters
+        tiles_stitched: (tileParser) tiles corresponding to the stitcher
+        tiles_channel: (tileParser) tiles to be registered to tiles_stitched
+        """
+
+        super().__init__(tiles_stitched)
+
+        self.stitcher = stitcher
+        self.tiles_channel = tiles_channel
+        self.database = stitcher.database.copy()
+
+    def compute_rigid_registration(self):
+
+        for t1, t2 in zip(self.tiles, self.tiles_channel):
+            tile1 = tileLoader(t1)
+            tile1.load_tile()
+            apr1, parts1 = tile1.data
+            tile2 = tileLoader(t2)
+            tile2.load_tile()
+            apr2, parts2 = tile2.data
+
+            patch = pyapr.ReconPatch()
+            proj1 = _get_max_proj_apr(apr1, parts1, patch)
+
+            patch = pyapr.ReconPatch()
+            proj2 = _get_max_proj_apr(apr2, parts2, patch)
+
+            if self.mask:
+                d, error = _get_masked_proj_shifts(proj1, proj2, self.threshold)
+            else:
+                d, error = _get_proj_shifts(proj1, proj2)
+
+            self._update_database(tile2.row, tile2.col, d)
+
+    def _update_database(self, row, col, d):
+        d = np.concatenate([d, d])
+        df = self.database
+        for loc, value in zip(['dD', 'dV', 'dH', 'ABS_D', 'ABS_V', 'ABS_H'], d):
+            df.loc[(df['row'] == row) & (df['col'] == col), loc] += value
 
 
 class tileMerger():

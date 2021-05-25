@@ -222,15 +222,15 @@ class tileViewer():
         self.cells = cells
         self.atlaser = atlaser
 
-    def display_all_tiles(self, level_delta=0, **kwargs):
+    def get_layers_all_tiles(self, downsample=1, **kwargs):
         """
         Display all parsed tiles.
 
         Parameters
         ----------
-        level_delta: (int) down sampling parameter for APRSlicer
-                            (0: full resolution, -1: 2x downsampling, -2: 4x downsampling..etc)
-        kwargs: (dict) dictionnary passed to Napari for custom option
+        downsample: (int) downsampling parameter for APRSlicer
+                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: (dict) dictionary passed to Napari for custom option
 
         Returns
         -------
@@ -239,6 +239,10 @@ class tileViewer():
 
         # Compute layers to be displayed by Napari
         layers = []
+
+        # Convert downsample to level delta
+        level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
+
         for t in self.tiles:
             tile = tileLoader(t)
             # Load tile if not loaded, else use cached tile
@@ -259,42 +263,114 @@ class tileViewer():
 
             position = self._get_tile_position(tile.row, tile.col)
             if level_delta != 0:
-                position = [x/level_delta**2 for x in position]
+                position = [x / level_delta ** 2 for x in position]
             layers.append(apr_to_napari_Image(apr, parts,
-                                               mode='constant',
-                                               name='Tile [{}, {}]'.format(tile.row, tile.col),
-                                               translate=position,
-                                               opacity=0.7,
-                                               level_delta=level_delta,
-                                               **kwargs))
+                                              mode='constant',
+                                              name='Tile [{}, {}]'.format(tile.row, tile.col),
+                                              translate=position,
+                                              opacity=0.7,
+                                              level_delta=level_delta,
+                                              **kwargs))
             if self.segmentation:
                 layers.append(apr_to_napari_Labels(apr, mask,
-                                                  mode='constant',
-                                                  name='Segmentation [{}, {}]'.format(tile.row, tile.col),
-                                                  translate=position,
-                                                  level_delta=level_delta,
-                                                  opacity=0.7))
+                                                   mode='constant',
+                                                   name='Segmentation [{}, {}]'.format(tile.row, tile.col),
+                                                   translate=position,
+                                                   level_delta=level_delta,
+                                                   opacity=0.7))
         if self.cells is not None:
             par = apr.get_parameters()
-            layers.append(Points(self.cells, opacity=0.7, name='Cells center', scale=[par.dz, par.dx, par.dy]))
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center',
+                                 scale=[par.dz/downsample, par.dx/downsample, par.dy/downsample]))
 
         if self.atlaser is not None:
             layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
-                                 scale=[self.atlaser.z_downsample, self.atlaser.y_downsample, self.atlaser.x_downsample]))
+                                 scale=[self.atlaser.z_downsample/downsample,
+                                        self.atlaser.y_downsample/downsample,
+                                        self.atlaser.x_downsample/downsample]))
+
+        return layers
+
+    def display_all_tiles(self, downsample=1, **kwargs):
+        """
+        Display all parsed tiles.
+
+        Parameters
+        ----------
+        downsample: (int) downsampling parameter for APRSlicer
+                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: (dict) dictionary passed to Napari for custom option
+
+        Returns
+        -------
+        None
+        """
+
+        # Compute layers to be displayed by Napari
+        layers = []
+
+        # Convert downsample to level delta
+        level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
+
+        for t in self.tiles:
+            tile = tileLoader(t)
+            # Load tile if not loaded, else use cached tile
+            ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
+            if self._is_tile_loaded(tile.row, tile.col):
+                apr, parts = self.loaded_tiles[ind]
+                if self.segmentation:
+                    mask = self.loaded_segmentation[ind]
+            else:
+                tile.load_tile()
+                apr, parts = tile.data
+                self.loaded_ind.append(ind)
+                self.loaded_tiles[ind] = apr, parts
+                if self.segmentation:
+                    tile.load_segmentation()
+                    apr, mask = tile.data_segmentation
+                    self.loaded_segmentation[ind] = mask
+
+            position = self._get_tile_position(tile.row, tile.col)
+            if level_delta != 0:
+                position = [x / level_delta ** 2 for x in position]
+            layers.append(apr_to_napari_Image(apr, parts,
+                                              mode='constant',
+                                              name='Tile [{}, {}]'.format(tile.row, tile.col),
+                                              translate=position,
+                                              opacity=0.7,
+                                              level_delta=level_delta,
+                                              **kwargs))
+            if self.segmentation:
+                layers.append(apr_to_napari_Labels(apr, mask,
+                                                   mode='constant',
+                                                   name='Segmentation [{}, {}]'.format(tile.row, tile.col),
+                                                   translate=position,
+                                                   level_delta=level_delta,
+                                                   opacity=0.7))
+        if self.cells is not None:
+            par = apr.get_parameters()
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center',
+                                 scale=[par.dz/downsample, par.dx/downsample, par.dy/downsample]))
+
+        if self.atlaser is not None:
+            layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
+                                 scale=[self.atlaser.z_downsample/downsample,
+                                        self.atlaser.y_downsample/downsample,
+                                        self.atlaser.x_downsample/downsample]))
 
         # Display layers
         display_layers(layers)
 
-    def display_tiles(self, coords, level_delta=0, **kwargs):
+    def display_tiles(self, coords, downsample=1, **kwargs):
         """
         Display tiles only for coordinates specified in coords.
 
         Parameters
         ----------
         coords: (np.array) array containing the coords of tiles to be displayed.
-        level_delta: (int) down sampling parameter for APRSlicer
-                            (0: full resolution, -1: 2x downsampling, -2: 4x downsampling..etc)
-        kwargs: (dict) dictionnary passed to Napari for custom option
+        downsample: (int) downsampling parameter for APRSlicer
+                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: (dict) dictionary passed to Napari for custom option
 
         Returns
         -------
@@ -307,6 +383,9 @@ class tileViewer():
             coords = coords.T
             if coords.shape[1] != 2:
                 raise ValueError('Error, at least one dimension of coords should be of size 2.')
+
+        # Convert downsample to level delta
+        level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
 
         # Compute layers to be displayed by Napari
         layers = []
@@ -347,7 +426,14 @@ class tileViewer():
                                                   opacity=0.7))
         if self.cells is not None:
             par = apr.get_parameters()
-            layers.append(Points(self.cells, opacity=0.7, name='Cells center', scale=[par.dz, par.dx, par.dy]))
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center',
+                                 scale=[par.dz/downsample, par.dx/downsample, par.dy/downsample]))
+
+        if self.atlaser is not None:
+            layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
+                                 scale=[self.atlaser.z_downsample/downsample,
+                                        self.atlaser.y_downsample/downsample,
+                                        self.atlaser.x_downsample/downsample]))
 
         # Display layers
         display_layers(layers)

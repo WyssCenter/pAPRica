@@ -73,11 +73,17 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
     """
     # Compute phase cross-correlation to extract shifts
     dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
-                                               return_error=True, upsample_factor=upsample_factor)
+                                               return_error=True,
+                                               upsample_factor=upsample_factor,
+                                               overlap_ratio=0.3)
     dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
-                                               return_error=True, upsample_factor=upsample_factor)
+                                               return_error=True,
+                                               upsample_factor=upsample_factor,
+                                               overlap_ratio=0.3)
     dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
-                                               return_error=True, upsample_factor=upsample_factor)
+                                               return_error=True,
+                                               upsample_factor=upsample_factor,
+                                               overlap_ratio=0.3)
 
     # Keep only the most reliable registration
     # D/z
@@ -111,7 +117,7 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
     #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
     #         ax[1].imshow(proj2[i], cmap='gray')
     #         ax[1].set_title(title)
-    #     print('ok')
+    #     print('o
 
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
@@ -343,7 +349,6 @@ class tileStitcher(baseStitcher):
         # Store post processing steps
         self.func_to_get_cc = func_to_get_cc
 
-
     def deactivate_segmentation(self):
         """
         Deactivate tile segmentation.
@@ -351,8 +356,6 @@ class tileStitcher(baseStitcher):
         """
 
         self.segment = False
-
-
 
     def compute_registration(self):
         """
@@ -571,14 +574,14 @@ class tileStitcher(baseStitcher):
 
         # Relative registration
         # Initialize relative registration map
-        reg_rel_map = np.zeros((3, self.nrow, self.ncol)) # H,V,D
+        reg_rel_map = np.zeros((3, self.nrow, self.ncol)) # H, V, D
 
         for i, min_tree in enumerate(['min_tree_H', 'min_tree_V', 'min_tree_D']):
             # Fill it by following the tree and getting the corresponding registration parameters
-            # H TREE
-            node_array = depth_first_order(getattr(self, min_tree), i_start=0,
+            node_array = depth_first_order(getattr(self, min_tree), i_start=self.cgraph_from[0],
                                            directed=False, return_predecessors=False)
-            node_visited = [0]
+
+            node_visited = [node_array[0]]
 
             tree = getattr(self, min_tree)
             row = tree.row
@@ -597,10 +600,12 @@ class tileStitcher(baseStitcher):
 
                 # Get the previous neighbor local reg parameter
                 ind1, ind2 = np.unravel_index(node_from, shape=(self.nrow, self.ncol))
+                print('From: row={} col={}'.format(ind1, ind2))
                 d_neighbor = reg_rel_map[i, ind1, ind2]
 
                 # Get the current 2D tile position
                 ind1, ind2 = np.unravel_index(node_to, shape=(self.nrow, self.ncol))
+                print('To: row={} col={}'.format(ind1, ind2))
                 # Get the associated ind position in the registration graph (as opposed to the reliability min_tree)
                 ind_graph = self._get_ind(node_from, node_to)
                 # Get the corresponding reg parameter
@@ -617,7 +622,7 @@ class tileStitcher(baseStitcher):
         for x in range(reg_abs_map.shape[2]):
             reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size-self.overlap)
         # V
-        for x in range(reg_abs_map.shape[2]):
+        for x in range(reg_abs_map.shape[1]):
             reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap)
         # D
         reg_abs_map[2] = reg_rel_map[2]
@@ -711,15 +716,13 @@ class tileStitcher(baseStitcher):
         patch.y_end = self.overlap
         proj_zy2, proj_zx2, proj_yx2 = _get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
-        # if self.row==0 and self.col==1:
-        #     proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
-        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #         ax[0].imshow(proj1[i], cmap='gray')
-        #         ax[0].set_title('EAST')
-        #         ax[1].imshow(proj2[i], cmap='gray')
-        #         ax[1].set_title(title)
-        #     print('ok')
+        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        # for i, title in enumerate(['X', 'Y', 'Z']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('EAST')
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
 
         if self.mask:
             return _get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
@@ -754,15 +757,13 @@ class tileStitcher(baseStitcher):
         patch.x_end = self.overlap
         proj_zy2, proj_zx2, proj_yx2 = _get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
-        # if self.row==0 and self.col==1:
-        #     print('ok')
-        #     proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
-        #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
-        #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        #         ax[0].imshow(proj1[i], cmap='gray')
-        #         ax[0].set_title('EAST')
-        #         ax[1].imshow(proj2[i], cmap='gray')
-        #         ax[1].set_title(title)
+        # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
+        # for i, title in enumerate(['X', 'Y', 'Z']):
+        #     fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        #     ax[0].imshow(proj1[i], cmap='gray')
+        #     ax[0].set_title('SOUTH')
+        #     ax[1].imshow(proj2[i], cmap='gray')
+        #     ax[1].set_title(title)
 
         if self.mask:
             return _get_masked_proj_shifts([proj_zy1, proj_zx1, proj_yx1],

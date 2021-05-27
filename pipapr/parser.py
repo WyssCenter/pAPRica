@@ -15,10 +15,12 @@ class tileParser():
     """
     Class used to parse the data.
     """
-    def __init__(self, path, frame_size, overlap, ftype):
+    def __init__(self, path, frame_size, overlap, ftype=None):
         self.path = path
-        # TODO: automatically determine data type and automatically convert if not APR.
-        self.type = ftype
+        if ftype is None:
+            self.type = self._get_type()
+        else:
+            self.type = ftype
         self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
         self.ncol = self._get_ncol()
@@ -32,10 +34,32 @@ class tileParser():
         self._print_info()
 
     def _print_info(self):
-        print('**********  PARSING DATA **********')
+
+        print('\n**********  PARSING DATA **********')
+        print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected'.format(self.n_tiles))
-        print('{} rows and {} columns'.format(self.nrow, self.ncol))
+        print('{} rows and {} columns.'.format(self.nrow, self.ncol))
         print('***********************************')
+
+    def _get_type(self):
+        """
+        Automatically determine file type based on what's inside 'path'.
+
+        """
+        folders = glob(os.path.join(self.path, '*/'))
+        files_tif = glob(os.path.join(self.path, '*.tif'))
+        files_apr = glob(os.path.join(self.path, '*.apr'))
+        detection = (len(folders) != 0) + (len(files_tif) != 0)+(len(files_apr) != 0)
+
+        if detection != 1:
+            raise ValueError('Error: could not determine file type automatically, please pass it to the constructor.')
+
+        if len(folders) != 0:
+            return 'tiff2D'
+        elif len(files_tif) != 0:
+            return 'tiff3D'
+        elif len(files_apr) != 0:
+            return 'apr'
 
     def _get_tile_list(self):
         """
@@ -47,10 +71,13 @@ class tileParser():
             files = glob(os.path.join(self.path, '*.apr'))
         elif self.type == 'tiff3D':
             # If files are 3D tiff then their names are 'row_col.tif'
-            files = glob(os.path.join(self.path, '*.apr'))
+            files = glob(os.path.join(self.path, '*.tif'))
         elif self.type == 'tiff2D':
             # If files are 2D tiff then tiff sequence are in folders with name "row_col"
-            files = [f.path for f in os.scandir(self.path) if f.is_dir()]
+            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
+            files = glob(os.path.join(self.path, '*/'))
+        else:
+            raise TypeError('Error: file type {} not supported.'.format(self.type))
 
         tiles = []
         for f in files:
@@ -204,14 +231,3 @@ class tileParser():
         Returns the number of tiles.
         """
         return self.n_tiles
-
-
-class tileParserMultiChannel(tileParser):
-    """
-    Class to parse multichannel data.
-    """
-
-    def __init__(self, path, frame_size, overlap, ftype):
-        super().__init__(path, frame_size, overlap, ftype)
-        self.multichannel = True
-

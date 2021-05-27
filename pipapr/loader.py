@@ -11,6 +11,8 @@ import os
 from skimage.io import imread
 import numpy as np
 import pyapr
+import re
+from alive_progress import alive_bar
 
 
 class tileLoader():
@@ -31,40 +33,16 @@ class tileLoader():
         self.overlap = tile['overlap']
         self.frame_size = tile['frame_size']
 
-        # Load tile data and neighbors data.
+        # Initialize attributes to load tile data and neighbors data.
         self.data = None
         self.data_neighbors = None
         self.data_segmentation = None
         self.data_neighbors_segmentation = None
 
-    def _load_data(self, path):
-        """
-        Load the current tile.
-        """
-
-        if self.type == 'tiff2D':
-            files = glob(os.path.join(path, '*.tif'))
-            im = imread(files[0])
-            u = np.zeros((len(files), *im.shape))
-            u[0] = im
-            files.pop(0)
-            for i, file in enumerate(files):
-                u[i+1] = imread(file)
-        elif self.type == 'tiff3D':
-            u = imread(path)
-        elif self.type == 'apr':
-            apr = pyapr.APR()
-            parts = pyapr.ShortParticles()
-            pyapr.io.read(path, apr, parts)
-            u = (apr, parts)
-        else:
-            raise TypeError('Error: image type {} not supported.'.format(self.type))
-
-        return u
-
     def load_tile(self):
         """
         Load the current tile.
+
         """
         if self.data is None:
             self.data = self._load_data(self.path)
@@ -121,6 +99,25 @@ class tileLoader():
 
         self.data_neighbors_segmentation = u
 
+    def _load_data(self, path):
+        """
+        Load the current tile.
+
+        """
+        if self.type == 'tiff2D':
+            u = self._load_sequence(path)
+        elif self.type == 'tiff3D':
+            u = imread(path)
+        elif self.type == 'apr':
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(path, apr, parts)
+            u = (apr, parts)
+        else:
+            raise TypeError('Error: image type {} not supported.'.format(self.type))
+
+        return u
+
     def _convert_to_apr(self):
         """
         Converts input tile from pixel data to APR.
@@ -144,3 +141,36 @@ class tileLoader():
         for data in self.data_neighbors:
             data_apr.append(pyapr.converter.get_apr(image=data, params=par, verbose=False))
         self.data_neighbors = data_apr
+
+    @staticmethod
+    def _load_sequence(path):
+        """
+        Load a sequence of images in a folder and return it as a 3D array.
+
+        """
+        files = glob(os.path.join(path, '*tif'))
+        n_files = len(files)
+
+        files_sorted = list(range(n_files))
+        n_max = 0
+        for i, pathname in enumerate(files):
+            number_search = re.search('CHN00_PLN(\d+).tif', pathname)
+            if number_search:
+                n = int(number_search.group(1))
+                files_sorted[n] = pathname
+                if n > n_max:
+                    n_max = n
+
+        files_sorted = files_sorted[:n_max]
+        n_files = len(files_sorted)
+
+        u = imread(files_sorted[0])
+        v = np.empty((n_files, *u.shape), dtype='uint16')
+        v[0] = u
+        files_sorted.pop(0)
+        with alive_bar(n_files, force_tty=True, title='Loading sequence') as bar:
+            for i, f in enumerate(files_sorted):
+                v[i + 1] = imread(f)
+                bar()
+
+        return v

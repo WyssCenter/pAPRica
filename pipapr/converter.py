@@ -67,4 +67,5 @@ class tileConverter():
                 pyapr.io.write(os.path.join(folder_apr, filename), apr, parts)
                 bar()
 
-        self.tiles.path = folder_apr
+        # Modify tileParser object to use APR instead
+        self.tiles = tileParser(folder_apr, frame_size=self.tiles.frame_size, overlap=self.tiles.overlap, ftype='apr')

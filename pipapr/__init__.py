@@ -7,4 +7,4 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 
-__all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser']
+__all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter']

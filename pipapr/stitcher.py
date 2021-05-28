@@ -117,7 +117,7 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
     #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
     #         ax[1].imshow(proj2[i], cmap='gray')
     #         ax[1].set_title(title)
-    #     print('o
+    #     print('ok')
 
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
@@ -405,6 +405,101 @@ class tileStitcher(baseStitcher):
         _, _ = self._produce_registration_map()
         self._build_database()
 
+    def _precompute_max_projs(self):
+
+        projs = np.empty((self.nrow, self.ncol), dtype=object)
+        for t in self.tiles:
+            tile = tileLoader(t)
+            tile.load_tile()
+            apr, parts = tile.data
+            proj = {}
+            if tile.col+1 < self.tiles.ncol:
+                if self.tiles.tiles_pattern[tile.row, tile.col+1] == 1:
+                    # EAST 1
+                    patch = pyapr.ReconPatch()
+                    patch.y_begin = self.frame_size - self.overlap
+                    proj['east'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+            if tile.col-1 >= 0:
+                if self.tiles.tiles_pattern[tile.row, tile.col-1] == 1:
+                    # EAST 2
+                    patch = pyapr.ReconPatch()
+                    patch.y_end = self.overlap
+                    proj['west'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+            if tile.row+1 < self.tiles.nrow:
+                if self.tiles.tiles_pattern[tile.row+1, tile.col] == 1:
+                    # SOUTH 1
+                    patch = pyapr.ReconPatch()
+                    patch.x_begin = self.frame_size - self.overlap
+                    proj['south'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+            if tile.row-1 >= 0:
+                if self.tiles.tiles_pattern[tile.row-1, tile.col] == 1:
+                    # SOUTH 2
+                    patch = pyapr.ReconPatch()
+                    patch.x_end = self.overlap
+                    proj['north'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+
+            projs[tile.row, tile.col] = proj
+
+            if self.segment:
+                segmenter = tileSegmenter(tile,
+                                          self.path_classifier,
+                                          self.func_to_compute_features,
+                                          self.func_to_get_cc)
+                segmenter.compute_segmentation(verbose=self.segmentation_verbose)
+
+        return projs
+
+    def compute_registration_fast(self):
+        """
+        Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
+        the redundancy).
+
+        """
+        # First we pre-compute the max-projections and keep them in memory.
+        projs = self._precompute_max_projs()
+
+        # Then we loop again through the tiles but now we have access to the max-proj
+        for t in self.tiles:
+            tile = tileLoader(t)
+            proj1 = projs[tile.row, tile.col]
+
+            for coords in tile.neighbors:
+                proj2 = projs[coords[0], coords[1]]
+
+                if tile.row == coords[0] and tile.col < coords[1]:
+                    # EAST
+                    if self.mask:
+                        reg, rel = _get_masked_proj_shifts(proj1['east'], proj2['west'], threshold=self.threshold)
+                    else:
+                        reg, rel = _get_proj_shifts(proj1['east'], proj2['west'])
+
+                elif tile.col == coords[1] and tile.row < coords[0]:
+                    # SOUTH
+                    if self.mask:
+                        reg, rel = _get_masked_proj_shifts(proj1['south'], proj2['north'], threshold=self.threshold)
+                    else:
+                        reg, rel = _get_proj_shifts(proj1['south'], proj2['north'])
+
+                else:
+                    raise TypeError('Error: couldn''t determine registration to perform.')
+
+                self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
+                                                                    dims=(self.nrow, self.ncol)))
+                self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
+                                                                  dims=(self.nrow, self.ncol)))
+                # H=x, V=y, D=z
+                self.dH.append(reg[2])
+                self.dV.append(reg[1])
+                self.dD.append(reg[0])
+                self.relia_H.append(rel[2])
+                self.relia_V.append(rel[1])
+                self.relia_D.append(rel[0])
+
+        self._build_sparse_graphs()
+        self._optimize_sparse_graphs()
+        _, _ = self._produce_registration_map()
+        self._build_database()
+
     def plot_graph(self, annotate=False):
         """
         Plot the graph for each direction (H, D, V). This method needs to be called after the graph
@@ -600,12 +695,10 @@ class tileStitcher(baseStitcher):
 
                 # Get the previous neighbor local reg parameter
                 ind1, ind2 = np.unravel_index(node_from, shape=(self.nrow, self.ncol))
-                print('From: row={} col={}'.format(ind1, ind2))
                 d_neighbor = reg_rel_map[i, ind1, ind2]
 
                 # Get the current 2D tile position
                 ind1, ind2 = np.unravel_index(node_to, shape=(self.nrow, self.ncol))
-                print('To: row={} col={}'.format(ind1, ind2))
                 # Get the associated ind position in the registration graph (as opposed to the reliability min_tree)
                 ind_graph = self._get_ind(node_from, node_to)
                 # Get the corresponding reg parameter

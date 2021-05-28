@@ -37,7 +37,7 @@ class tileParser():
 
         print('\n**********  PARSING DATA **********')
         print('Tiles are of type {}.'.format(self.type))
-        print('{} tiles were detected'.format(self.n_tiles))
+        print('{} tiles were detected.'.format(self.n_tiles))
         print('{} rows and {} columns.'.format(self.nrow, self.ncol))
         print('***********************************')
 

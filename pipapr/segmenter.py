@@ -42,8 +42,9 @@ class tileSegmenter():
         """
 
         self.path = tile.path
-        self.data = tile.data
-        self.is_tile_loaded = (tile.data is not None)
+        self.apr = tile.apr
+        self.parts = tile.parts
+        self.is_tile_loaded = (tile.apr is not None)
         # Load classifier
         self.clf = load(path_classifier)
         # Store function to compute features
@@ -90,7 +91,7 @@ class tileSegmenter():
 
         return parts_pred
 
-    def compute_segmentation(self, verbose=False):
+    def compute_segmentation(self, save_mask=False, save_cc=True, verbose=False):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -103,13 +104,10 @@ class tileSegmenter():
         None
         """
 
-        apr = self.data[0]
-        parts = self.data[1]
-
         if verbose:
             t = time()
             print('Computing features on AP')
-        f = self.func_to_compute_features(apr, parts)
+        f = self.func_to_compute_features(self.apr, self.parts)
         if verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
@@ -127,12 +125,32 @@ class tileSegmenter():
                                                             np.sum(parts_pred == 2) / len(parts_pred) * 100))
             print('*******************************')
 
-        cc = self.func_to_get_cc(apr, parts_pred)
+        cc = self.func_to_get_cc(self.apr, parts_pred)
 
-        folder, filename = os.path.split(self.path)
-        folder_seg = os.path.join(folder, 'segmentation')
-        Path(folder_seg).mkdir(parents=True, exist_ok=True)
-        pyapr.io.write(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, cc)
+        # Save results
+        if save_mask:
+            self._save_segmentation(name='segmentation mask', parts=parts_pred)
+        if save_cc:
+            self._save_segmentation(name='segmentation cc', parts=cc)
+
+    def _save_segmentation(self, name, parts):
+        """
+        Save segmentation particles by appending the original APR file.
+
+        Parameters
+        ----------
+        parts: (pyapr.ParticleData) particles to save. Note that the PAR tree should be the same otherwise the data
+                                    will be inconsistent and not readable.
+
+        Returns
+        -------
+        None
+        """
+        aprfile = pyapr.io.APRFile()
+        aprfile.set_read_write_tree(False)
+        aprfile.open(self.path, 'READWRITE')
+        aprfile.write_particles(name, parts)
+        aprfile.close()
 
 class tileCells():
     """
@@ -199,16 +217,14 @@ class tileCells():
             tile = tileLoader(t)
             tile.load_tile()
             tile.load_segmentation()
-            apr, parts = tile.data
-            apr, cc = tile.data_segmentation
 
             # Initialized merged cells for the first tile
             if self.cells is None:
-                self.cells = pyapr.numerics.transform.find_label_centers(apr, cc, parts)
+                self.cells = pyapr.numerics.transform.find_label_centers(tile.apr, tile.cc, tile.parts)
                 self.cells += self._get_tile_position(tile.row, tile.col)
             # Then merge the rest on the first tile
             else:
-                self._merge_cells(tile, apr, cc, parts, lowe_ratio=lowe_ratio, distance_max=distance_max)
+                self._merge_cells(tile, lowe_ratio=lowe_ratio, distance_max=distance_max)
 
     def save_cells(self, output_path):
         """
@@ -225,16 +241,13 @@ class tileCells():
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
 
-    def _merge_cells(self, tile, apr, cc, parts, lowe_ratio, distance_max):
+    def _merge_cells(self, tile, lowe_ratio, distance_max):
         """
         Function to merge cells on a tile to the final cells list and remove duplicate.
 
         Parameters
         ----------
         tile: (tileLoader) tile from which to merge cells
-        apr: (pyapr.APR) apr tree of the tile
-        cc: (pyapr.LongParticle) connected component particle data of the tile file
-        parts: (pyapr.ShortParticle, pyapr.FloatParticle) particle data of the tile file
         lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
                             above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
                             a second detection on the neighboring tile.
@@ -248,14 +261,14 @@ class tileCells():
         r1 = np.max(self.cells, axis=0)
         r2 = self._get_tile_position(tile.row, tile.col)
 
-        v_size = np.array([apr.org_dims(2), apr.org_dims(1), apr.org_dims(0)])
+        v_size = np.array([self.apr.org_dims(2), self.apr.org_dims(1), self.apr.org_dims(0)])
 
         # Define the overlapping area
         overlap_i = r2
         overlap_f = np.min((r1 + v_size, r2 + v_size), axis=0)
 
         # Retrieve cell centers
-        cells2 = pyapr.numerics.transform.find_label_centers(apr, cc, parts)
+        cells2 = pyapr.numerics.transform.find_label_centers(self.apr, self.cc, self.parts)
         cells2 += r2
 
         # Filter cells to keep only those on the overlapping area

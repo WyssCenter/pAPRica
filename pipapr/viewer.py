@@ -250,16 +250,17 @@ class tileViewer():
             if self._is_tile_loaded(tile.row, tile.col):
                 apr, parts = self.loaded_tiles[ind]
                 if self.segmentation:
-                    mask = self.loaded_segmentation[ind]
+                    cc = self.loaded_segmentation[ind]
             else:
                 tile.load_tile()
-                apr, parts = tile.data
+                apr, parts = tile.apr, tile.parts
                 self.loaded_ind.append(ind)
                 self.loaded_tiles[ind] = apr, parts
                 if self.segmentation:
                     tile.load_segmentation()
-                    apr, mask = tile.data_segmentation
-                    self.loaded_segmentation[ind] = mask
+                    cc = tile.parts_cc
+                    self.loaded_segmentation[ind] = cc
+
 
             position = self._get_tile_position(tile.row, tile.col)
             if level_delta != 0:
@@ -272,7 +273,7 @@ class tileViewer():
                                               level_delta=level_delta,
                                               **kwargs))
             if self.segmentation:
-                layers.append(apr_to_napari_Labels(apr, mask,
+                layers.append(apr_to_napari_Labels(apr, cc,
                                                    mode='constant',
                                                    name='Segmentation [{}, {}]'.format(tile.row, tile.col),
                                                    translate=position,
@@ -322,13 +323,13 @@ class tileViewer():
                     mask = self.loaded_segmentation[ind]
             else:
                 tile.load_tile()
-                apr, parts = tile.data
+                apr, parts = tile.apr, tile.parts
                 self.loaded_ind.append(ind)
                 self.loaded_tiles[ind] = apr, parts
                 if self.segmentation:
                     tile.load_segmentation()
-                    apr, mask = tile.data_segmentation
-                    self.loaded_segmentation[ind] = mask
+                    cc = tile.parts_cc
+                    self.loaded_segmentation[ind] = cc
 
             position = self._get_tile_position(tile.row, tile.col)
             if level_delta != 0:
@@ -341,7 +342,7 @@ class tileViewer():
                                               level_delta=level_delta,
                                               **kwargs))
             if self.segmentation:
-                layers.append(apr_to_napari_Labels(apr, mask,
+                layers.append(apr_to_napari_Labels(apr, cc,
                                                    mode='constant',
                                                    name='Segmentation [{}, {}]'.format(tile.row, tile.col),
                                                    translate=position,

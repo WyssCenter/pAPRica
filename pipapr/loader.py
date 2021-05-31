@@ -33,11 +33,17 @@ class tileLoader():
         self.overlap = tile['overlap']
         self.frame_size = tile['frame_size']
 
-        # Initialize attributes to load tile data and neighbors data.
-        self.data = None
+        # Initialize attributes to load tile data
+        self.data = None                    # Pixel data
+        self.apr = None                     # APR tree
+        self.parts = None                   # Particles
+        self.parts_cc = None                # Connected component
+
+        # Initialize attributes to load neighbors data
         self.data_neighbors = None
-        self.data_segmentation = None
-        self.data_neighbors_segmentation = None
+        self.apr_neighbors = None
+        self.parts_neighbors = None
+        self.parts_cc_neighbors = None
 
     def load_tile(self):
         """
@@ -45,7 +51,10 @@ class tileLoader():
 
         """
         if self.data is None:
-            self.data = self._load_data(self.path)
+            if self.type == 'apr':
+                self.apr, self.parts = self._load_data(self.path)
+            else:
+                self.data = self._load_data(self.path)
         else:
             print('Tile already loaded.')
 
@@ -53,51 +62,76 @@ class tileLoader():
         """
         Load the current tile neighbors.
         """
-
         if self.data_neighbors is None:
-            u = []
-            for path_neighbor in self.neighbors_path:
-                u.append(self._load_data(path_neighbor))
+            if self.type == 'apr':
+                aprs = []
+                partss = []
+                for path_neighbor in self.neighbors_path:
+                    apr, parts = self._load_data(path_neighbor)
+                    aprs.append(apr)
+                    partss.append(parts)
+                self.apr_neighbors = aprs
+                self.parts_neighbors = partss
+            else:
+                u = []
+                for path_neighbor in self.neighbors_path:
+                    u.append(self._load_data(path_neighbor))
+                self.data_neighbors = u
         else:
             print('Tile neighbors already loaded.')
 
-        self.data_neighbors = u
-
-    def load_segmentation(self):
+    def load_segmentation(self, load_tree=False):
         """
         Load the current tile cc.
         """
 
-        if self.data_segmentation is None:
-            apr = pyapr.APR()
+        if self.parts_cc is None:
             cc = pyapr.LongParticles()
-            folder, filename = os.path.split(self.path)
-            folder_seg = os.path.join(folder, 'segmentation')
-            pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, cc)
-            u = (apr, cc)
+            aprfile = pyapr.io.APRFile()
+            aprfile.set_read_write_tree(True)
+            aprfile.open(self.path, 'READ')
+            if load_tree:
+                apr = pyapr.APR()
+                aprfile.read_apr(apr, t=0, channel_name='t')
+                self.apr = apr
+            aprfile.read_particles(self.apr, 'segmentation cc', cc, t=0)
+            aprfile.close()
+            self.parts_cc = cc
         else:
             print('Tile cc already loaded.')
 
-        self.data_segmentation = u
-
-    def load_neighbors_segmentation(self):
+    def load_neighbors_segmentation(self, load_tree=False):
         """
         Load the current tile neighbors cc.
         """
+        if self.data_neighbors is None:
+            if self.type == 'apr':
+                aprs = []
+                ccs = []
+                for i, path_neighbor in enumerate(self.neighbors_path):
+                    if not load_tree:
+                        apr = self.apr_neighbors[i]
+                    cc = pyapr.LongParticles()
+                    aprfile = pyapr.io.APRFile()
+                    aprfile.set_read_write_tree(True)
+                    aprfile.open(path_neighbor, 'READ')
+                    if load_tree:
+                        apr = pyapr.APR()
+                        aprfile.read_apr(apr, t=0, channel_name='t')
+                    aprfile.read_particles(apr, 'segmentation cc', cc, t=0)
+                    aprfile.close()
+                    aprs.append(apr)
+                    ccs.append(cc)
+                self.apr_neighbors = aprs
+                self.parts_neighbors = ccs
 
-        if self.data_neighbors_segmentation is None:
-            u = []
-            for path_neighbor in self.neighbors_path:
-                apr = pyapr.APR()
-                cc = pyapr.LongParticles()
-                folder, filename = os.path.split(path_neighbor)
-                folder_seg = os.path.join(folder, 'segmentation')
-                pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, cc)
-                u.append(apr, cc)
+            else:
+                u = []
+                for path_neighbor in self.neighbors_path:
+                    u.append(self._load_data(path_neighbor))
+                self.data_neighbors = u
         else:
             print('Tile neighbors already loaded.')
-
-        self.data_neighbors_segmentation = u
 
     def _load_data(self, path):
         """
@@ -117,30 +151,6 @@ class tileLoader():
             raise TypeError('Error: image type {} not supported.'.format(self.type))
 
         return u
-
-    def _convert_to_apr(self):
-        """
-        Converts input tile from pixel data to APR.
-        """
-        # TODO: have an automatic way to set the parameters.
-
-        # Parameters are hardcoded for now
-        par = pyapr.APRParameters()
-        par.auto_parameters = False  # really heuristic and not working
-        par.sigma_th = 26.0
-        par.grad_th = 3.0
-        par.Ip_th = 253.0
-        par.rel_error = 0.2
-        par.gradient_smoothing = 2
-
-        # Convert data to APR
-        self.data = pyapr.converter.get_apr(image=self.data, params=par, verbose=False)
-
-        # Convert neighbors to APR
-        data_apr = []
-        for data in self.data_neighbors:
-            data_apr.append(pyapr.converter.get_apr(image=data, params=par, verbose=False))
-        self.data_neighbors = data_apr
 
     @staticmethod
     def _load_sequence(path):

@@ -375,15 +375,15 @@ class tileStitcher(baseStitcher):
                                           self.func_to_get_cc)
                 segmenter.compute_segmentation(verbose=self.segmentation_verbose)
 
-            for v, coords in zip(tile.data_neighbors, tile.neighbors):
+            for apr, parts, coords in zip(tile.apr_neighbors, tile.parts_neighbors, tile.neighbors):
 
                 if tile.row == coords[0] and tile.col < coords[1]:
                     # EAST
-                    reg, rel = self._compute_east_registration(tile.data, v)
+                    reg, rel = self._compute_east_registration(tile.apr, tile.parts, apr, parts)
 
                 elif tile.col == coords[1] and tile.row < coords[0]:
                     # SOUTH
-                    reg, rel = self._compute_south_registration(tile.data, v)
+                    reg, rel = self._compute_south_registration(tile.apr, tile.parts, apr, parts)
 
                 else:
                     raise TypeError('Error: couldn''t determine registration to perform.')
@@ -411,32 +411,31 @@ class tileStitcher(baseStitcher):
         for t in self.tiles:
             tile = tileLoader(t)
             tile.load_tile()
-            apr, parts = tile.data
             proj = {}
             if tile.col+1 < self.tiles.ncol:
                 if self.tiles.tiles_pattern[tile.row, tile.col+1] == 1:
                     # EAST 1
                     patch = pyapr.ReconPatch()
                     patch.y_begin = self.frame_size - self.overlap
-                    proj['east'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+                    proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
             if tile.col-1 >= 0:
                 if self.tiles.tiles_pattern[tile.row, tile.col-1] == 1:
                     # EAST 2
                     patch = pyapr.ReconPatch()
                     patch.y_end = self.overlap
-                    proj['west'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+                    proj['west'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
             if tile.row+1 < self.tiles.nrow:
                 if self.tiles.tiles_pattern[tile.row+1, tile.col] == 1:
                     # SOUTH 1
                     patch = pyapr.ReconPatch()
                     patch.x_begin = self.frame_size - self.overlap
-                    proj['south'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+                    proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
             if tile.row-1 >= 0:
                 if self.tiles.tiles_pattern[tile.row-1, tile.col] == 1:
                     # SOUTH 2
                     patch = pyapr.ReconPatch()
                     patch.x_end = self.overlap
-                    proj['north'] = _get_max_proj_apr(apr, parts, patch, plot=False)
+                    proj['north'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
 
             projs[tile.row, tile.col] = proj
 
@@ -783,7 +782,7 @@ class tileStitcher(baseStitcher):
             raise ValueError('Error: can''t find matching vertex pair.')
         return ind
 
-    def _compute_east_registration(self, u, v):
+    def _compute_east_registration(self, apr_1, parts_1, apr_2, parts_2):
         """
         Compute the registration between the current tile and its eastern neighbor.
 
@@ -797,9 +796,6 @@ class tileStitcher(baseStitcher):
         None
 
         """
-
-        apr_1, parts_1 = u
-        apr_2, parts_2 = v
 
         patch = pyapr.ReconPatch()
         patch.y_begin = self.frame_size - self.overlap
@@ -825,7 +821,7 @@ class tileStitcher(baseStitcher):
             return _get_proj_shifts([proj_zy1, proj_zx1, proj_yx1],
                                     [proj_zy2, proj_zx2, proj_yx2])
 
-    def _compute_south_registration(self, u, v):
+    def _compute_south_registration(self, apr_1, parts_1, apr_2, parts_2):
         """
         Compute the registration between the current tile and its southern neighbor.
 
@@ -839,8 +835,6 @@ class tileStitcher(baseStitcher):
         None
 
         """
-        apr_1, parts_1 = u
-        apr_2, parts_2 = v
 
         patch = pyapr.ReconPatch()
         patch.x_begin = self.frame_size - self.overlap
@@ -902,16 +896,14 @@ class channelStitcher(baseStitcher):
         for t1, t2 in zip(self.tiles, self.tiles_channel):
             tile1 = tileLoader(t1)
             tile1.load_tile()
-            apr1, parts1 = tile1.data
             tile2 = tileLoader(t2)
             tile2.load_tile()
-            apr2, parts2 = tile2.data
 
             patch = pyapr.ReconPatch()
-            proj1 = _get_max_proj_apr(apr1, parts1, patch)
+            proj1 = _get_max_proj_apr(tile1.apr, tile1.parts, patch)
 
             patch = pyapr.ReconPatch()
-            proj2 = _get_max_proj_apr(apr2, parts2, patch)
+            proj2 = _get_max_proj_apr(tile2.apr, tile2.parts, patch)
 
             if self.mask:
                 d, error = _get_masked_proj_shifts(proj1, proj2, self.threshold)
@@ -1024,8 +1016,8 @@ class tileMerger():
             for i, t in enumerate(self.tiles):
                 tile = tileLoader(t)
                 tile.load_tile()
-                apr, parts = tile.data
-                u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
+
+                u = pyapr.data_containers.APRSlicer(self.apr, self.parts, level_delta=self.level_delta, mode=mode)
                 data = u[:, :, :]
 
                 x1 = int(H_pos[i])

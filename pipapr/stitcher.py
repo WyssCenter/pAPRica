@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 import pyapr
 from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
+import os
 
 
 def _get_max_proj_apr(apr, parts, patch, plot=False):
@@ -269,7 +270,6 @@ class baseStitcher():
         self.database.to_csv(path)
 
 
-
 class tileStitcher(baseStitcher):
     """
     Class used to perform the stitching. The stitching is performed in 4 steps:
@@ -405,57 +405,18 @@ class tileStitcher(baseStitcher):
         _, _ = self._produce_registration_map()
         self._build_database()
 
-    def _precompute_max_projs(self):
-
-        projs = np.empty((self.nrow, self.ncol), dtype=object)
-        for t in self.tiles:
-            tile = tileLoader(t)
-            tile.load_tile()
-            proj = {}
-            if tile.col+1 < self.tiles.ncol:
-                if self.tiles.tiles_pattern[tile.row, tile.col+1] == 1:
-                    # EAST 1
-                    patch = pyapr.ReconPatch()
-                    patch.y_begin = self.frame_size - self.overlap
-                    proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-            if tile.col-1 >= 0:
-                if self.tiles.tiles_pattern[tile.row, tile.col-1] == 1:
-                    # EAST 2
-                    patch = pyapr.ReconPatch()
-                    patch.y_end = self.overlap
-                    proj['west'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-            if tile.row+1 < self.tiles.nrow:
-                if self.tiles.tiles_pattern[tile.row+1, tile.col] == 1:
-                    # SOUTH 1
-                    patch = pyapr.ReconPatch()
-                    patch.x_begin = self.frame_size - self.overlap
-                    proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-            if tile.row-1 >= 0:
-                if self.tiles.tiles_pattern[tile.row-1, tile.col] == 1:
-                    # SOUTH 2
-                    patch = pyapr.ReconPatch()
-                    patch.x_end = self.overlap
-                    proj['north'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-
-            projs[tile.row, tile.col] = proj
-
-            if self.segment:
-                segmenter = tileSegmenter(tile,
-                                          self.path_classifier,
-                                          self.func_to_compute_features,
-                                          self.func_to_get_cc)
-                segmenter.compute_segmentation(verbose=self.segmentation_verbose)
-
-        return projs
-
-    def compute_registration_fast(self):
+    def compute_registration_fast(self, on_disk=False):
         """
         Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
         the redundancy).
 
         """
-        # First we pre-compute the max-projections and keep them in memory.
-        projs = self._precompute_max_projs()
+        # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
+        if on_disk:
+            self._save_max_projs()
+            projs = self._load_max_projs()
+        else:
+            projs = self._precompute_max_projs()
 
         # Then we loop again through the tiles but now we have access to the max-proj
         for t in self.tiles:
@@ -615,6 +576,135 @@ class tileStitcher(baseStitcher):
 
         with open(path, 'wb') as f:
             dill.dump(self, f)
+
+    def _save_max_projs(self):
+
+        for t in self.tiles:
+            tile = tileLoader(t)
+            tile.load_tile()
+            proj = {}
+            if tile.col + 1 < self.tiles.ncol:
+                if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:
+                    # EAST 1
+                    patch = pyapr.ReconPatch()
+                    patch.y_begin = self.frame_size - self.overlap
+                    proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        np.save(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_east_{}.npy'.format(tile.row, tile.col, d)), proj[i])
+            if tile.col - 1 >= 0:
+                if self.tiles.tiles_pattern[tile.row, tile.col - 1] == 1:
+                    # EAST 2
+                    patch = pyapr.ReconPatch()
+                    patch.y_end = self.overlap
+                    proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        np.save(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_west_{}.npy'.format(tile.row, tile.col, d)), proj[i])
+            if tile.row + 1 < self.tiles.nrow:
+                if self.tiles.tiles_pattern[tile.row + 1, tile.col] == 1:
+                    # SOUTH 1
+                    patch = pyapr.ReconPatch()
+                    patch.x_begin = self.frame_size - self.overlap
+                    proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        np.save(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_south_{}.npy'.format(tile.row, tile.col, d)), proj[i])
+            if tile.row - 1 >= 0:
+                if self.tiles.tiles_pattern[tile.row - 1, tile.col] == 1:
+                    # SOUTH 2
+                    patch = pyapr.ReconPatch()
+                    patch.x_end = self.overlap
+                    proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        np.save(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_north_{}.npy'.format(tile.row, tile.col, d)), proj[i])
+
+    def _load_max_projs(self):
+        projs = np.empty((self.nrow, self.ncol), dtype=object)
+        for t in self.tiles:
+            tile = tileLoader(t)
+            tile.load_tile()
+            proj = {}
+            if tile.col + 1 < self.tiles.ncol:
+                if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:
+                    # EAST 1
+                    tmp = []
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_east_{}.npy'.format(tile.row, tile.col, d))))
+                    proj['east'] = tmp
+            if tile.col - 1 >= 0:
+                if self.tiles.tiles_pattern[tile.row, tile.col - 1] == 1:
+                    # EAST 2
+                    tmp = []
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_west_{}.npy'.format(tile.row, tile.col, d))))
+                    proj['west'] = tmp
+            if tile.row + 1 < self.tiles.nrow:
+                if self.tiles.tiles_pattern[tile.row + 1, tile.col] == 1:
+                    # SOUTH 1
+                    tmp = []
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_south_{}.npy'.format(tile.row, tile.col, d))))
+                    proj['south'] = tmp
+            if tile.row - 1 >= 0:
+                if self.tiles.tiles_pattern[tile.row - 1, tile.col] == 1:
+                    # SOUTH 2
+                    tmp = []
+                    for i, d in enumerate(['zy', 'zx', 'yx']):
+                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                                             '{}_{}_north_{}.npy'.format(tile.row, tile.col, d))))
+                    proj['north'] = tmp
+
+            projs[tile.row, tile.col] = proj
+
+        return projs
+
+    def _precompute_max_projs(self):
+
+        projs = np.empty((self.nrow, self.ncol), dtype=object)
+        for t in self.tiles:
+            tile = tileLoader(t)
+            tile.load_tile()
+            proj = {}
+            if tile.col+1 < self.tiles.ncol:
+                if self.tiles.tiles_pattern[tile.row, tile.col+1] == 1:
+                    # EAST 1
+                    patch = pyapr.ReconPatch()
+                    patch.y_begin = self.frame_size - self.overlap
+                    proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+            if tile.col-1 >= 0:
+                if self.tiles.tiles_pattern[tile.row, tile.col-1] == 1:
+                    # EAST 2
+                    patch = pyapr.ReconPatch()
+                    patch.y_end = self.overlap
+                    proj['west'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+            if tile.row+1 < self.tiles.nrow:
+                if self.tiles.tiles_pattern[tile.row+1, tile.col] == 1:
+                    # SOUTH 1
+                    patch = pyapr.ReconPatch()
+                    patch.x_begin = self.frame_size - self.overlap
+                    proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+            if tile.row-1 >= 0:
+                if self.tiles.tiles_pattern[tile.row-1, tile.col] == 1:
+                    # SOUTH 2
+                    patch = pyapr.ReconPatch()
+                    patch.x_end = self.overlap
+                    proj['north'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+
+            projs[tile.row, tile.col] = proj
+
+        if self.segment:
+            segmenter = tileSegmenter(tile,
+                                      self.path_classifier,
+                                      self.func_to_compute_features,
+                                      self.func_to_get_cc)
+            segmenter.compute_segmentation(verbose=self.segmentation_verbose)
+
+        return projs
 
     def _build_sparse_graphs(self):
         """

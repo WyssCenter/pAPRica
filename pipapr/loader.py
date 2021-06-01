@@ -33,6 +33,11 @@ class tileLoader():
         self.overlap = tile['overlap']
         self.frame_size = tile['frame_size']
 
+        # Define some folders
+        base, _ = os.path.split(self.path)
+        base, _ = os.path.split(base)
+        self.folder_max_projs = os.path.join(base, 'max_projs')
+
         # Initialize attributes to load tile data
         self.data = None                    # Pixel data
         self.apr = None                     # APR tree
@@ -51,6 +56,7 @@ class tileLoader():
 
         """
         if self.data is None:
+            print('Load Tile {}'.format(self.path))
             if self.type == 'apr':
                 self.apr, self.parts = self._load_data(self.path)
             else:

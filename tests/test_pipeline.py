@@ -182,21 +182,37 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 # Parameters
-path = r'../data'
+path = r'../data/apr/'
 path_classifier=r'../data/random_forest_n100.joblib'
+n = 1
 
 # Parse data
 t_ini = time()
-tiles = tileParser(path, frame_size=512, overlap=128, type='apr')
+tiles = tileParser(path, frame_size=512, overlap=128, ftype='apr')
 t = time()
 
 # Stitch and segment
 stitcher = tileStitcher(tiles)
 stitcher.activate_mask(99)
 stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
-stitcher.compute_registration()
-stitcher.save_database(os.path.join(path, 'registration_results.csv'))
-print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
+
+# for i in range(n):
+#     stitcher = tileStitcher(tiles)
+#     stitcher.compute_registration()
+# print('Elapsed time old registration: {} s.'.format((time()-t)/n))
+t = time()
+for i in range(n):
+    stitcher = tileStitcher(tiles)
+    stitcher.compute_registration_fast()
+print('Elapsed time new registration on RAM: {} s.'.format((time()-t)/n))
+t = time()
+# for i in range(n):
+#     stitcher = tileStitcher(tiles)
+#     stitcher.compute_registration_fast(on_disk=True)
+# print('Elapsed time new registration on disk: {} s.'.format((time()-t)/n))
+
+# stitcher.save_database(os.path.join(path, 'registration_results.csv'))
+# print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
 # Extract cell position and merge across the whole volume.
 cells = tileCells(tiles, stitcher.database)
@@ -204,4 +220,4 @@ cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
 
 # Display result
 viewer = tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
-viewer.display_all_tiles(level_delta=0, contrast_limits=[0, 3000])
+viewer.display_all_tiles(downsample=1, contrast_limits=[0, 3000])

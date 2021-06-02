@@ -33,6 +33,10 @@ class tileParser():
         self.frame_size = frame_size
         self._print_info()
 
+        # Define some folders
+        base, _ = os.path.split(self.path)
+        self.folder_max_projs = os.path.join(base, 'max_projs')
+
     def _print_info(self):
 
         print('\n**********  PARSING DATA **********')

@@ -465,6 +465,53 @@ class tileStitcher(baseStitcher):
         _, _ = self._produce_registration_map()
         self._build_database()
 
+    def compute_registration_from_max_projs(self):
+
+        # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
+        projs = self._load_max_projs()
+
+        # Then we loop again through the tiles but now we have access to the max-proj
+        for t in self.tiles:
+            tile = tileLoader(t)
+            proj1 = projs[tile.row, tile.col]
+
+            for coords in tile.neighbors:
+                proj2 = projs[coords[0], coords[1]]
+
+                if tile.row == coords[0] and tile.col < coords[1]:
+                    # EAST
+                    if self.mask:
+                        reg, rel = _get_masked_proj_shifts(proj1['east'], proj2['west'], threshold=self.threshold)
+                    else:
+                        reg, rel = _get_proj_shifts(proj1['east'], proj2['west'])
+
+                elif tile.col == coords[1] and tile.row < coords[0]:
+                    # SOUTH
+                    if self.mask:
+                        reg, rel = _get_masked_proj_shifts(proj1['south'], proj2['north'], threshold=self.threshold)
+                    else:
+                        reg, rel = _get_proj_shifts(proj1['south'], proj2['north'])
+
+                else:
+                    raise TypeError('Error: couldn''t determine registration to perform.')
+
+                self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
+                                                                    dims=(self.nrow, self.ncol)))
+                self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
+                                                                  dims=(self.nrow, self.ncol)))
+                # H=x, V=y, D=z
+                self.dH.append(reg[2])
+                self.dV.append(reg[1])
+                self.dD.append(reg[0])
+                self.relia_H.append(rel[2])
+                self.relia_V.append(rel[1])
+                self.relia_D.append(rel[0])
+
+        self._build_sparse_graphs()
+        self._optimize_sparse_graphs()
+        _, _ = self._produce_registration_map()
+        self._build_database()
+
     def plot_graph(self, annotate=False):
         """
         Plot the graph for each direction (H, D, V). This method needs to be called after the graph

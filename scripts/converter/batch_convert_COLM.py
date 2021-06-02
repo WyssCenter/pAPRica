@@ -62,7 +62,7 @@ def sort_list(mylist):
 
 # Parameters for batch conversion
 data_path = r'/media/jules/ALICe_Ivana/LOC000_20210420_153304/VW0'
-output_dir = r'/home/jules/Desktop/mouse_colm/'
+output_dir = r'/home/jules/Desktop/mouse_colm/multitile_auto'
 n_H = 10
 n_V = 10
 
@@ -75,13 +75,11 @@ par.dx = 1
 par.dy = 1
 par.dz = 1
 par.Ip_th = 450
-par.sigma_th = 95.0
-par.grad_th = 15.0
 
 # Conversion
 folders = glob(os.path.join(data_path, 'LOC*'))
 folders = sort_list(folders)
-folders = folders[96:]
+print(folders)
 loading = []
 conversion = []
 writing = []

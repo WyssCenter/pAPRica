@@ -91,7 +91,7 @@ class tileSegmenter():
 
         return parts_pred
 
-    def compute_segmentation(self, save_mask=False, save_cc=True, verbose=False):
+    def compute_segmentation(self, save_cc=True, save_mask=False, verbose=False):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -147,9 +147,9 @@ class tileSegmenter():
         None
         """
         aprfile = pyapr.io.APRFile()
-        aprfile.set_read_write_tree(False)
+        aprfile.set_read_write_tree(True)
         aprfile.open(self.path, 'READWRITE')
-        aprfile.write_particles(name, parts)
+        aprfile.write_particles('test', parts, t=0)
         aprfile.close()
 
 class tileCells():
@@ -220,7 +220,7 @@ class tileCells():
 
             # Initialized merged cells for the first tile
             if self.cells is None:
-                self.cells = pyapr.numerics.transform.find_label_centers(tile.apr, tile.cc, tile.parts)
+                self.cells = pyapr.numerics.transform.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
                 self.cells += self._get_tile_position(tile.row, tile.col)
             # Then merge the rest on the first tile
             else:
@@ -261,14 +261,14 @@ class tileCells():
         r1 = np.max(self.cells, axis=0)
         r2 = self._get_tile_position(tile.row, tile.col)
 
-        v_size = np.array([self.apr.org_dims(2), self.apr.org_dims(1), self.apr.org_dims(0)])
+        v_size = np.array([tile.apr.org_dims(2), tile.apr.org_dims(1), tile.apr.org_dims(0)])
 
         # Define the overlapping area
         overlap_i = r2
         overlap_f = np.min((r1 + v_size, r2 + v_size), axis=0)
 
         # Retrieve cell centers
-        cells2 = pyapr.numerics.transform.find_label_centers(self.apr, self.cc, self.parts)
+        cells2 = pyapr.numerics.transform.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
         cells2 += r2
 
         # Filter cells to keep only those on the overlapping area

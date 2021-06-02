@@ -473,6 +473,7 @@ class tileStitcher(baseStitcher):
         # Then we loop again through the tiles but now we have access to the max-proj
         for t in self.tiles:
             tile = tileLoader(t)
+            print(tile.path)
             proj1 = projs[tile.row, tile.col]
 
             for coords in tile.neighbors:
@@ -678,9 +679,10 @@ class tileStitcher(baseStitcher):
     def _load_max_projs(self):
 
         projs = np.empty((self.nrow, self.ncol), dtype=object)
+
         for t in self.tiles:
             tile = tileLoader(t)
-            tile.load_tile()
+            print(tile.path)
             proj = {}
             if tile.col + 1 < self.tiles.ncol:
                 if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:

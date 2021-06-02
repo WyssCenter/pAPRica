@@ -23,8 +23,10 @@ tiles = tileParser(path, frame_size=2048, overlap=int(2048*0.25), ftype='apr')
 
 t = time()
 stitcher = tileStitcher(tiles)
-stitcher.compute_registration_fast(on_disk=False)
+stitcher.compute_registration_fast(on_disk=True)
 print('Elapsed time: {} s.'.format(time()-t))
+
+stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 
 
 #
@@ -38,7 +40,7 @@ print('Elapsed time: {} s.'.format(time()-t))
 #
 
 # Merge multi-tile acquisition using maximum strategy
-merger = tileMerger(os.path.join(path, 'registration_results.csv'), frame_size=2048, type='apr', n_planes=1835)
+merger = tileMerger(tiles, os.path.join(path, 'registration_results.csv'), n_planes=1835)
 merger.set_downsample(8)
 merger.initialize_merged_array()
 merger.merge_max(mode='constant')

@@ -21,17 +21,16 @@ class tileLoader():
 
     Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
-    def __init__(self, tile):
-        # TODO: here the data of each tile is passed as a dictionary. Maybe there is a less redundant or cleaner way
-        # to achieve this.
-        self.path = tile['path']
-        self.row = tile['row']
-        self.col = tile['col']
-        self.type = tile['type']
-        self.neighbors = tile['neighbors']
-        self.neighbors_path = tile['neighbors_path']
-        self.overlap = tile['overlap']
-        self.frame_size = tile['frame_size']
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_path, overlap, frame_size):
+
+        self.path = path
+        self.row = row
+        self.col = col
+        self.type = ftype
+        self.neighbors = neighbors
+        self.neighbors_path = neighbors_path
+        self.overlap = overlap
+        self.frame_size = frame_size
 
         # Initialize attributes to load tile data
         self.data = None                    # Pixel data

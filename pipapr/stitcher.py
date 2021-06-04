@@ -22,6 +22,7 @@ import pyapr
 from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
 import os
+from pathlib import Path
 
 
 def _get_max_proj_apr(apr, parts, patch, plot=False):
@@ -269,6 +270,38 @@ class baseStitcher():
 
         self.database.to_csv(path)
 
+    def activate_segmentation(self, path_classifier, func_to_compute_features,
+                              func_to_get_cc, verbose=False):
+        """
+        Activate the segmentation. When a tile is loaded it is segmented before the stitching is done.
+
+        Parameters
+        ----------
+        tile: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
+        path_classifier: (str) path to pre-trained classifier
+        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
+                                        as the one used to train the classifier.
+        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
+                                        a unique id)
+        """
+
+        self.segment = True
+        self.segmentation_verbose = verbose
+        # Load classifier
+        self.path_classifier = path_classifier
+        # Store function to compute features
+        self.func_to_compute_features = func_to_compute_features
+        # Store post processing steps
+        self.func_to_get_cc = func_to_get_cc
+
+    def deactivate_segmentation(self):
+        """
+        Deactivate tile segmentation.
+
+        """
+
+        self.segment = False
+
 
 class tileStitcher(baseStitcher):
     """
@@ -324,38 +357,10 @@ class tileStitcher(baseStitcher):
         self.database = None
 
         self.segment = False
-
-    def activate_segmentation(self, path_classifier, func_to_compute_features,
-                              func_to_get_cc, verbose=False):
-        """
-        Activate the segmentation. When a tile is loaded it is segmented before the stitching is done.
-
-        Parameters
-        ----------
-        tile: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
-        path_classifier: (str) path to pre-trained classifier
-        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
-                                        as the one used to train the classifier.
-        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
-                                        a unique id)
-        """
-
-        self.segment = True
-        self.segmentation_verbose = verbose
-        # Load classifier
-        self.path_classifier = path_classifier
-        # Store function to compute features
-        self.func_to_compute_features = func_to_compute_features
-        # Store post processing steps
-        self.func_to_get_cc = func_to_get_cc
-
-    def deactivate_segmentation(self):
-        """
-        Deactivate tile segmentation.
-
-        """
-
-        self.segment = False
+        self.segmentation_verbose = None
+        self.path_classifier = None
+        self.func_to_compute_features = None
+        self.func_to_get_cc = None
 
     def compute_registration(self):
         """
@@ -421,6 +426,54 @@ class tileStitcher(baseStitcher):
         # Then we loop again through the tiles but now we have access to the max-proj
         for t in self.tiles:
             tile = tileLoader(t)
+            proj1 = projs[tile.row, tile.col]
+
+            for coords in tile.neighbors:
+                proj2 = projs[coords[0], coords[1]]
+
+                if tile.row == coords[0] and tile.col < coords[1]:
+                    # EAST
+                    if self.mask:
+                        reg, rel = _get_masked_proj_shifts(proj1['east'], proj2['west'], threshold=self.threshold)
+                    else:
+                        reg, rel = _get_proj_shifts(proj1['east'], proj2['west'])
+
+                elif tile.col == coords[1] and tile.row < coords[0]:
+                    # SOUTH
+                    if self.mask:
+                        reg, rel = _get_masked_proj_shifts(proj1['south'], proj2['north'], threshold=self.threshold)
+                    else:
+                        reg, rel = _get_proj_shifts(proj1['south'], proj2['north'])
+
+                else:
+                    raise TypeError('Error: couldn''t determine registration to perform.')
+
+                self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
+                                                                    dims=(self.nrow, self.ncol)))
+                self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
+                                                                  dims=(self.nrow, self.ncol)))
+                # H=x, V=y, D=z
+                self.dH.append(reg[2])
+                self.dV.append(reg[1])
+                self.dD.append(reg[0])
+                self.relia_H.append(rel[2])
+                self.relia_V.append(rel[1])
+                self.relia_D.append(rel[0])
+
+        self._build_sparse_graphs()
+        self._optimize_sparse_graphs()
+        _, _ = self._produce_registration_map()
+        self._build_database()
+
+    def compute_registration_from_max_projs(self):
+
+        # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
+        projs = self._load_max_projs()
+
+        # Then we loop again through the tiles but now we have access to the max-proj
+        for t in self.tiles:
+            tile = tileLoader(t)
+            print(tile.path)
             proj1 = projs[tile.row, tile.col]
 
             for coords in tile.neighbors:
@@ -579,6 +632,9 @@ class tileStitcher(baseStitcher):
 
     def _save_max_projs(self):
 
+        # Safely create folder to save max-projs
+        Path(self.tiles.folder_max_projs).mkdir(parents=True, exist_ok=True)
+
         for t in self.tiles:
             tile = tileLoader(t)
             tile.load_tile()
@@ -590,7 +646,7 @@ class tileStitcher(baseStitcher):
                     patch.y_begin = self.frame_size - self.overlap
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        np.save(os.path.join(tile.folder_max_projs,
+                        np.save(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_east_{}.npy'.format(tile.row, tile.col, d)), proj[i])
             if tile.col - 1 >= 0:
                 if self.tiles.tiles_pattern[tile.row, tile.col - 1] == 1:
@@ -599,7 +655,7 @@ class tileStitcher(baseStitcher):
                     patch.y_end = self.overlap
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        np.save(os.path.join(tile.folder_max_projs,
+                        np.save(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_west_{}.npy'.format(tile.row, tile.col, d)), proj[i])
             if tile.row + 1 < self.tiles.nrow:
                 if self.tiles.tiles_pattern[tile.row + 1, tile.col] == 1:
@@ -608,7 +664,7 @@ class tileStitcher(baseStitcher):
                     patch.x_begin = self.frame_size - self.overlap
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        np.save(os.path.join(tile.folder_max_projs,
+                        np.save(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_south_{}.npy'.format(tile.row, tile.col, d)), proj[i])
             if tile.row - 1 >= 0:
                 if self.tiles.tiles_pattern[tile.row - 1, tile.col] == 1:
@@ -617,21 +673,23 @@ class tileStitcher(baseStitcher):
                     patch.x_end = self.overlap
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        np.save(os.path.join(tile.folder_max_projs,
+                        np.save(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_north_{}.npy'.format(tile.row, tile.col, d)), proj[i])
 
     def _load_max_projs(self):
+
         projs = np.empty((self.nrow, self.ncol), dtype=object)
+
         for t in self.tiles:
             tile = tileLoader(t)
-            tile.load_tile()
+            print(tile.path)
             proj = {}
             if tile.col + 1 < self.tiles.ncol:
                 if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:
                     # EAST 1
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_east_{}.npy'.format(tile.row, tile.col, d))))
                     proj['east'] = tmp
             if tile.col - 1 >= 0:
@@ -639,7 +697,7 @@ class tileStitcher(baseStitcher):
                     # EAST 2
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_west_{}.npy'.format(tile.row, tile.col, d))))
                     proj['west'] = tmp
             if tile.row + 1 < self.tiles.nrow:
@@ -647,7 +705,7 @@ class tileStitcher(baseStitcher):
                     # SOUTH 1
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_south_{}.npy'.format(tile.row, tile.col, d))))
                     proj['south'] = tmp
             if tile.row - 1 >= 0:
@@ -655,7 +713,7 @@ class tileStitcher(baseStitcher):
                     # SOUTH 2
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(tile.folder_max_projs,
+                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
                                              '{}_{}_north_{}.npy'.format(tile.row, tile.col, d))))
                     proj['north'] = tmp
 
@@ -964,8 +1022,8 @@ class channelStitcher(baseStitcher):
 
     def __init__(self,
                  stitcher: tileStitcher,
-                 tiles_stitched: tileParser,
-                 tiles_channel: tileParser):
+                 ref: tileParser,
+                 moving: tileParser):
         """
 
         Parameters
@@ -975,19 +1033,33 @@ class channelStitcher(baseStitcher):
         tiles_channel: (tileParser) tiles to be registered to tiles_stitched
         """
 
-        super().__init__(tiles_stitched)
+        super().__init__(ref)
 
         self.stitcher = stitcher
-        self.tiles_channel = tiles_channel
+        self.tiles_channel = moving
         self.database = stitcher.database.copy()
+
+        self.segment = False
+        self.segmentation_verbose = None
+        self.path_classifier = None
+        self.func_to_compute_features = None
+        self.func_to_get_cc = None
 
     def compute_rigid_registration(self):
 
         for t1, t2 in zip(self.tiles, self.tiles_channel):
+
             tile1 = tileLoader(t1)
             tile1.load_tile()
             tile2 = tileLoader(t2)
             tile2.load_tile()
+
+            if self.segment:
+                segmenter = tileSegmenter(tile2,
+                                          self.path_classifier,
+                                          self.func_to_compute_features,
+                                          self.func_to_get_cc)
+                segmenter.compute_segmentation(verbose=self.segmentation_verbose)
 
             patch = pyapr.ReconPatch()
             proj1 = _get_max_proj_apr(tile1.apr, tile1.parts, patch)
@@ -1107,7 +1179,7 @@ class tileMerger():
                 tile = tileLoader(t)
                 tile.load_tile()
 
-                u = pyapr.data_containers.APRSlicer(self.apr, self.parts, level_delta=self.level_delta, mode=mode)
+                u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta, mode=mode)
                 data = u[:, :, :]
 
                 x1 = int(H_pos[i])

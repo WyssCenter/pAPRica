@@ -79,7 +79,6 @@ par.Ip_th = 450
 # Conversion
 folders = glob(os.path.join(data_path, 'LOC*'))
 folders = sort_list(folders)
-print(folders)
 loading = []
 conversion = []
 writing = []

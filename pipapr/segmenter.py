@@ -213,8 +213,7 @@ class tileCells():
         None
         """
         
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             tile.load_tile()
             tile.load_segmentation()
 
@@ -369,3 +368,8 @@ class tileCells():
             print('{:0.2f}% of cells were removed.'.format(len(ind_c2)/(c1.shape[0]+c2.shape[0]-len(ind_c2))*100))
 
         return np.vstack((c1, c2))
+
+# class tileTrainer():
+#
+#     def __init__(self,
+#                  tile: dict):

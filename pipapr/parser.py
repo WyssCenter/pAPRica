@@ -10,6 +10,7 @@ from glob import glob
 import os
 import re
 import numpy as np
+from pipapr.loader import tileLoader
 
 class tileParser():
     """
@@ -218,17 +219,25 @@ class tileParser():
         Return tiles, add neighbors information before returning.
         """
 
-        e = self.tiles_list[item]
-        e['neighbors'] = self.neighbors[e['row'], e['col']]
+        t = self.tiles_list[item]
+        path = t['path']
+        col = t['col']
+        row = t['row']
+        neighbors = self.neighbors[row, col]
+
         neighbors_path = []
-        for row, col in e['neighbors']:
-            if self.tiles_pattern[row, col]:
-                neighbors_path.append(self.tile_pattern_path[row, col])
-        e['neighbors_path'] = neighbors_path
-        e['type'] = self.type
-        e['overlap'] = self.overlap
-        e['frame_size'] = self.frame_size
-        return e
+        for r, c in neighbors:
+            if self.tiles_pattern[r, c]:
+                neighbors_path.append(self.tile_pattern_path[r, c])
+
+        return tileLoader(path=path,
+                          row=row,
+                          col=col,
+                          ftype=self.type,
+                          neighbors=neighbors,
+                          neighbors_path=neighbors_path,
+                          overlap=self.overlap,
+                          frame_size=self.frame_size)
 
     def __len__(self):
         """

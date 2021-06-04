@@ -112,10 +112,10 @@ def display_layers(layers):
     -------
     napari viewer.
     """
-    with napari.gui_qt():
-        viewer = napari.Viewer()
-        for layer in layers:
-            viewer.add_layer(layer)
+    viewer = napari.Viewer()
+    for layer in layers:
+        viewer.add_layer(layer)
+    napari.run()
     return viewer
 
 
@@ -243,8 +243,7 @@ class tileViewer():
         # Convert downsample to level delta
         level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
 
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             # Load tile if not loaded, else use cached tile
             ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
             if self._is_tile_loaded(tile.row, tile.col):
@@ -313,8 +312,7 @@ class tileViewer():
         # Convert downsample to level delta
         level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
 
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             # Load tile if not loaded, else use cached tile
             ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
             if self._is_tile_loaded(tile.row, tile.col):
@@ -453,6 +451,59 @@ class tileViewer():
     #     pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, parts)
     #     u = (apr, parts)
     #     return u
+
+    def display_all_tiles_pyramid(self, **kwargs):
+        """
+        Display all parsed tiles.
+
+        Parameters
+        ----------
+        downsample: (int) downsampling parameter for APRSlicer
+                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: (dict) dictionary passed to Napari for custom option
+
+        Returns
+        -------
+        None
+        """
+
+        # Compute layers to be displayed by Napari
+        layers = []
+
+        for tile in self.tiles:
+            # Load tile if not loaded, else use cached tile
+            ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
+            if self._is_tile_loaded(tile.row, tile.col):
+                apr, parts = self.loaded_tiles[ind]
+                if self.segmentation:
+                    cc = self.loaded_segmentation[ind]
+            else:
+                tile.load_tile()
+                apr, parts = tile.apr, tile.parts
+                self.loaded_ind.append(ind)
+                self.loaded_tiles[ind] = apr, parts
+                if self.segmentation:
+                    tile.load_segmentation()
+                    cc = tile.parts_cc
+                    self.loaded_segmentation[ind] = cc
+
+            position = self._get_tile_position(tile.row, tile.col)
+            layers.append(self._get_pyramid(apr, parts,
+                                              name='Tile [{}, {}]'.format(tile.row, tile.col),
+                                              translate=position,
+                                              opacity=0.7,
+                                              **kwargs))
+
+        # Display layers
+        display_layers(layers)
+
+    def _get_pyramid(self, apr, parts, **kwargs):
+        p = [pyapr.data_containers.APRSlicer(apr, parts, mode='constant', level_delta=0),
+             pyapr.data_containers.APRSlicer(apr, parts, mode='constant', level_delta=-4)]
+
+        u = Image(p, multiscale=True, **kwargs)
+
+        return u
 
     def _is_tile_loaded(self, row, col):
         """

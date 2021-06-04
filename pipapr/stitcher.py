@@ -318,7 +318,6 @@ class tileStitcher(baseStitcher):
     is very fast and does not require to reload the data.
 
     """
-    # TODO: store the max-proj to avoid loading apr data twice.
     def __init__(self,
                  tiles: tileParser):
         """
@@ -368,8 +367,7 @@ class tileStitcher(baseStitcher):
         the redundancy).
 
         """
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             tile.load_tile()
             tile.load_neighbors()
 
@@ -424,8 +422,7 @@ class tileStitcher(baseStitcher):
             projs = self._precompute_max_projs()
 
         # Then we loop again through the tiles but now we have access to the max-proj
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             proj1 = projs[tile.row, tile.col]
 
             for coords in tile.neighbors:
@@ -471,9 +468,7 @@ class tileStitcher(baseStitcher):
         projs = self._load_max_projs()
 
         # Then we loop again through the tiles but now we have access to the max-proj
-        for t in self.tiles:
-            tile = tileLoader(t)
-            print(tile.path)
+        for tile in self.tiles:
             proj1 = projs[tile.row, tile.col]
 
             for coords in tile.neighbors:
@@ -635,8 +630,7 @@ class tileStitcher(baseStitcher):
         # Safely create folder to save max-projs
         Path(self.tiles.folder_max_projs).mkdir(parents=True, exist_ok=True)
 
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             tile.load_tile()
             proj = {}
             if tile.col + 1 < self.tiles.ncol:
@@ -680,9 +674,7 @@ class tileStitcher(baseStitcher):
 
         projs = np.empty((self.nrow, self.ncol), dtype=object)
 
-        for t in self.tiles:
-            tile = tileLoader(t)
-            print(tile.path)
+        for tile in self.tiles:
             proj = {}
             if tile.col + 1 < self.tiles.ncol:
                 if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:
@@ -724,8 +716,7 @@ class tileStitcher(baseStitcher):
     def _precompute_max_projs(self):
 
         projs = np.empty((self.nrow, self.ncol), dtype=object)
-        for t in self.tiles:
-            tile = tileLoader(t)
+        for tile in self.tiles:
             tile.load_tile()
             proj = {}
             if tile.col+1 < self.tiles.ncol:
@@ -883,9 +874,9 @@ class tileStitcher(baseStitcher):
 
         database_dict = {}
         for i in range(self.n_vertex):
-            row = self.tiles[i]['row']
-            col = self.tiles[i]['col']
-            database_dict[i] = {'path': self.tiles[i]['path'],
+            row = self.tiles[i].row
+            col = self.tiles[i].col
+            database_dict[i] = {'path': self.tiles[i].path,
                                 'row': row,
                                 'col': col,
                                 'dH': self.registration_map_rel[0, row, col],
@@ -1047,11 +1038,9 @@ class channelStitcher(baseStitcher):
 
     def compute_rigid_registration(self):
 
-        for t1, t2 in zip(self.tiles, self.tiles_channel):
+        for tile1, tile2 in zip(self.tiles, self.tiles_channel):
 
-            tile1 = tileLoader(t1)
             tile1.load_tile()
-            tile2 = tileLoader(t2)
             tile2.load_tile()
 
             if self.segment:
@@ -1175,8 +1164,7 @@ class tileMerger():
         D_pos = (D_pos - D_pos.min())/self.downsample
 
         with alive_bar(total=self.n_tiles, title='Merging', force_tty=True) as bar:
-            for i, t in enumerate(self.tiles):
-                tile = tileLoader(t)
+            for i, tile in enumerate(self.tiles):
                 tile.load_tile()
 
                 u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta, mode=mode)
@@ -1191,7 +1179,6 @@ class tileMerger():
 
                 self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
                 bar()
-        self.merged_data = self.merged_data.astype('uint16')
 
     def crop(self, background=0, xlim=None, ylim=None, zlim=None):
         """
@@ -1269,7 +1256,7 @@ class tileMerger():
         self.ny = int(np.ceil(self._get_ny() / self.downsample))
         self.nz = int(np.ceil(self._get_nz() / self.downsample))
 
-        self.merged_data = np.zeros((self.nz, self.ny, self.nx))
+        self.merged_data = np.zeros((self.nz, self.ny, self.nx), dtype='uint16')
 
     def set_downsample(self, downsample):
         """

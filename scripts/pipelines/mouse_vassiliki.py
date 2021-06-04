@@ -191,8 +191,8 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 # Parameters
-path_autofluo = '/mnt/Data/wholebrain/multitile/autofluo'
-path_cells= '/mnt/Data/wholebrain/multitile/c1'
+path_autofluo = '/mnt/Data/wholebrain/multitile/autofluo/apr'
+path_cells= '/mnt/Data/wholebrain/multitile/c1/apr'
 path_classifier = r'/mnt/Data/wholebrain/multitile/c1/random_forest_n10.joblib'
 t_ini = time()
 
@@ -203,19 +203,22 @@ tiles_cells = tileParser(path_cells, frame_size=2048, overlap=868, ftype='apr')
 # Stitch and segment data
 t = time()
 stitcher = tileStitcher(tiles_autofluo)
-# stitcher.activate_mask(95)
-# stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
+stitcher.activate_mask(95)
 stitcher.compute_registration()
-# stitcher.plot_min_trees(annotate=True)
-# stitcher.save_database(os.path.join(path_autofluo, 'registration_results.csv'))
-print('\n\nTOTAL elapsed time for parsing, stitching and segmenting: {:.2f} s.'.format(time() - t_ini))
+print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
-channel_stitcher = channelStitcher(stitcher, tiles_autofluo, tiles_cells)
+# Register c1 channel to autofluo and perform segmentation at the same time
+channel_stitcher = channelStitcher(stitcher, ref=tiles_autofluo, moving=tiles_cells)
+channel_stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
 channel_stitcher.compute_rigid_registration()
 
 # Display registered tiles
-# viewer = tileViewer(tiles_autofluo, stitcher.database)
-# viewer.display_all_tiles(level_delta=0, contrast_limits=[0, 1000])
+# viewer_autofluo = tileViewer(tiles_autofluo, stitcher.database)
+# layers = viewer_autofluo.get_layers_all_tiles(downsample=2, contrast_limits=[0, 1000])
+# viewer_cells = tileViewer(tiles_cells, stitcher.database, segmentation=True)
+# layers.extend(viewer_cells.get_layers_all_tiles(downsample=2, contrast_limits=[0, 1000]))
+# from pipapr.viewer import display_layers
+# display_layers(layers)
 
 # Merge autofluo data
 # merger = tileMerger(tiles_autofluo, stitcher.database, n_planes=2008)

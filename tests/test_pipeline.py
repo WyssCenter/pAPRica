@@ -181,6 +181,7 @@ def get_cc_from_features(apr, parts_pred):
 
     return cc
 
+
 # Parameters
 path = r'../data/apr/'
 path_classifier=r'../data/random_forest_n100.joblib'
@@ -203,7 +204,7 @@ stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_fe
 t = time()
 for i in range(n):
     stitcher = tileStitcher(tiles)
-    stitcher.compute_registration_fast()
+    stitcher.compute_registration()
 print('Elapsed time new registration on RAM: {} s.'.format((time()-t)/n))
 t = time()
 # for i in range(n):

@@ -1,12 +1,5 @@
 """
-
-By using this code you agree to the terms of the software license agreement.
-
-© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
-"""
-
-"""
-Script to process the 2x2 Vassiliki data.
+Script to process Tomas data taken on 3x2 COLM.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -200,8 +193,7 @@ def get_cc_from_features(apr, parts_pred):
 
 # Parameters
 path = '/mnt/Data/MC_PV_LOC000_20210503_172011/APR'
-path_classifier = r'/mnt/Data/wholebrain/multitile/c1/random_forest_n10.joblib'
-t_ini = time()
+
 
 # Parse data
 tiles = tileParser(path, frame_size=2048, overlap=512)
@@ -212,14 +204,22 @@ tiles = tileParser(path, frame_size=2048, overlap=512)
 # converter.batch_convert()
 
 # Stitch and segment data
-t = time()
-stitcher = tileStitcher(tiles)
-# stitcher.activate_mask(95)
-# stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
-stitcher.compute_registration()
-# stitcher.plot_min_trees(annotate=True)
-# stitcher.save_database(os.path.join(path_autofluo, 'registration_results.csv'))
-print('\n\nTOTAL elapsed time for parsing, stitching and segmenting: {:.2f} s.'.format(time() - t_ini))
+# t = time()
+# stitcher = tileStitcher(tiles)
+# stitcher.compute_registration()
+# stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 
-viewer = tileViewer(tiles, stitcher.database)
-viewer.display_all_tiles(contrast_limits=[0, 1000])
+database = os.path.join(path, 'registration_results.csv')
+# viewer = tileViewer(tiles, database)
+# viewer.display_all_tiles_pyramid(contrast_limits=[100, 5000], rendering='attenuated_mip', colormap='bop orange',
+#                                  blending='additive')
+
+# Merge Data
+merger = tileMerger(tiles, database, n_planes=1167)
+merger.set_downsample(1)
+merger.initialize_merged_array()
+merger.merge_max()
+
+for i in range(merger.merged_data.shape[0]):
+    imsave('/mnt/Data/tomas/merged_data_{}.tif'.format(i), merger.merged_data[i])
+    print('{}/{}'.format(i, merger.merged_data.shape[0]))

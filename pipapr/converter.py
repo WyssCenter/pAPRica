@@ -41,8 +41,7 @@ class tileConverter():
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
         with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
-            for t in self.tiles:
-                tile = tileLoader(t)
+            for tile in self.tiles:
                 tile.load_tile()
 
                 # Set parameters

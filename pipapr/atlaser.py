@@ -8,7 +8,7 @@ By using this code you agree to the terms of the software license agreement.
 
 import pandas as pd
 from skimage.io import imread, imsave
-from pipapr.stitcher import tileMerger
+import pipapr
 import numpy as np
 import os
 from pathlib import Path
@@ -56,7 +56,7 @@ class tileAtlaser():
 
     @classmethod
     def from_merger(cls,
-                   merger: tileMerger,
+                   merger: pipapr.stitcher.tileMerger,
                    original_pixel_size: (np.array, list)):
         """
         Constructor from a tileMerger object. Typically to perform the registration to the Atlas on

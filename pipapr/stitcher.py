@@ -14,9 +14,7 @@ import pandas as pd
 from skimage.exposure import equalize_adapthist
 from alive_progress import alive_bar
 import dill
-from pipapr.loader import tileLoader
-from pipapr.parser import tileParser
-from pipapr.segmenter import tileSegmenter
+import pipapr
 import matplotlib.pyplot as plt
 import pyapr
 from skimage.registration import phase_cross_correlation
@@ -219,7 +217,7 @@ def _get_registration_error(proj1, proj2):
 
 class baseStitcher():
     def __init__(self,
-                 tiles: tileParser):
+                 tiles: pipapr.parser.tileParser):
 
         self.tiles = tiles
         self.ncol = tiles.ncol
@@ -319,7 +317,7 @@ class tileStitcher(baseStitcher):
 
     """
     def __init__(self,
-                 tiles: tileParser):
+                 tiles: pipapr.parser.tileParser):
         """
 
         Parameters
@@ -372,7 +370,7 @@ class tileStitcher(baseStitcher):
             tile.load_neighbors()
 
             if self.segment:
-                segmenter = tileSegmenter(tile,
+                segmenter = pipapr.segmenter.tileSegmenter(tile,
                                           self.path_classifier,
                                           self.func_to_compute_features,
                                           self.func_to_get_cc)
@@ -747,7 +745,7 @@ class tileStitcher(baseStitcher):
             projs[tile.row, tile.col] = proj
 
         if self.segment:
-            segmenter = tileSegmenter(tile,
+            segmenter = pipapr.segmenter.tileSegmenter(tile,
                                       self.path_classifier,
                                       self.func_to_compute_features,
                                       self.func_to_get_cc)
@@ -1013,8 +1011,8 @@ class channelStitcher(baseStitcher):
 
     def __init__(self,
                  stitcher: tileStitcher,
-                 ref: tileParser,
-                 moving: tileParser):
+                 ref: pipapr.parser.tileParser,
+                 moving: pipapr.parser.tileParser):
         """
 
         Parameters
@@ -1044,7 +1042,7 @@ class channelStitcher(baseStitcher):
             tile2.load_tile()
 
             if self.segment:
-                segmenter = tileSegmenter(tile2,
+                segmenter = pipapr.segmenter.tileSegmenter(tile2,
                                           self.path_classifier,
                                           self.func_to_compute_features,
                                           self.func_to_get_cc)

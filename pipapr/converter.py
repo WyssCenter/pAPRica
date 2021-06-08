@@ -6,8 +6,7 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from pipapr.parser import tileParser
-from pipapr.loader import tileLoader
+import pipapr
 import pyapr
 import os
 from pathlib import Path
@@ -16,7 +15,7 @@ from alive_progress import alive_bar
 class tileConverter():
 
     def __init__(self,
-                 tiles: tileParser):
+                 tiles: pipapr.parser.tileParser):
 
         self.tiles = tiles
         self.path = tiles.path
@@ -67,4 +66,7 @@ class tileConverter():
                 bar()
 
         # Modify tileParser object to use APR instead
-        self.tiles = tileParser(folder_apr, frame_size=self.tiles.frame_size, overlap=self.tiles.overlap, ftype='apr')
+        self.tiles = pipapr.parser.tileParser(folder_apr,
+                                              frame_size=self.tiles.frame_size,
+                                              overlap=self.tiles.overlap,
+                                              ftype='apr')

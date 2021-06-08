@@ -10,7 +10,7 @@ from glob import glob
 import os
 import re
 import numpy as np
-from pipapr.loader import tileLoader
+import pipapr
 
 class tileParser():
     """
@@ -36,6 +36,7 @@ class tileParser():
 
         # Define some folders
         base, _ = os.path.split(self.path)
+        self.folder_root = base
         self.folder_max_projs = os.path.join(base, 'max_projs')
 
     def _print_info(self):
@@ -44,7 +45,7 @@ class tileParser():
         print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected.'.format(self.n_tiles))
         print('{} rows and {} columns.'.format(self.nrow, self.ncol))
-        print('***********************************')
+        print('***********************************\n')
 
     def _get_type(self):
         """
@@ -230,14 +231,15 @@ class tileParser():
             if self.tiles_pattern[r, c]:
                 neighbors_path.append(self.tile_pattern_path[r, c])
 
-        return tileLoader(path=path,
-                          row=row,
-                          col=col,
-                          ftype=self.type,
-                          neighbors=neighbors,
-                          neighbors_path=neighbors_path,
-                          overlap=self.overlap,
-                          frame_size=self.frame_size)
+        return pipapr.loader.tileLoader(path=path,
+                                          row=row,
+                                          col=col,
+                                          ftype=self.type,
+                                          neighbors=neighbors,
+                                          neighbors_path=neighbors_path,
+                                          overlap=self.overlap,
+                                          frame_size=self.frame_size,
+                                          folder_root=self.folder_root)
 
     def __len__(self):
         """

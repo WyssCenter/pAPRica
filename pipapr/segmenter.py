@@ -7,16 +7,57 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 import pandas as pd
-from pipapr.parser import tileParser
-from pipapr.loader import tileLoader
-import os
+import pipapr
 import numpy as np
 import pyapr
 from joblib import load
 from time import time
-from pathlib import Path
-import cv2 as cv
-from skimage.io import imread
+# import cv2 as cv
+import sparse
+import napari
+from alive_progress import alive_bar
+import os
+
+
+def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
+    """
+    Predict particle class with the trained classifier clf on the precomputed features f using a
+    blocked strategy to avoid memory segfault.
+
+    Parameters
+    ----------
+    x: (np.array) features (n_particle, n_features) for particle prediction
+    n_parts: (int) number of particles in the batch to predict
+    verbose: (bool) control function verbosity
+
+    Returns
+    -------
+    Class prediction for each particle.
+    """
+
+    # Predict on numpy array by block to avoid memory issues
+    if verbose:
+        t = time()
+
+    y_pred = np.empty((x.shape[0]))
+    n_block = int(np.ceil(x.shape[0] / n_parts))
+    if int(n_parts) != n_parts:
+        raise ValueError('Error: n_parts must be an int.')
+    n_parts = int(n_parts)
+
+    clf[1].set_params(n_jobs=-1)
+    for i in range(n_block):
+        y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = clf.predict(
+            x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+
+    if verbose:
+        print('Blocked prediction took {:0.3f} s.\n'.format(time() - t))
+
+    # Transform numpy array to ParticleData
+    parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
+
+    return parts_pred
+
 
 class tileSegmenter():
     """
@@ -27,7 +68,7 @@ class tileSegmenter():
     """
 
     def __init__(self,
-                 tile: tileLoader,
+                 tile: pipapr.loader.tileLoader,
                  path_classifier, func_to_compute_features, func_to_get_cc):
         """
 
@@ -52,45 +93,6 @@ class tileSegmenter():
         # Store post processing steps
         self.func_to_get_cc = func_to_get_cc
 
-    def _predict_on_APR_block(self, x, n_parts=1e7, verbose=False):
-        """
-        Predict particle class with the trained classifier clf on the precomputed features f using a
-        blocked strategy to avoid memory segfault.
-
-        Parameters
-        ----------
-        x: (np.array) features (n_particle, n_features) for particle prediction
-        n_parts: (int) number of particles in the batch to predict
-        verbose: (bool) control function verbosity
-
-        Returns
-        -------
-        Class prediction for each particle.
-        """
-
-        # Predict on numpy array by block to avoid memory issues
-        if verbose:
-            t = time()
-
-        y_pred = np.empty((x.shape[0]))
-        n_block = int(np.ceil(x.shape[0] / n_parts))
-        if int(n_parts) != n_parts:
-            raise ValueError('Error: n_parts must be an int.')
-        n_parts = int(n_parts)
-
-        self.clf[1].set_params(n_jobs=-1)
-        for i in range(n_block):
-            y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = self.clf.predict(
-                x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
-
-        if verbose:
-            print('Blocked prediction took {:0.3f} s.\n'.format(time() - t))
-
-        # Transform numpy array to ParticleData
-        parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
-
-        return parts_pred
-
     def compute_segmentation(self, save_cc=True, save_mask=False, verbose=False):
         """
         Compute the segmentation and stores the result as an independent APR.
@@ -111,7 +113,7 @@ class tileSegmenter():
         if verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
-        parts_pred = self._predict_on_APR_block(f, verbose=verbose)
+        parts_pred = _predict_on_APR_block(f, self.clf, verbose=verbose)
 
         if verbose:
             # Display inference info
@@ -152,6 +154,7 @@ class tileSegmenter():
         aprfile.write_particles('test', parts, t=0)
         aprfile.close()
 
+
 class tileCells():
     """
     Class for storing the high level cell information (e.g. cell center position).
@@ -160,7 +163,7 @@ class tileCells():
     """
 
     def __init__(self,
-                 tiles: tileParser,
+                 tiles: pipapr.parser.tileParser,
                  database: (str, pd.DataFrame)):
         """
 
@@ -369,7 +372,340 @@ class tileCells():
 
         return np.vstack((c1, c2))
 
-# class tileTrainer():
-#
-#     def __init__(self,
-#                  tile: dict):
+
+class tileTrainer():
+    """
+    Class used to train a classifier that works directly on PAR data. It uses Napari to manually add labels.
+
+    """
+
+    def __init__(self,
+                 tile: pipapr.loader.tileLoader,
+                 func_to_compute_features):
+
+        tile.load_tile()
+        self.tile = tile
+        self.apr = tile.apr
+        self.parts = tile.parts
+        self.apr_it = self.apr.iterator()
+        self.shape = [tile.apr.org_dims(i) for i in [2, 1, 0]]
+        self.func_to_compute_features = func_to_compute_features
+
+        self.labels_manual = None
+        self.pixel_list = None
+        self.labels = None
+        self.use_sparse_labels = None
+        self.parts_train_idx = None
+        self.clf = None
+
+    def manually_annotate(self, use_sparse_labels=True, **kwargs):
+        """
+        Manually annotate dataset using Napari.
+
+        Parameters
+        ----------
+        use_sparse_labels: (bool) use sparse array to store the labels (memory efficient but slower graphics)
+
+        Returns
+        -------
+        None
+        """
+        self.sparse = use_sparse_labels
+
+        if self.sparse:
+            # We create a sparse array that supports inserting data (COO does not)
+            self.labels_manual = sparse.DOK(shape=self.shape, dtype='uint8')
+        else:
+            self.labels_manual = np.empty(self.shape, dtype='uint8')
+
+        # We call napari with the APRSlicer and the sparse array for storing the manual annotations
+        viewer = napari.Viewer()
+        image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
+        viewer.add_layer(image_layer)
+        viewer.add_labels(self.labels_manual)
+        napari.run()
+
+        # We extract labels and pixel coordinate from the sparse array
+        if self.sparse:
+            self.labels_manual = self.labels_manual.to_coo()
+        else:
+            self.labels_manual = sparse.COO.from_numpy(self.labels_manual)
+
+        self.pixel_list = self.labels_manual.coords.T
+        self.labels = self.labels_manual.data
+
+    def save_labels(self, path=None):
+        """
+        Save labels as numpy array with columns corresponding to [z, y, x, label].
+
+        Parameters
+        ----------
+        path: (str) path to save labels. By default it saves them in the data root folder.
+
+        Returns
+        -------
+        None
+        """
+
+        if path is None:
+            path = os.path.join(self.tile.folder_root, 'manual_labels.npy')
+
+        to_be_saved = np.hstack((self.pixel_list, self.labels[:, np.newaxis]))
+        np.save(path, to_be_saved)
+
+    def load_labels(self, path=None):
+        """
+        Load previously saved labels as numpy array with columns corresponding to [z, y, x, label].
+
+        Parameters
+        ----------
+        path: (str) path to load the saved labels. By default it loads them in the data root folder.
+
+        Returns
+        -------
+        None
+        """
+        if path is None:
+            path = os.path.join(self.tile.folder_root, 'manual_labels.npy')
+
+        data = np.load(path)
+        self.pixel_list = data[:, :-1]
+        self.labels = data[:, -1]
+        self.labels_manual = sparse.COO(coords=self.pixel_list.T, data=self.labels)
+
+    def train_classifier(self, verbose=True):
+        """
+        Train the classifier for segmentation.
+
+        Parameters
+        ----------
+        verbose: (bool) option to print out information.
+
+        Returns
+        -------
+        None
+        """
+        if self.pixel_list is None:
+            raise ValueError('Error: annotate dataset or load annotations before training classifier.')
+
+        from sklearn import preprocessing
+        from sklearn.pipeline import make_pipeline
+        from sklearn.ensemble import RandomForestClassifier
+
+        # We sample pixel_list on APR grid
+        self._sample_pixel_list_on_APR()
+
+        # We remove ambiguous case where a particle was labeled differently
+        self._remove_ambiguities(verbose=verbose)
+
+        # We compute features and train the classifier
+        f = self.func_to_compute_features(self.apr, self.parts)
+
+        # Fetch data that was manually labelled
+        x = f[self.parts_train_idx]
+        y = self.parts_labels
+
+        # Train random forest
+        clf = make_pipeline(preprocessing.StandardScaler(with_mean=True, with_std=True),
+                            RandomForestClassifier(n_estimators=100, class_weight='balanced'))
+        t = time()
+        clf.fit(x, y.ravel())
+        print('Training took {} s.\n'.format(time() - t))
+
+        x_pred = clf.predict(x)
+
+        # Display training info
+        if verbose:
+            print('\n****** TRAINING RESULTS ******')
+            print('Total accuracy: {:0.2f}%'.format(np.sum(x_pred == y) / y.size * 100))
+            for l in self.unique_labels:
+                print('Class {} accuracy: {:0.2f}% ({} cell particles)'.format(l,
+                    np.sum((x_pred == y) * (y == l)) / np.sum(y == l) * 100, np.sum(y == l)))
+            print('******************************\n')
+
+        self.clf = clf
+        self.f = f
+
+    def segment_training_tile(self, bg, display_result=True, verbose=True):
+        """
+        Apply classifier to the whole tile and display segmentation results using Napari.
+
+        Parameters
+        ----------
+        display_result: (bool) option to display segmentation results using Napari
+        verbose: (bool) option to print out information.
+
+        Returns
+        -------
+        None
+        """
+
+        # Apply on whole dataset
+        parts_pred = _predict_on_APR_block(self.f, self.clf, verbose=verbose)
+
+        # Display inference info
+        if verbose:
+            print('\n****** INFERENCE RESULTS ******')
+            for l in self.unique_labels:
+                print('Class {}: {} cell particles ({:0.2f}%)'.format(l, np.sum(parts_pred == l),
+                                                            np.sum(parts_pred == l) / len(parts_pred) * 100))
+            print('******************************\n')
+
+        # Display segmentation using Napari
+        if display_result:
+            parts_pred = np.array(parts_pred)
+            parts_pred[parts_pred==bg] = 0
+            parts_pred = pyapr.ShortParticles(parts_pred)
+            pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
+
+    def display_training_annotations(self, **kwargs):
+        """
+        Display manual annotations and their sampling on APR grid (if available).
+
+        Returns
+        -------
+        None
+        """
+        image_nap = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts),
+                                        opacity=0.7, **kwargs)
+        viewer = napari.Viewer()
+        viewer.add_layer(image_nap)
+        viewer.add_labels(self.labels_manual, name='Manual labels', opacity=0.5)
+        if self.parts_labels is not None:
+            mask = np.zeros_like(self.parts, dtype='uint16')
+            mask[self.parts_train_idx] = self.parts_labels
+            label_nap = napari.layers.Labels(data=pyapr.data_containers.APRSlicer(self.apr, pyapr.ShortParticles(mask)),
+                                             name='APR labels', opacity=0.5)
+            viewer.add_layer(label_nap)
+        napari.run()
+
+    def save_classifier(self, path=None):
+        """
+        Save the trained classifier.
+
+        Parameters
+        ----------
+        path: (str) path for saving the classifier. By default it is saved in the data root folder.
+
+        Returns
+        -------
+
+        """
+        from joblib import dump
+
+        if path is None:
+            path = os.path.join(self.tile.folder_root, 'random_forest_n100.joblib')
+
+        dump(self.clf, path)
+
+    def _remove_ambiguities(self, verbose):
+        """
+        Remove particles that have been labelled with different labels.
+
+        Parameters
+        ----------
+        verbose: (bool) option to print out information.
+
+        Returns
+        -------
+
+        """
+        if self.parts_train_idx is None:
+            raise ValueError('Error: train classifier before removing ambiguities.')
+
+        idx_unique = np.unique(self.parts_train_idx)
+
+        parts_train = []
+        parts_labels = []
+
+        cnt = 0
+        for idx in idx_unique:
+            local_labels = self.labels[self.parts_train_idx==idx]
+            is_same, l = self._are_labels_the_same(local_labels)
+            if is_same:
+                # If labels are the same we assign it
+                parts_labels.append(l)
+                parts_train.append(idx)
+            else:
+                cnt += 1
+
+        self.parts_train_idx = np.array(parts_train)
+        self.parts_labels = np.array(parts_labels)
+        self.unique_labels = np.unique(self.parts_labels)
+
+        if verbose:
+            print('\n********* ANNOTATIONS ***********')
+            print('{} ambiguous particles were removed.'.format(cnt))
+            print('{} particles were labeled.'.format(self.parts_labels.shape[0]))
+            for l in self.unique_labels:
+                print('{} particles ({:0.2f}%) were labeled as {}.'.format(np.sum(self.parts_labels==l),
+                                                                       100*np.sum(self.parts_labels==l)/self.parts_labels.shape[0],
+                                                                        l))
+            print('***********************************\n')
+
+    def _sample_pixel_list_on_APR(self):
+        """
+        Convert manual annotations coordinates from pixel to APR.
+
+        Returns
+        -------
+        None
+        """
+        self.parts_train_idx = np.empty(self.pixel_list.shape[0], dtype='uint64')
+
+        with alive_bar(total=self.pixel_list.shape[0], title='Sampling labels on APR.', force_tty=True) as bar:
+            for i in range(self.pixel_list.shape[0]):
+                idx = self._find_particle(self.pixel_list[i, :])
+
+                self.parts_train_idx[i] = idx
+                bar()
+
+    def _find_particle(self, coords):
+        """
+        Find particle index corresponding to pixel location coords.
+
+        Parameters
+        ----------
+        coords: (array) pixel coordinate [z, y, x]
+
+        Returns
+        -------
+        idx: (int) particle index
+        """
+        # TODO: @JOEL PUT THIS IN C++ PLEASE
+        for level in range(self.apr_it.level_min(), self.apr_it.level_max()+1):
+            particle_size = 2 ** (self.apr.level_max() - level)
+            z_l, x_l, y_l = coords // particle_size
+            for idx in range(self.apr_it.begin(level, z_l, x_l), self.apr_it.end()):
+                if self.apr_it.y(idx) == y_l:
+                    if np.sqrt(np.sum((coords-np.array([z_l, x_l, y_l])*particle_size)**2))/particle_size > np.sqrt(3):
+                        print('ich')
+                    return idx
+
+    def _order_labels(self):
+        """
+        Order pixel_list in z incresing order, then y increasing order and finally x increasing order.
+
+        Returns
+        -------
+        None
+        """
+        for d in range(3, 0):
+            ind = np.argsort(self.pixel_list[:, d])
+            self.pixel_list = self.pixel_list[ind]
+            self.labels = self.labels[ind]
+
+    @staticmethod
+    def _are_labels_the_same(local_labels):
+        """
+        Determine if manual labels in particle are the same and return the labels
+
+        Parameters
+        ----------
+        local_labels: (array) particle labels
+
+        Returns
+        -------
+        ((bool): True if labels are the same, (int) corresponding label)
+        """
+        return ((local_labels == local_labels[0]).all(), local_labels[0])

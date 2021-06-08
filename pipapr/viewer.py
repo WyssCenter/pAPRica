@@ -14,9 +14,7 @@ import numpy as np
 import pyapr
 import napari
 from napari.layers import Image, Labels, Points
-from pipapr.parser import tileParser
-from pipapr.stitcher import tileStitcher
-from pipapr.loader import tileLoader
+import pipapr
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 
@@ -135,12 +133,11 @@ def display_segmentation(apr, parts, mask):
     None
     """
     image_nap = apr_to_napari_Image(apr, parts, name='APR')
-    mask_nap = apr_to_napari_Labels(apr, mask, name='Segmentation')
-
-    with napari.gui_qt():
-        viewer = napari.Viewer()
-        viewer.add_layer(image_nap)
-        viewer.add_layer(mask_nap)
+    mask_nap = apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3)
+    viewer = napari.Viewer()
+    viewer.add_layer(image_nap)
+    viewer.add_layer(mask_nap)
+    napari.run()
 
 
 def display_heatmap(heatmap, atlas=None, data=None, log=False):
@@ -186,8 +183,8 @@ class tileViewer():
     Class to display the registration and segmentation using Napari.
     """
     def __init__(self,
-                 tiles: (tileParser),
-                 database: (tileStitcher, pd.DataFrame, str),
+                 tiles: pipapr.parser.tileParser,
+                 database: (pipapr.stitcher.tileStitcher, pd.DataFrame, str),
                  segmentation: bool=False,
                  cells=None,
                  atlaser=None):
@@ -204,7 +201,7 @@ class tileViewer():
 
         self.tiles = tiles
 
-        if isinstance(database, tileStitcher):
+        if isinstance(database, pipapr.stitcher.tileStitcher):
             self.database = database.database
         elif isinstance(database, pd.DataFrame):
             self.database = database

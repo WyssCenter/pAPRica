@@ -19,7 +19,8 @@ setup(
         'dill',
         'matplotlib',
         'napari',
-        'allensdk'
+        'allensdk',
+        'sparse'
     ],
     description='APR-based image processing pipeline for brain data',
     long_description=LONG_DESCR,

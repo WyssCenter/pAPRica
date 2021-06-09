@@ -168,11 +168,11 @@ tile.load_tile()
 # We create the trainer object and then manually annotate the dataset
 trainer = pipapr.segmenter.tileTrainer(tile, compute_features)
 trainer.manually_annotate(use_sparse_labels=True)
-trainer.save_labels()
+# trainer.save_labels()
 # trainer.load_labels()
 
 # We then train the classifier and apply it to the whole training tile
 trainer.train_classifier()
-trainer.display_training_annotations(contrast_limits=[0, 3000])
+trainer.display_training_annotations(contrast_limits=[0, 5000])
 trainer.segment_training_tile(bg=3)
-trainer.save_classifier()
+# trainer.save_classifier()

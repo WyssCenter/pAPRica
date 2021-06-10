@@ -11,3 +11,4 @@ dill
 joblib
 sparse
 allensdk
+scikit-learn

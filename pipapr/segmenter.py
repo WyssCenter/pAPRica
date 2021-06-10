@@ -67,9 +67,7 @@ class tileSegmenter():
 
     """
 
-    def __init__(self,
-                 tile: pipapr.loader.tileLoader,
-                 path_classifier, func_to_compute_features, func_to_get_cc):
+    def __init__(self, path_classifier, func_to_compute_features, func_to_get_cc, verbose=True):
         """
 
         Parameters
@@ -82,18 +80,17 @@ class tileSegmenter():
                                         a unique id)
         """
 
-        self.path = tile.path
-        self.apr = tile.apr
-        self.parts = tile.parts
-        self.is_tile_loaded = (tile.apr is not None)
         # Load classifier
         self.clf = load(path_classifier)
         # Store function to compute features
         self.func_to_compute_features = func_to_compute_features
         # Store post processing steps
         self.func_to_get_cc = func_to_get_cc
+        # Verbose
+        self.verbose = verbose
 
-    def compute_segmentation(self, save_cc=True, save_mask=False, verbose=False):
+    def compute_segmentation(self, tile: pipapr.loader.tileLoader,
+                             save_cc=True, save_mask=False):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -106,16 +103,19 @@ class tileSegmenter():
         None
         """
 
-        if verbose:
+        if tile.apr is None:
+            tile.load_tile()
+
+        if self.verbose:
             t = time()
             print('Computing features on AP')
-        f = self.func_to_compute_features(self.apr, self.parts)
-        if verbose:
+        f = self.func_to_compute_features(tile.apr, tile.parts)
+        if self.verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
-        parts_pred = _predict_on_APR_block(f, self.clf, verbose=verbose)
+        parts_pred = _predict_on_APR_block(f, self.clf, verbose=self.verbose)
 
-        if verbose:
+        if self.verbose:
             # Display inference info
             print('\n****** INFERENCE RESULTS ******')
             print(
@@ -127,15 +127,15 @@ class tileSegmenter():
                                                             np.sum(parts_pred == 2) / len(parts_pred) * 100))
             print('*******************************')
 
-        cc = self.func_to_get_cc(self.apr, parts_pred)
+        cc = self.func_to_get_cc(tile.apr, parts_pred)
 
         # Save results
         if save_mask:
-            self._save_segmentation(name='segmentation mask', parts=parts_pred)
+            self._save_segmentation(tile.path, name='segmentation mask', parts=parts_pred)
         if save_cc:
-            self._save_segmentation(name='segmentation cc', parts=cc)
+            self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
 
-    def _save_segmentation(self, name, parts):
+    def _save_segmentation(self, path, name, parts):
         """
         Save segmentation particles by appending the original APR file.
 
@@ -150,8 +150,8 @@ class tileSegmenter():
         """
         aprfile = pyapr.io.APRFile()
         aprfile.set_read_write_tree(True)
-        aprfile.open(self.path, 'READWRITE')
-        aprfile.write_particles('test', parts, t=0)
+        aprfile.open(path, 'READWRITE')
+        aprfile.write_particles(name, parts, t=0)
         aprfile.close()
 
 

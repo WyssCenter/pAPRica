@@ -6,11 +6,8 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 from time import time
-from pipapr.parser import tileParser
-from pipapr.stitcher import tileStitcher
-from pipapr.viewer import tileViewer
-from pipapr.segmenter import tileSegmenter
-from pipapr.segmenter import tileCells
+
+import pipapr
 import os
 import numpy as np
 import pyapr
@@ -189,24 +186,23 @@ n = 1
 
 # Parse data
 t_ini = time()
-tiles = tileParser(path, frame_size=512, overlap=128, ftype='apr')
+tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
 t = time()
 
 # Stitch and segment
-stitcher = tileStitcher(tiles)
+stitcher = pipapr.stitcher.tileStitcher(tiles)
 stitcher.activate_mask(99)
-stitcher.activate_segmentation(path_classifier, compute_features, get_cc_from_features, verbose=True)
+segmenter = pipapr.segmenter.tileSegmenter(path_classifier, compute_features, get_cc_from_features, verbose=True)
+stitcher.activate_segmentation(segmenter)
 
 # for i in range(n):
 #     stitcher = tileStitcher(tiles)
 #     stitcher.compute_registration()
 # print('Elapsed time old registration: {} s.'.format((time()-t)/n))
 t = time()
-for i in range(n):
-    stitcher = tileStitcher(tiles)
-    stitcher.compute_registration()
+stitcher.compute_registration_fast()
 print('Elapsed time new registration on RAM: {} s.'.format((time()-t)/n))
-t = time()
+# t = time()
 # for i in range(n):
 #     stitcher = tileStitcher(tiles)
 #     stitcher.compute_registration_fast(on_disk=True)
@@ -216,9 +212,9 @@ t = time()
 # print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
 
 # Extract cell position and merge across the whole volume.
-cells = tileCells(tiles, stitcher.database)
-cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
+# cells = tileCells(tiles, stitcher.database)
+# cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
 
 # Display result
-viewer = tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
-viewer.display_all_tiles(downsample=1, contrast_limits=[0, 3000])
+# viewer = tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
+# viewer.display_all_tiles(downsample=1, contrast_limits=[0, 3000])

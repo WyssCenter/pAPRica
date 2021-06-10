@@ -133,7 +133,9 @@ def display_layers(layers):
 
     my_slider = QSlider(Qt.Horizontal)
     my_slider.setMinimum(0)
-    my_slider.setMaximum(layer.data.apr.level_max()-layer.data.apr.level_min())
+    l_max = np.min([l.data.apr.level_max() for l in layers])
+    l_min = 5 if l_max >5 else 1
+    my_slider.setMaximum(l_max-l_min)
     my_slider.setSingleStep(1)
     my_slider.setValue(layer.data.patch.level_delta)
 

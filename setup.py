@@ -15,7 +15,7 @@ setup(
         'alive-progress',
         'pandas',
         'scikit-image',
-        'opencv-python',
+        'opencv-contrib-python-headless',
         'dill',
         'matplotlib',
         'napari',

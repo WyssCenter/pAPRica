@@ -191,30 +191,26 @@ t = time()
 
 # Stitch and segment
 stitcher = pipapr.stitcher.tileStitcher(tiles)
-stitcher.activate_mask(99)
-segmenter = pipapr.segmenter.tileSegmenter(path_classifier, compute_features, get_cc_from_features, verbose=True)
-stitcher.activate_segmentation(segmenter)
+# stitcher.activate_mask(99)
+# segmenter = pipapr.segmenter.tileSegmenter(path_classifier, compute_features, get_cc_from_features, verbose=True)
+# stitcher.activate_segmentation(segmenter)
 
-# for i in range(n):
-#     stitcher = tileStitcher(tiles)
-#     stitcher.compute_registration()
-# print('Elapsed time old registration: {} s.'.format((time()-t)/n))
+t = time()
+stitcher.compute_registration()
+print('Elapsed time old registration: {} s.'.format((time()-t)/n))
 t = time()
 stitcher.compute_registration_fast()
 print('Elapsed time new registration on RAM: {} s.'.format((time()-t)/n))
-# t = time()
-# for i in range(n):
-#     stitcher = tileStitcher(tiles)
-#     stitcher.compute_registration_fast(on_disk=True)
-# print('Elapsed time new registration on disk: {} s.'.format((time()-t)/n))
+t = time()
+stitcher.compute_registration_fast(on_disk=True)
+print('Elapsed time new registration on disk: {} s.'.format((time()-t)/n))
 
-# stitcher.save_database(os.path.join(path, 'registration_results.csv'))
-# print('\n\nTOTAL elapsed time: {:.2f} s.'.format(time() - t_ini))
+stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 
 # Extract cell position and merge across the whole volume.
-# cells = tileCells(tiles, stitcher.database)
-# cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
+cells = pipapr.segmenter.tileCells(tiles, stitcher.database)
+cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
 
 # Display result
-# viewer = tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
-# viewer.display_all_tiles(downsample=1, contrast_limits=[0, 3000])
+viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
+viewer.display_all_tiles(pyramidal=True, downsample=1, contrast_limits=[0, 3000])

@@ -97,6 +97,18 @@ def apr_to_napari_Labels(apr: pyapr.APR,
     return Labels(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode='max'),
                   multiscale=False, scale=[par.dz, par.dx, par.dy], **kwargs)
 
+# Define a callback that will take the value of the slider and the viewer
+def resolution_callback(viewer, value):
+    for l in viewer.layers:
+        if isinstance(l.data, pyapr.APRSlicer):
+            old_value = -l.data.patch.level_delta
+            l.data.set_level_delta(-value)
+            l.translate = l.translate/2**(value-old_value)
+    viewer.dims.set_point(axis=0, value=viewer.dims.point[0] / 2 ** (value-old_value))
+    viewer.status = str(value)
+    viewer._update_layers()
+    viewer.reset_view()
+
 
 def display_layers(layers):
     """
@@ -110,10 +122,32 @@ def display_layers(layers):
     -------
     napari viewer.
     """
+
     viewer = napari.Viewer()
     for layer in layers:
         viewer.add_layer(layer)
+
+    from qtpy.QtCore import Qt
+    from qtpy.QtWidgets import QSlider
+
+
+    my_slider = QSlider(Qt.Horizontal)
+    my_slider.setMinimum(0)
+    l_max = np.min([l.data.apr.level_max() for l in layers])
+    l_min = 5 if l_max >5 else 1
+    my_slider.setMaximum(l_max-l_min)
+    my_slider.setSingleStep(1)
+    my_slider.setValue(layer.data.patch.level_delta)
+
+    # Connect your slider to your callback function
+    my_slider.valueChanged[int].connect(
+        lambda value=my_slider: resolution_callback(viewer, value)
+    )
+    viewer.window.add_dock_widget(my_slider, name='Downsampling', area='left')
+
     napari.run()
+
+
     return viewer
 
 

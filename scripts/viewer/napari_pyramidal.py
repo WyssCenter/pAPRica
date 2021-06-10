@@ -9,8 +9,7 @@ By using this code you agree to the terms of the software license agreement.
 from napari.layers import Image
 import napari
 import pyapr
-from pipapr.viewer import tileViewer
-from pipapr.parser import tileParser
+import pipapr
 import pandas as pd
 
 def get_pyramid(apr, parts, n):
@@ -23,9 +22,9 @@ def get_pyramid(apr, parts, n):
 path = '/mnt/Data/wholebrain/multitile/c1/apr'
 
 # Load APR file
-tiles = tileParser(path, frame_size=2048, overlap=512, ftype='apr')
+tiles = pipapr.parser.tileParser(path, frame_size=2048, overlap=512, ftype='apr')
 database = pd.read_csv('/mnt/Data/wholebrain/multitile/c1/registration_results.csv')
 
 # Display pyramidal file with Napari
-viewer = tileViewer(tiles, database)
-viewer.display_all_tiles_pyramid(4, contrast_limits=[0, 1000])
+viewer = pipapr.viewer.tileViewer(tiles, database)
+viewer.display_all_tiles(contrast_limits=[0, 3000])

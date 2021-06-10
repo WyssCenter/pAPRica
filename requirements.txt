@@ -1,0 +1,13 @@
+numpy
+scikit-image
+matplotlib
+scipy
+napari[all]
+opencv-python
+scikit-image
+pandas
+alive-progress
+dill
+joblib
+sparse
+allensdk

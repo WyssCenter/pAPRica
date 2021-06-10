@@ -12,7 +12,7 @@ import numpy as np
 import pyapr
 from joblib import load
 from time import time
-# import cv2 as cv
+import cv2 as cv
 import sparse
 import napari
 from alive_progress import alive_bar

@@ -3,7 +3,7 @@ scikit-image
 matplotlib
 scipy
 napari[all]
-opencv-python
+opencv-contrib-python-headless
 scikit-image
 pandas
 alive-progress

@@ -16,13 +16,17 @@ class tileParser():
     """
     Class used to parse multitile data.
     """
-    def __init__(self, path, frame_size, overlap, ftype=None):
+    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None):
         self.path = path
         if ftype is None:
             self.type = self._get_type()
         else:
             self.type = ftype
-        self.tiles_list = self._get_tile_list()
+
+        if (nrow is not None) and (ncol is not None):
+            self.tiles_list = self._get_tile_list_LOC(nrow, ncol)
+        else:
+            self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
@@ -82,6 +86,8 @@ class tileParser():
             # If files are 2D tiff then tiff sequence are in folders with name "row_col"
             # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
             files = glob(os.path.join(self.path, '*/'))
+        elif self.type == 'raw':
+            files = glob(os.path.join(self.path, '*.raw'))
         else:
             raise TypeError('Error: file type {} not supported.'.format(self.type))
 
@@ -92,6 +98,44 @@ class tileParser():
             if pattern_search:
                 row = int(pattern_search.group(1))
                 col = int(pattern_search.group(2))
+            else:
+                raise TypeError('Couldn''t get the column/row.')
+
+            tile = {'path': f,
+                    'row': row,
+                    'col': col,
+                    }
+            tiles.append(tile)
+        return tiles
+
+    def _get_tile_list_LOC(self, nrow, ncol):
+        """
+        Returns a list of tiles as a dictionary for data saved as LOC00X.
+        """
+
+        if self.type == 'apr':
+            # If files are apr then their names are 'row_col.apr'
+            files = glob(os.path.join(self.path, '*.apr'))
+        elif self.type == 'tiff3D':
+            # If files are 3D tiff then their names are 'row_col.tif'
+            files = glob(os.path.join(self.path, '*.tif'))
+        elif self.type == 'tiff2D':
+            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
+            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
+            files = glob(os.path.join(self.path, '*/'))
+        elif self.type == 'raw':
+            files = glob(os.path.join(self.path, '*.raw'))
+        else:
+            raise TypeError('Error: file type {} not supported.'.format(self.type))
+
+        tiles = []
+        for f in files:
+
+            pattern_search = re.search('/LOC(\d+)', f)
+            if pattern_search:
+                n = int(pattern_search.group(1))
+                row = n % ncol
+                col = n // ncol
             else:
                 raise TypeError('Couldn''t get the column/row.')
 

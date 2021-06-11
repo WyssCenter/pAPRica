@@ -147,10 +147,20 @@ class tileLoader():
             parts = pyapr.ShortParticles()
             pyapr.io.read(path, apr, parts)
             u = (apr, parts)
+        elif self.type == 'raw':
+            u = self._load_raw(path)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
 
         return u
+
+    def _load_raw(self, path):
+        """
+        Load a raw file (binary) using numpy.
+
+        """
+        u = np.fromfile(path, dtype='uint16', count=-1)
+        return u.reshape((-1, self.frame_size, self.frame_size))
 
     @staticmethod
     def _load_sequence(path):

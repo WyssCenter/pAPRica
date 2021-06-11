@@ -8,12 +8,7 @@ By using this code you agree to the terms of the software license agreement.
 
 from time import time
 import pandas as pd
-from pipapr.parser import tileParser
-from pipapr.stitcher import tileStitcher, tileMerger, channelStitcher
-from pipapr.viewer import tileViewer
-from pipapr.atlaser import tileAtlaser
-from pipapr.segmenter import tileCells
-from pipapr.converter import tileConverter
+import pipapr
 import os
 import numpy as np
 import pyapr
@@ -141,6 +136,7 @@ def particle_levels(apr):
 
 
 def compute_features(apr, parts):
+    t = time()
     gauss = gaussian_blur(apr, parts, sigma=1.5, size=11)
     print('Gaussian computed.')
 
@@ -192,34 +188,44 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 # Parameters
-path = '/mnt/Data/MC_PV_LOC000_20210503_172011/APR'
+path = '/run/user/1000/gvfs/smb-share:server=fcbgnasc.campusbiotech.ch,share=fcbgdata/0063_CBT_UNIGE_LAMY/Tomas Jorda/COLM/MC_PV_LOC000_20210503_172011/APR'
 
 
 # Parse data
-tiles = tileParser(path, frame_size=2048, overlap=512)
+tiles = pipapr.parser.tileParser(path, frame_size=2048, overlap=512)
 
 # Convert data
-# converter = tileConverter(tiles)
+# converter = pipapr.converter.tileConverter(tiles)
 # converter.set_compression(quantization_factor=2)
 # converter.batch_convert()
 
 # Stitch and segment data
 # t = time()
-# stitcher = tileStitcher(tiles)
-# stitcher.compute_registration()
+# stitcher = pipapr.stitcher.tileStitcher(tiles)
+# stitcher.compute_registration_fast()
+# print('Elapsed time for stitching: {} s.'.format(time()-t))
 # stitcher.save_database(os.path.join(path, 'registration_results.csv'))
-
-database = os.path.join(path, 'registration_results.csv')
-# viewer = tileViewer(tiles, database)
-# viewer.display_all_tiles_pyramid(contrast_limits=[100, 5000], rendering='attenuated_mip', colormap='bop orange',
+#
+# database = os.path.join(path, 'registration_results.csv')
+# viewer = pipapr.viewer.tileViewer(tiles, database)
+# viewer.display_all_tiles(pyramidal=True, contrast_limits=[100, 5000], rendering='attenuated_mip', colormap='bop orange',
 #                                  blending='additive')
 
-# Merge Data
-merger = tileMerger(tiles, database, n_planes=1167)
-merger.set_downsample(1)
-merger.initialize_merged_array()
-merger.merge_max()
+trainer = pipapr.segmenter.tileTrainer(tiles[2], func_to_compute_features=compute_features)
+trainer.load_labels()
+trainer.add_annotations()
+# trainer.manually_annotate(use_sparse_labels=True)
+trainer.save_labels()
+trainer.train_classifier()
+trainer.segment_training_tile(bg_label=3)
+trainer.display_training_annotations()
 
-for i in range(merger.merged_data.shape[0]):
-    imsave('/mnt/Data/tomas/merged_data_{}.tif'.format(i), merger.merged_data[i])
-    print('{}/{}'.format(i, merger.merged_data.shape[0]))
+# # Merge Data
+# merger = tileMerger(tiles, database, n_planes=1167)
+# merger.set_downsample(1)
+# merger.initialize_merged_array()
+# merger.merge_max()
+#
+# for i in range(merger.merged_data.shape[0]):
+#     imsave('/mnt/Data/tomas/merged_data_{}.tif'.format(i), merger.merged_data[i])
+#     print('{}/{}'.format(i, merger.merged_data.shape[0]))

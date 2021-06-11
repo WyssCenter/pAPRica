@@ -434,6 +434,44 @@ class tileTrainer():
         self.pixel_list = self.labels_manual.coords.T
         self.labels = self.labels_manual.data
 
+
+    def add_annotations(self, use_sparse_labels=True, **kwargs):
+        """
+        Add annotations on previously annotated dataset.
+
+        Parameters
+        ----------
+        use_sparse_labels: (bool) use sparse array to store the labels (memory efficient but slower graphics)
+
+        Returns
+        -------
+        None
+        """
+
+        self.sparse = use_sparse_labels
+
+        if self.sparse:
+            # We create a sparse array that supports inserting data (COO does not)
+            self.labels_manual = sparse.DOK(self.labels_manual)
+        else:
+            self.labels_manual = self.labels_manual.todense()
+
+        # We call napari with the APRSlicer and the sparse array for storing the manual annotations
+        viewer = napari.Viewer()
+        image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
+        viewer.add_layer(image_layer)
+        viewer.add_labels(self.labels_manual)
+        napari.run()
+
+        # We extract labels and pixel coordinate from the sparse array
+        if self.sparse:
+            self.labels_manual = self.labels_manual.to_coo()
+        else:
+            self.labels_manual = sparse.COO.from_numpy(self.labels_manual)
+
+        self.pixel_list = self.labels_manual.coords.T
+        self.labels = self.labels_manual.data
+
     def save_labels(self, path=None):
         """
         Save labels as numpy array with columns corresponding to [z, y, x, label].
@@ -526,7 +564,7 @@ class tileTrainer():
         self.clf = clf
         self.f = f
 
-    def segment_training_tile(self, bg, display_result=True, verbose=True):
+    def segment_training_tile(self, bg_label, display_result=True, verbose=True):
         """
         Apply classifier to the whole tile and display segmentation results using Napari.
 
@@ -554,7 +592,7 @@ class tileTrainer():
         # Display segmentation using Napari
         if display_result:
             parts_pred = np.array(parts_pred)
-            parts_pred[parts_pred==bg] = 0
+            parts_pred[parts_pred==bg_label] = 0
             parts_pred = pyapr.ShortParticles(parts_pred)
             pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
 

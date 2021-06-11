@@ -18,6 +18,14 @@ import pipapr
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 
+def display_apr(path):
+    """"""
+    apr = pyapr.APR()
+    parts = pyapr.ShortParticles()
+    pyapr.io.read(path, apr, parts)
+    layer = apr_to_napari_Image(apr, parts)
+    display_layers_pyramidal([layer], level_delta=0)
+
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
                         mode: str = 'constant',

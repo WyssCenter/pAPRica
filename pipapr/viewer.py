@@ -18,13 +18,43 @@ import pipapr
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 
-def display_apr(path):
-    """"""
+
+def display_apr_from_path(path):
+    """
+    Display an APR using Napari from a filepath.
+    Parameters
+    ----------
+    path
+
+    Returns
+    -------
+
+    """
     apr = pyapr.APR()
     parts = pyapr.ShortParticles()
     pyapr.io.read(path, apr, parts)
     layer = apr_to_napari_Image(apr, parts)
     display_layers_pyramidal([layer], level_delta=0)
+
+def display_apr(apr, parts):
+    """
+    Display an APR using Napari from previously loaded data.
+
+    Parameters
+    ----------
+    apr : pyapr.APR
+        Input APR data structure
+    parts : pyapr.FloatParticles or pyapr.ShortParticles
+        Input particle intensities
+
+    Returns
+    -------
+    None
+    """
+
+    l = apr_to_napari_Image(apr, parts)
+    display_layers_pyramidal([l], level_delta=0)
+
 
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
@@ -183,7 +213,7 @@ def display_layers_pyramidal(layers, level_delta):
     return viewer
 
 
-def display_segmentation(apr, parts, mask):
+def display_segmentation(apr, parts, mask, pyramidal=True):
     """
     This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel
     data from APR on the fly.
@@ -198,12 +228,13 @@ def display_segmentation(apr, parts, mask):
     -------
     None
     """
-    image_nap = apr_to_napari_Image(apr, parts, name='APR')
-    mask_nap = apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3)
-    viewer = napari.Viewer()
-    viewer.add_layer(image_nap)
-    viewer.add_layer(mask_nap)
-    napari.run()
+    layers = []
+    layers.append(apr_to_napari_Image(apr, parts, name='APR'))
+    layers.append(apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3))
+    if pyramidal:
+        display_layers_pyramidal(layers, level_delta=0)
+    else:
+        display_layers(layers)
 
 
 def display_heatmap(heatmap, atlas=None, data=None, log=False):
@@ -249,8 +280,8 @@ class tileViewer():
     Class to display the registration and segmentation using Napari.
     """
     def __init__(self,
-                 tiles: pipapr.parser.tileParser,
-                 database: (pipapr.stitcher.tileStitcher, pd.DataFrame, str),
+                 tiles,
+                 database,
                  segmentation: bool=False,
                  cells=None,
                  atlaser=None):

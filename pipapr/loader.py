@@ -10,6 +10,7 @@ from glob import glob
 import os
 from skimage.io import imread
 import numpy as np
+import pipapr
 import pyapr
 import re
 from alive_progress import alive_bar
@@ -161,6 +162,15 @@ class tileLoader():
         """
         u = np.fromfile(path, dtype='uint16', count=-1)
         return u.reshape((-1, self.frame_size, self.frame_size))
+
+    def view_tile(self):
+        """
+        Display tile using napari.
+
+        """
+        if self.apr is None:
+            self.load_tile()
+        pipapr.viewer.display_apr(self.apr, self.parts)
 
     @staticmethod
     def _load_sequence(path):

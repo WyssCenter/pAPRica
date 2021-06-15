@@ -454,6 +454,7 @@ class tileTrainer():
         self.parts_train_idx = None
         self.clf = None
         self.parts_mask = None
+        self.parts_cc = None
 
     def manually_annotate(self, use_sparse_labels=True, **kwargs):
         """
@@ -646,8 +647,8 @@ class tileTrainer():
         if verbose:
             print('\n****** INFERENCE RESULTS ******')
             for l in self.unique_labels:
-                print('Class {}: {} cell particles ({:0.2f}%)'.format(l, np.sum(parts_pred == l),
-                                                            np.sum(parts_pred == l) / len(parts_pred) * 100))
+                print('Class {}: {} cell particles ({:0.2f}%)'.format(l, np.sum(self.parts_mask == l),
+                                                            np.sum(self.parts_mask == l) / len(self.parts_mask) * 100))
             print('******************************\n')
 
         # Display segmentation using Napari
@@ -697,7 +698,7 @@ class tileTrainer():
 
         # Apply on whole dataset
         if tile.apr is None:
-            tile.load()
+            tile.load_tile()
         f = self.func_to_compute_features(tile.apr, tile.parts)
         parts_pred = _predict_on_APR_block(f, self.clf, verbose=verbose)
         tile.parts_mask = parts_pred.copy()

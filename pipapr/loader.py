@@ -163,7 +163,7 @@ class tileLoader():
         u = np.fromfile(path, dtype='uint16', count=-1)
         return u.reshape((-1, self.frame_size, self.frame_size))
 
-    def view_tile(self):
+    def view_tile(self, **kwargs):
         """
         Display tile using napari.
 

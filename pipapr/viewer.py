@@ -36,7 +36,7 @@ def display_apr_from_path(path):
     layer = apr_to_napari_Image(apr, parts)
     display_layers_pyramidal([layer], level_delta=0)
 
-def display_apr(apr, parts):
+def display_apr(apr, parts, **kwargs):
     """
     Display an APR using Napari from previously loaded data.
 
@@ -52,7 +52,7 @@ def display_apr(apr, parts):
     None
     """
 
-    l = apr_to_napari_Image(apr, parts)
+    l = apr_to_napari_Image(apr, parts, **kwargs)
     display_layers_pyramidal([l], level_delta=0)
 
 

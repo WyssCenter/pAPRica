@@ -12,3 +12,4 @@ joblib
 sparse
 allensdk
 scikit-learn
+brainreg

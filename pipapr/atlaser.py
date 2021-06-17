@@ -27,7 +27,7 @@ class tileAtlaser():
                  original_pixel_size: (np.array, list),
                  downsample: int,
                  atlas=None,
-                 merger=None):
+                 merged_data=None):
         """
         Parameters
         ----------
@@ -41,7 +41,7 @@ class tileAtlaser():
         self.downsample = downsample
         self.pixel_size_registered_atlas = np.array([25, 25, 25])
         self.pixel_size_data = np.array(original_pixel_size) # Z Y X
-        self.merger = merger
+        self.merged_data = merged_data
         self.z_downsample = self.pixel_size_registered_atlas[0] / self.pixel_size_data[0]
         self.y_downsample = self.pixel_size_registered_atlas[1] / self.pixel_size_data[1]
         self.x_downsample = self.pixel_size_registered_atlas[2] / self.pixel_size_data[2]
@@ -152,11 +152,12 @@ class tileAtlaser():
 
         path_merged_data = os.path.join(output_dir, merged_data_filename)
         imsave(path_merged_data, self.merged_data)
+
         command = 'brainreg {} {} -v {} {} {} --orientation {}'.format('"' + path_merged_data + '"',
                                                             '"' + atlas_dir + '"',
-                                                            self.pixel_size[0],
-                                                            self.pixel_size[1],
-                                                            self.pixel_size[2],
+                                                            self.pixel_size_data[0]*self.z_downsample,
+                                                            self.pixel_size_data[1]*self.y_downsample,
+                                                            self.pixel_size_data[2]*self.x_downsample,
                                                             orientation)
         for key, value in kwargs.items():
             command += ' --{} {}'.format(key, value)

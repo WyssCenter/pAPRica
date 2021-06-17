@@ -1091,6 +1091,10 @@ class tileMerger():
         None
 
         """
+
+        if self.merged_data is None:
+            self.initialize_merged_array()
+
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()
@@ -1126,6 +1130,10 @@ class tileMerger():
         None
 
         """
+
+        if self.merged_data is None:
+            self.initialize_merged_array()
+
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()

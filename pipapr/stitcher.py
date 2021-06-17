@@ -230,6 +230,9 @@ class baseStitcher():
         self.mask = False
         self.threshold = None
 
+        self.segment = False
+        self.segmenter = None
+
     def activate_mask(self, threshold):
         """
         Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
@@ -268,29 +271,19 @@ class baseStitcher():
 
         self.database.to_csv(path)
 
-    def activate_segmentation(self, path_classifier, func_to_compute_features,
-                              func_to_get_cc, verbose=False):
+    def activate_segmentation(self,
+                              segmenter):
         """
         Activate the segmentation. When a tile is loaded it is segmented before the stitching is done.
 
         Parameters
         ----------
-        tile: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
-        path_classifier: (str) path to pre-trained classifier
-        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
-                                        as the one used to train the classifier.
-        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
-                                        a unique id)
+        segmenter: (tileSegmenter) segmenter object for segmenting each tile.
+
         """
 
         self.segment = True
-        self.segmentation_verbose = verbose
-        # Load classifier
-        self.path_classifier = path_classifier
-        # Store function to compute features
-        self.func_to_compute_features = func_to_compute_features
-        # Store post processing steps
-        self.func_to_get_cc = func_to_get_cc
+        self.segmenter = segmenter
 
     def deactivate_segmentation(self):
         """
@@ -353,12 +346,6 @@ class tileStitcher(baseStitcher):
         self.graph_relia_D = None
         self.database = None
 
-        self.segment = False
-        self.segmentation_verbose = None
-        self.path_classifier = None
-        self.func_to_compute_features = None
-        self.func_to_get_cc = None
-
     def compute_registration(self):
         """
         Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
@@ -370,11 +357,7 @@ class tileStitcher(baseStitcher):
             tile.load_neighbors()
 
             if self.segment:
-                segmenter = pipapr.segmenter.tileSegmenter(tile,
-                                          self.path_classifier,
-                                          self.func_to_compute_features,
-                                          self.func_to_get_cc)
-                segmenter.compute_segmentation(verbose=self.segmentation_verbose)
+                self.segmenter.compute_segmentation(tile)
 
             for apr, parts, coords in zip(tile.apr_neighbors, tile.parts_neighbors, tile.neighbors):
 
@@ -744,12 +727,8 @@ class tileStitcher(baseStitcher):
 
             projs[tile.row, tile.col] = proj
 
-        if self.segment:
-            segmenter = pipapr.segmenter.tileSegmenter(tile,
-                                      self.path_classifier,
-                                      self.func_to_compute_features,
-                                      self.func_to_get_cc)
-            segmenter.compute_segmentation(verbose=self.segmentation_verbose)
+            if self.segment:
+                self.segmenter.compute_segmentation(tile)
 
         return projs
 
@@ -1030,9 +1009,6 @@ class channelStitcher(baseStitcher):
 
         self.segment = False
         self.segmentation_verbose = None
-        self.path_classifier = None
-        self.func_to_compute_features = None
-        self.func_to_get_cc = None
 
     def compute_rigid_registration(self):
 
@@ -1042,11 +1018,7 @@ class channelStitcher(baseStitcher):
             tile2.load_tile()
 
             if self.segment:
-                segmenter = pipapr.segmenter.tileSegmenter(tile2,
-                                          self.path_classifier,
-                                          self.func_to_compute_features,
-                                          self.func_to_get_cc)
-                segmenter.compute_segmentation(verbose=self.segmentation_verbose)
+                self.segmenter.compute_segmentation(tile2)
 
             patch = pyapr.ReconPatch()
             proj1 = _get_max_proj_apr(tile1.apr, tile1.parts, patch)
@@ -1119,6 +1091,10 @@ class tileMerger():
         None
 
         """
+
+        if self.merged_data is None:
+            self.initialize_merged_array()
+
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()
@@ -1154,6 +1130,10 @@ class tileMerger():
         None
 
         """
+
+        if self.merged_data is None:
+            self.initialize_merged_array()
+
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
         V_pos = self.database['ABS_V'].to_numpy()

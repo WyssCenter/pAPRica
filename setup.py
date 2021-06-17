@@ -15,12 +15,13 @@ setup(
         'alive-progress',
         'pandas',
         'scikit-image',
-        'opencv-python',
+        'opencv-contrib-python-headless',
         'dill',
         'matplotlib',
         'napari',
         'allensdk',
-        'sparse'
+        'sparse',
+        'brainreg'
     ],
     description='APR-based image processing pipeline for brain data',
     long_description=LONG_DESCR,

@@ -15,7 +15,12 @@ from alive_progress import alive_bar
 class tileConverter():
 
     def __init__(self,
-                 tiles: pipapr.parser.tileParser):
+                 tiles: (pipapr.parser.tileParser, pipapr.parser.randomParser)):
+
+        if isinstance(tiles, pipapr.parser.randomParser):
+            self.random = True # Not multitile
+        else:
+            self.random = False # Multitile
 
         self.tiles = tiles
         self.path = tiles.path
@@ -39,34 +44,69 @@ class tileConverter():
         folder_apr = os.path.join(base_folder, 'APR')
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
-        with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
-            for tile in self.tiles:
-                tile.load_tile()
+        if self.random:
+            # Safely create folder to save apr data
+            base_folder, _ = os.path.split(self.path)
+            folder_apr = os.path.join(base_folder, 'APR')
+            Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
-                # Set parameters
-                par = pyapr.APRParameters()
-                par.Ip_th = Ip_th
-                par.rel_error = rel_error
-                par.dx = dx
-                par.dy = dy
-                par.dz = dz
-                par.gradient_smoothing = gradient_smoothing
-                par.auto_parameters = True
+            with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
+                for tile in self.tiles:
+                    tile.load_tile()
 
-                # Convert tile to APR and save
-                apr, parts = pyapr.converter.get_apr(tile.data, params=par)
+                    # Set parameters
+                    par = pyapr.APRParameters()
+                    par.Ip_th = Ip_th
+                    par.rel_error = rel_error
+                    par.dx = dx
+                    par.dy = dy
+                    par.dz = dz
+                    par.gradient_smoothing = gradient_smoothing
+                    par.auto_parameters = True
 
-                if self.compression:
-                    parts.set_compression_type(1)
-                    parts.set_quantization_factor(self.quantization_factor)
-                    parts.set_background(self.bg)
+                    # Convert tile to APR and save
+                    apr, parts = pyapr.converter.get_apr(tile.data, params=par)
 
-                filename = '{}_{}.apr'.format(tile.row, tile.col)
-                pyapr.io.write(os.path.join(folder_apr, filename), apr, parts)
-                bar()
+                    if self.compression:
+                        parts.set_compression_type(1)
+                        parts.set_quantization_factor(self.quantization_factor)
+                        parts.set_background(self.bg)
 
-        # Modify tileParser object to use APR instead
-        self.tiles = pipapr.parser.tileParser(folder_apr,
-                                              frame_size=self.tiles.frame_size,
-                                              overlap=self.tiles.overlap,
-                                              ftype='apr')
+                    basename, filename = os.path.split(tile.path)
+                    pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts)
+                    bar()
+        else:
+            with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
+                for tile in self.tiles:
+                    tile.load_tile()
+
+                    # Set parameters
+                    par = pyapr.APRParameters()
+                    par.Ip_th = Ip_th
+                    par.rel_error = rel_error
+                    par.dx = dx
+                    par.dy = dy
+                    par.dz = dz
+                    par.gradient_smoothing = gradient_smoothing
+                    par.auto_parameters = True
+
+                    # Convert tile to APR and save
+                    apr, parts = pyapr.converter.get_apr(tile.data, params=par)
+
+                    if self.compression:
+                        parts.set_compression_type(1)
+                        parts.set_quantization_factor(self.quantization_factor)
+                        parts.set_background(self.bg)
+
+                    filename = '{}_{}.apr'.format(tile.row, tile.col)
+                    pyapr.io.write(os.path.join(folder_apr, filename), apr, parts)
+                    bar()
+
+            # Modify tileParser object to use APR instead
+            self.tiles = pipapr.parser.tileParser(folder_apr,
+                                                  frame_size=self.tiles.frame_size,
+                                                  overlap=self.tiles.overlap,
+                                                  ftype='apr')
+
+
+

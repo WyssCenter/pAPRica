@@ -18,6 +18,44 @@ import pipapr
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 
+
+def display_apr_from_path(path):
+    """
+    Display an APR using Napari from a filepath.
+    Parameters
+    ----------
+    path
+
+    Returns
+    -------
+
+    """
+    apr = pyapr.APR()
+    parts = pyapr.ShortParticles()
+    pyapr.io.read(path, apr, parts)
+    layer = apr_to_napari_Image(apr, parts)
+    display_layers_pyramidal([layer], level_delta=0)
+
+def display_apr(apr, parts, **kwargs):
+    """
+    Display an APR using Napari from previously loaded data.
+
+    Parameters
+    ----------
+    apr : pyapr.APR
+        Input APR data structure
+    parts : pyapr.FloatParticles or pyapr.ShortParticles
+        Input particle intensities
+
+    Returns
+    -------
+    None
+    """
+
+    l = apr_to_napari_Image(apr, parts, **kwargs)
+    display_layers_pyramidal([l], level_delta=0)
+
+
 def apr_to_napari_Image(apr: pyapr.APR,
                         parts: (pyapr.ShortParticles, pyapr.FloatParticles),
                         mode: str = 'constant',
@@ -127,17 +165,41 @@ def display_layers(layers):
     for layer in layers:
         viewer.add_layer(layer)
 
+    napari.run()
+
+
+    return viewer
+
+
+def display_layers_pyramidal(layers, level_delta):
+    """
+    Display a list of layers using Napari.
+
+    Parameters
+    ----------
+    layers: (list) list of layers to display
+
+    Returns
+    -------
+    napari viewer.
+    """
+
+    viewer = napari.Viewer()
+    for layer in layers:
+        viewer.add_layer(layer)
+
     from qtpy.QtCore import Qt
     from qtpy.QtWidgets import QSlider
 
 
     my_slider = QSlider(Qt.Horizontal)
     my_slider.setMinimum(0)
-    l_max = np.min([l.data.apr.level_max() for l in layers])
-    l_min = 5 if l_max >5 else 1
+    layers_apr = [l for l in layers if isinstance(l.data, pyapr.data_containers.APRSlicer)]
+    l_max = np.min([l.data.apr.level_max() for l in layers_apr])
+    l_min = 5 if l_max > 5 else 1
     my_slider.setMaximum(l_max-l_min)
     my_slider.setSingleStep(1)
-    my_slider.setValue(layer.data.patch.level_delta)
+    my_slider.setValue(-level_delta)
 
     # Connect your slider to your callback function
     my_slider.valueChanged[int].connect(
@@ -151,7 +213,7 @@ def display_layers(layers):
     return viewer
 
 
-def display_segmentation(apr, parts, mask):
+def display_segmentation(apr, parts, mask, pyramidal=True):
     """
     This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel
     data from APR on the fly.
@@ -166,12 +228,13 @@ def display_segmentation(apr, parts, mask):
     -------
     None
     """
-    image_nap = apr_to_napari_Image(apr, parts, name='APR')
-    mask_nap = apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3)
-    viewer = napari.Viewer()
-    viewer.add_layer(image_nap)
-    viewer.add_layer(mask_nap)
-    napari.run()
+    layers = []
+    layers.append(apr_to_napari_Image(apr, parts, name='APR'))
+    layers.append(apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3))
+    if pyramidal:
+        display_layers_pyramidal(layers, level_delta=0)
+    else:
+        display_layers(layers)
 
 
 def display_heatmap(heatmap, atlas=None, data=None, log=False):
@@ -217,8 +280,8 @@ class tileViewer():
     Class to display the registration and segmentation using Napari.
     """
     def __init__(self,
-                 tiles: pipapr.parser.tileParser,
-                 database: (pipapr.stitcher.tileStitcher, pd.DataFrame, str),
+                 tiles,
+                 database,
                  segmentation: bool=False,
                  cells=None,
                  atlaser=None):
@@ -322,7 +385,7 @@ class tileViewer():
 
         return layers
 
-    def display_all_tiles(self, downsample=1, **kwargs):
+    def display_all_tiles(self, pyramidal=True, downsample=1, **kwargs):
         """
         Display all parsed tiles.
 
@@ -389,7 +452,10 @@ class tileViewer():
                                         self.atlaser.x_downsample/downsample]))
 
         # Display layers
-        display_layers(layers)
+        if pyramidal:
+            display_layers_pyramidal(layers, level_delta)
+        else:
+            display_layers(layers)
 
     # This function is currently not working
     # def display_tiles(self, coords, downsample=1, **kwargs):
@@ -482,59 +548,6 @@ class tileViewer():
     #     pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, parts)
     #     u = (apr, parts)
     #     return u
-
-    def display_all_tiles_pyramid(self, **kwargs):
-        """
-        Display all parsed tiles.
-
-        Parameters
-        ----------
-        downsample: (int) downsampling parameter for APRSlicer
-                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
-        kwargs: (dict) dictionary passed to Napari for custom option
-
-        Returns
-        -------
-        None
-        """
-
-        # Compute layers to be displayed by Napari
-        layers = []
-
-        for tile in self.tiles:
-            # Load tile if not loaded, else use cached tile
-            ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
-            if self._is_tile_loaded(tile.row, tile.col):
-                apr, parts = self.loaded_tiles[ind]
-                if self.segmentation:
-                    cc = self.loaded_segmentation[ind]
-            else:
-                tile.load_tile()
-                apr, parts = tile.apr, tile.parts
-                self.loaded_ind.append(ind)
-                self.loaded_tiles[ind] = apr, parts
-                if self.segmentation:
-                    tile.load_segmentation()
-                    cc = tile.parts_cc
-                    self.loaded_segmentation[ind] = cc
-
-            position = self._get_tile_position(tile.row, tile.col)
-            layers.append(self._get_pyramid(apr, parts,
-                                              name='Tile [{}, {}]'.format(tile.row, tile.col),
-                                              translate=position,
-                                              opacity=0.7,
-                                              **kwargs))
-
-        # Display layers
-        display_layers(layers)
-
-    def _get_pyramid(self, apr, parts, **kwargs):
-        p = [pyapr.data_containers.APRSlicer(apr, parts, mode='constant', level_delta=0),
-             pyapr.data_containers.APRSlicer(apr, parts, mode='constant', level_delta=-4)]
-
-        u = Image(p, multiscale=True, **kwargs)
-
-        return u
 
     def _is_tile_loaded(self, row, col):
         """

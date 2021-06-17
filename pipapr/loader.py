@@ -10,6 +10,7 @@ from glob import glob
 import os
 from skimage.io import imread
 import numpy as np
+import pipapr
 import pyapr
 import re
 from alive_progress import alive_bar
@@ -147,10 +148,29 @@ class tileLoader():
             parts = pyapr.ShortParticles()
             pyapr.io.read(path, apr, parts)
             u = (apr, parts)
+        elif self.type == 'raw':
+            u = self._load_raw(path)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
 
         return u
+
+    def _load_raw(self, path):
+        """
+        Load a raw file (binary) using numpy.
+
+        """
+        u = np.fromfile(path, dtype='uint16', count=-1)
+        return u.reshape((-1, self.frame_size, self.frame_size))
+
+    def view_tile(self, **kwargs):
+        """
+        Display tile using napari.
+
+        """
+        if self.apr is None:
+            self.load_tile()
+        pipapr.viewer.display_apr(self.apr, self.parts)
 
     @staticmethod
     def _load_sequence(path):

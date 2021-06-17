@@ -5,12 +5,21 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from time import time
+"""
+Script to process Tomas data taken on 3x2 COLM.
 
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+"""
+
+from time import time
+import pandas as pd
 import pipapr
 import os
 import numpy as np
 import pyapr
+import matplotlib.pyplot as plt
 
 
 def compute_gradients(apr, parts, sobel=True):
@@ -134,12 +143,16 @@ def particle_levels(apr):
 
 
 def compute_features(apr, parts):
+    t = time()
     gauss = gaussian_blur(apr, parts, sigma=1.5, size=11)
     print('Gaussian computed.')
 
     # Compute gradient magnitude (central finite differences)
     grad = compute_gradmag(apr, gauss)
     print('Gradient magnitude computed.')
+    # Compute local standard deviation around each particle
+    # local_std = compute_std(apr, parts, size=5)
+    # print('STD computed.')
     # Compute lvl for each particle
     lvl = particle_levels(apr)
     print('Particle level computed.')
@@ -148,6 +161,8 @@ def compute_features(apr, parts):
     print('DOG computed.')
     lapl_of_gaussian = compute_laplacian(apr, gauss)
     print('Laplacian of Gaussian computed.')
+
+    print('Features computation took {} s.'.format(time()-t))
 
     # Aggregate filters in a feature array
     f = np.vstack((np.array(parts, copy=True),
@@ -163,54 +178,57 @@ def compute_features(apr, parts):
 
 def get_cc_from_features(apr, parts_pred):
 
-    # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
-    parts_cells = (parts_pred == 0)
+    # Create a mask from particle classified as cells (cell=1, background=2, membrane=3)
+    parts_cells = (parts_pred == 1)
 
     # Use opening to separate touching cells
-    pyapr.numerics.transform.opening(apr, parts_cells, radius=1, binary=True, inplace=True)
+    pyapr.numerics.transform.opening(apr, parts_cells, binary=True, inplace=True)
 
     # Apply connected component
     cc = pyapr.LongParticles()
     pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
 
-    # Remove small objects
-    # cc = pyapr.numerics.transform.remove_small_objects(apr, cc, 128)
+    # Remove small and large objects
+    pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=4)
+    pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=128)
 
     return cc
 
-
 # Parameters
-path = r'../data/apr/'
-path_classifier=r'../data/random_forest_n100.joblib'
-n = 1
+path = '/home/apr-benchmark/Desktop/data/sarah/APR'
+
 
 # Parse data
-t_ini = time()
-tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
-t = time()
+tiles = pipapr.parser.randomParser(path, frame_size=2048, ftype='apr')
+tile = tiles[0]
 
-# Stitch and segment
-stitcher = pipapr.stitcher.tileStitcher(tiles)
-# stitcher.activate_mask(99)
-# segmenter = pipapr.segmenter.tileSegmenter(path_classifier, compute_features, get_cc_from_features, verbose=True)
-# stitcher.activate_segmentation(segmenter)
+# Segment tile
+trainer = pipapr.segmenter.tileTrainer(tile, compute_features, get_cc_from_features)
+# trainer.manually_annotate(use_sparse_labels=True)
+# trainer.save_labels()
+trainer.load_labels()
+trainer.train_classifier()
+# t = time()
+# trainer.segment_training_tile(bg_label=2, display_result=False)
+# print('Elapsed time: {} s.'.format(time()-t))
 
-t = time()
-stitcher.compute_registration()
-print('Elapsed time old registration: {} s.'.format((time()-t)/n))
-t = time()
-stitcher.compute_registration_fast()
-print('Elapsed time new registration on RAM: {} s.'.format((time()-t)/n))
-t = time()
-stitcher.compute_registration_fast(on_disk=True)
-print('Elapsed time new registration on disk: {} s.'.format((time()-t)/n))
 
-stitcher.save_database(os.path.join(path, 'registration_results.csv'))
+trainer = pipapr.segmenter.tileTrainer(tile, func_to_compute_features=compute_features, func_to_get_cc=get_cc_from_features)
+trainer.load_labels()
+# trainer.add_annotations()
+# trainer.manually_annotate(use_sparse_labels=True)
+# trainer.save_labels()
+trainer.train_classifier()
+# trainer.segment_training_tile(bg_label=3)
+# trainer.display_training_annotations()
+# trainer.save_classifier()
+# trainer.segment_training_tile(func_to_get_cc=get_cc_from_features)
 
-# Extract cell position and merge across the whole volume.
-cells = pipapr.segmenter.tileCells(tiles, stitcher.database)
-cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
+# Apply the segmentation
+segmenter = pipapr.segmenter.tileSegmenter.from_trainer(trainer)
+segmenter.compute_segmentation(tile)
 
-# Display result
-viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
-viewer.display_all_tiles(pyramidal=True, downsample=1, contrast_limits=[0, 3000])
+
+# Save a lower resolution for atlasing
+atlaser = pipapr.atlaser.tileAtlaser(original_pixel_size=[5, 5.26, 5.26], )
+

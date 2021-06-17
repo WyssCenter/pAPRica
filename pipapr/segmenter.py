@@ -12,7 +12,7 @@ import numpy as np
 import pyapr
 from joblib import load
 from time import time
-# import cv2 as cv
+import cv2 as cv
 import sparse
 import napari
 from alive_progress import alive_bar
@@ -67,9 +67,7 @@ class tileSegmenter():
 
     """
 
-    def __init__(self,
-                 tile: pipapr.loader.tileLoader,
-                 path_classifier, func_to_compute_features, func_to_get_cc):
+    def __init__(self, clf, func_to_compute_features, func_to_get_cc, verbose):
         """
 
         Parameters
@@ -82,18 +80,72 @@ class tileSegmenter():
                                         a unique id)
         """
 
-        self.path = tile.path
-        self.apr = tile.apr
-        self.parts = tile.parts
-        self.is_tile_loaded = (tile.apr is not None)
-        # Load classifier
-        self.clf = load(path_classifier)
+        # Store classifier
+        self.clf = clf
         # Store function to compute features
         self.func_to_compute_features = func_to_compute_features
         # Store post processing steps
         self.func_to_get_cc = func_to_get_cc
+        # Verbose
+        self.verbose = verbose
 
-    def compute_segmentation(self, save_cc=True, save_mask=False, verbose=False):
+    @classmethod
+    def from_trainer(cls,
+                     trainer,
+                     verbose=True):
+        """
+        Instantiate tileSegmenter object with a tileTrainer object.
+
+        Parameters
+        ----------
+        trainer: (pipapr.segmenter.tileTrainer) trainer object previously trained for segmentation
+        verbose: (bool) control function output
+
+        Returns
+        -------
+        tileSegmenter object
+        """
+
+        return cls(clf=trainer.clf,
+                   func_to_compute_features=trainer.func_to_compute_features,
+                   func_to_get_cc=trainer.func_to_get_cc,
+                   verbose=verbose)
+
+    @classmethod
+    def from_classifier(cls,
+                        classifier,
+                        func_to_compute_features,
+                        func_to_get_cc,
+                        verbose=True):
+        """
+        Instantiate tileSegmenter object with a classifier, function to compute the features and to get the
+        connected components.
+
+        Parameters
+        ----------
+        classifier
+        func_to_compute_features: (func) function to compute features used by the classifier to perform
+                                    the segmentation.
+        func_to_get_cc: (func) function to compute the connected component from the classifier prediction.
+        verbose: (bool) control function output.
+
+        Returns
+        -------
+        tileSegmenter object
+        """
+
+        if isinstance(classifier, str):
+            clf = load(classifier)
+        else:
+            clf = classifier
+
+        return cls(clf=clf,
+                   func_to_compute_features=func_to_compute_features,
+                   func_to_get_cc=func_to_get_cc,
+                   verbose=verbose)
+
+    def compute_segmentation(self, tile: pipapr.loader.tileLoader,
+                             save_cc=True, save_mask=False):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -106,42 +158,44 @@ class tileSegmenter():
         None
         """
 
-        if verbose:
+        if tile.apr is None:
+            tile.load_tile()
+
+        if self.verbose:
             t = time()
             print('Computing features on AP')
-        f = self.func_to_compute_features(self.apr, self.parts)
-        if verbose:
+        f = self.func_to_compute_features(tile.apr, tile.parts)
+        if self.verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
-        parts_pred = _predict_on_APR_block(f, self.clf, verbose=verbose)
+        parts_pred = _predict_on_APR_block(f, self.clf, verbose=self.verbose)
 
-        if verbose:
+        if self.verbose:
             # Display inference info
             print('\n****** INFERENCE RESULTS ******')
-            print(
-                '{} cell particles ({:0.2f}%)'.format(np.sum(parts_pred == 0),
-                                                      np.sum(parts_pred == 0) / len(parts_pred) * 100))
-            print('{} background particles ({:0.2f}%)'.format(np.sum(parts_pred == 1),
-                                                              np.sum(parts_pred == 1) / len(parts_pred) * 100))
-            print('{} membrane particles ({:0.2f}%)'.format(np.sum(parts_pred == 2),
-                                                            np.sum(parts_pred == 2) / len(parts_pred) * 100))
+            for l in self.clf.classes_:
+                print('Class {}: {} particles ({:0.2f}%)'.format(l, np.sum(parts_pred == l),
+                                                      np.sum(parts_pred == l) / len(parts_pred) * 100))
             print('*******************************')
 
-        cc = self.func_to_get_cc(self.apr, parts_pred)
+        cc = self.func_to_get_cc(tile.apr, parts_pred)
 
         # Save results
         if save_mask:
-            self._save_segmentation(name='segmentation mask', parts=parts_pred)
+            self._save_segmentation(tile.path, name='segmentation mask', parts=parts_pred)
         if save_cc:
-            self._save_segmentation(name='segmentation cc', parts=cc)
+            self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
 
-    def _save_segmentation(self, name, parts):
+        tile.parts_cc = cc
+        tile.parts_mask = parts_pred
+
+    def _save_segmentation(self, path, name, parts):
         """
         Save segmentation particles by appending the original APR file.
 
         Parameters
         ----------
-        parts: (pyapr.ParticleData) particles to save. Note that the PAR tree should be the same otherwise the data
+        parts: (pyapr.ParticleData) particles to save. Note that the APR tree should be the same otherwise the data
                                     will be inconsistent and not readable.
 
         Returns
@@ -150,8 +204,8 @@ class tileSegmenter():
         """
         aprfile = pyapr.io.APRFile()
         aprfile.set_read_write_tree(True)
-        aprfile.open(self.path, 'READWRITE')
-        aprfile.write_particles('test', parts, t=0)
+        aprfile.open(path, 'READWRITE')
+        aprfile.write_particles(name, parts, t=0)
         aprfile.close()
 
 
@@ -381,7 +435,8 @@ class tileTrainer():
 
     def __init__(self,
                  tile: pipapr.loader.tileLoader,
-                 func_to_compute_features):
+                 func_to_compute_features,
+                 func_to_get_cc=None):
 
         tile.load_tile()
         self.tile = tile
@@ -390,6 +445,7 @@ class tileTrainer():
         self.apr_it = self.apr.iterator()
         self.shape = [tile.apr.org_dims(i) for i in [2, 1, 0]]
         self.func_to_compute_features = func_to_compute_features
+        self.func_to_get_cc = func_to_get_cc
 
         self.labels_manual = None
         self.pixel_list = None
@@ -397,6 +453,8 @@ class tileTrainer():
         self.use_sparse_labels = None
         self.parts_train_idx = None
         self.clf = None
+        self.parts_mask = None
+        self.parts_cc = None
 
     def manually_annotate(self, use_sparse_labels=True, **kwargs):
         """
@@ -417,6 +475,43 @@ class tileTrainer():
             self.labels_manual = sparse.DOK(shape=self.shape, dtype='uint8')
         else:
             self.labels_manual = np.empty(self.shape, dtype='uint8')
+
+        # We call napari with the APRSlicer and the sparse array for storing the manual annotations
+        viewer = napari.Viewer()
+        image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
+        viewer.add_layer(image_layer)
+        viewer.add_labels(self.labels_manual)
+        napari.run()
+
+        # We extract labels and pixel coordinate from the sparse array
+        if self.sparse:
+            self.labels_manual = self.labels_manual.to_coo()
+        else:
+            self.labels_manual = sparse.COO.from_numpy(self.labels_manual)
+
+        self.pixel_list = self.labels_manual.coords.T
+        self.labels = self.labels_manual.data
+
+    def add_annotations(self, use_sparse_labels=True, **kwargs):
+        """
+        Add annotations on previously annotated dataset.
+
+        Parameters
+        ----------
+        use_sparse_labels: (bool) use sparse array to store the labels (memory efficient but slower graphics)
+
+        Returns
+        -------
+        None
+        """
+
+        self.sparse = use_sparse_labels
+
+        if self.sparse:
+            # We create a sparse array that supports inserting data (COO does not)
+            self.labels_manual = sparse.DOK(self.labels_manual)
+        else:
+            self.labels_manual = self.labels_manual.todense()
 
         # We call napari with the APRSlicer and the sparse array for storing the manual annotations
         viewer = napari.Viewer()
@@ -526,7 +621,7 @@ class tileTrainer():
         self.clf = clf
         self.f = f
 
-    def segment_training_tile(self, bg, display_result=True, verbose=True):
+    def segment_training_tile(self, bg_label=None, display_result=True, verbose=True):
         """
         Apply classifier to the whole tile and display segmentation results using Napari.
 
@@ -541,22 +636,30 @@ class tileTrainer():
         """
 
         # Apply on whole dataset
-        parts_pred = _predict_on_APR_block(self.f, self.clf, verbose=verbose)
+        if self.parts_mask is None:
+            parts_pred = _predict_on_APR_block(self.f, self.clf, verbose=verbose)
+            self.parts_mask = parts_pred
+
+        if (self.func_to_get_cc is not None) and self.parts_cc is None:
+            self.parts_cc = self.func_to_get_cc(self.apr, self.parts_mask.copy())
 
         # Display inference info
         if verbose:
             print('\n****** INFERENCE RESULTS ******')
             for l in self.unique_labels:
-                print('Class {}: {} cell particles ({:0.2f}%)'.format(l, np.sum(parts_pred == l),
-                                                            np.sum(parts_pred == l) / len(parts_pred) * 100))
+                print('Class {}: {} cell particles ({:0.2f}%)'.format(l, np.sum(self.parts_mask == l),
+                                                            np.sum(self.parts_mask == l) / len(self.parts_mask) * 100))
             print('******************************\n')
 
         # Display segmentation using Napari
         if display_result:
-            parts_pred = np.array(parts_pred)
-            parts_pred[parts_pred==bg] = 0
-            parts_pred = pyapr.ShortParticles(parts_pred)
-            pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
+            if self.parts_cc is not None:
+                pipapr.viewer.display_segmentation(self.apr, self.parts, self.parts_cc)
+            elif bg_label is not None:
+                parts_pred = np.array(self.parts_mask.copy())
+                parts_pred[parts_pred == bg_label] = 0
+                parts_pred = pyapr.ShortParticles(parts_pred)
+                pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
 
     def display_training_annotations(self, **kwargs):
         """
@@ -579,13 +682,53 @@ class tileTrainer():
             viewer.add_layer(label_nap)
         napari.run()
 
+    def apply_on_tile(self, tile, bg_label=None, func_to_get_cc=None, display_result=True, verbose=True):
+        """
+        Apply classifier to the whole tile and display segmentation results using Napari.
+
+        Parameters
+        ----------
+        display_result: (bool) option to display segmentation results using Napari
+        verbose: (bool) option to print out information.
+
+        Returns
+        -------
+        None
+        """
+
+        # Apply on whole dataset
+        if tile.apr is None:
+            tile.load_tile()
+        f = self.func_to_compute_features(tile.apr, tile.parts)
+        parts_pred = _predict_on_APR_block(f, self.clf, verbose=verbose)
+        tile.parts_mask = parts_pred.copy()
+
+        # Display inference info
+        if verbose:
+            print('\n****** INFERENCE RESULTS ******')
+            for l in self.unique_labels:
+                print('Class {}: {} cell particles ({:0.2f}%)'.format(l, np.sum(parts_pred == l),
+                                                            np.sum(parts_pred == l) / len(parts_pred) * 100))
+            print('******************************\n')
+
+        # Display segmentation using Napari
+        if display_result:
+            if func_to_get_cc is not None:
+                tile.parts_cc = func_to_get_cc(tile.apr, parts_pred)
+                pipapr.viewer.display_segmentation(self.apr, self.parts, tile.parts_cc)
+            elif bg_label is not None:
+                parts_pred = np.array(parts_pred)
+                parts_pred[parts_pred==bg_label] = 0
+                parts_pred = pyapr.ShortParticles(parts_pred)
+                pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
+
     def save_classifier(self, path=None):
         """
         Save the trained classifier.
 
         Parameters
         ----------
-        path: (str) path for saving the classifier. By default it is saved in the data root folder.
+        path: (str) path for saving the classifier. By default, it is saved in the data root folder.
 
         Returns
         -------

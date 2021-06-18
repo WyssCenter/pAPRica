@@ -108,6 +108,4 @@ venv.bak/
 .DS_Store
 
 # Data files
-data/segmentation/
-data/max_projs/
-data/registration_results.csv
+tests/data/

@@ -294,7 +294,7 @@ class tileParser():
 
 class randomParser():
     """
-    Class used to parse random data (not multitile).
+    Class used to parse several independent tiles (not multitile).
     """
 
     def __init__(self, path, frame_size, ftype):

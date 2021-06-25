@@ -11,11 +11,21 @@ import pyapr
 import os
 from pathlib import Path
 from alive_progress import alive_bar
+from skimage.io import imsave
 
 class tileConverter():
+    """
+    Class to convert tiles to APR or to tiff.
+    """
 
     def __init__(self,
                  tiles: (pipapr.parser.tileParser, pipapr.parser.randomParser)):
+        """
+
+        Parameters
+        ----------
+        tiles: (tileParser or randomParser) parser object referencing tiles to be converted.
+        """
 
         if isinstance(tiles, pipapr.parser.randomParser):
             self.random = True # Not multitile
@@ -31,82 +41,136 @@ class tileConverter():
         self.quantization_factor = None
 
     def set_compression(self, quantization_factor=1, bg=108):
+        """
+        Activate B3D compression for saving tiles.
 
-        self.compression = 1
+        Parameters
+        ----------
+        quantization_factor: (int) quantization factor: the higher, the more compressed
+                                (refer to B3D paper for more detail).
+        bg: (int) background value: any value below this threshold will be set to the background value. This helps
+                save up space by having the same value for the background (refer to B3D paper for more details).
+
+        Returns
+        -------
+        None
+        """
+
+        self.compression = True
         self.bg = bg
         self.quantization_factor = quantization_factor
 
+    def deactivate_compression(self):
+        """
+        Deactivate B3D compression when saving particles.
 
-    def batch_convert(self, Ip_th=108, rel_error=0.2, gradient_smoothing=2, dx=1, dy=1, dz=1):
+        Returns
+        -------
+        None
+        """
+
+        self.compression = False
+        self.bg = None
+        self.quantization_factor = None
+
+    def batch_convert_to_apr(self, Ip_th=108, rel_error=0.2, gradient_smoothing=2, dx=1, dy=1, dz=1):
+        """
+        Convert all parsed tiles to APR using auto-parameters.
+
+        Parameters
+        ----------
+        Ip_th: (int) Intensity threshold
+        rel_error: (float in [0, 1[) relative error bound
+        gradient_smoothing: (float) B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of
+                            smoothing)
+        dx: (float) PSF size in x, used to compute the gradient
+        dy: (float) PSF size in y, used to compute the gradient
+        dz: (float) PSF size in z, used to compute the gradient
+
+        Returns
+        -------
+        None
+        """
+
+        if self.tiles.type == 'apr':
+            raise TypeError('Error: data already in APR format.')
 
         # Safely create folder to save apr data
         base_folder, _ = os.path.split(self.path)
         folder_apr = os.path.join(base_folder, 'APR')
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
-        if self.random:
-            # Safely create folder to save apr data
-            base_folder, _ = os.path.split(self.path)
-            folder_apr = os.path.join(base_folder, 'APR')
-            Path(folder_apr).mkdir(parents=True, exist_ok=True)
+        with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
+            for tile in self.tiles:
+                tile.load_tile()
 
-            with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
-                for tile in self.tiles:
-                    tile.load_tile()
+                # Set parameters
+                par = pyapr.APRParameters()
+                par.Ip_th = Ip_th
+                par.rel_error = rel_error
+                par.dx = dx
+                par.dy = dy
+                par.dz = dz
+                par.gradient_smoothing = gradient_smoothing
+                par.auto_parameters = True
 
-                    # Set parameters
-                    par = pyapr.APRParameters()
-                    par.Ip_th = Ip_th
-                    par.rel_error = rel_error
-                    par.dx = dx
-                    par.dy = dy
-                    par.dz = dz
-                    par.gradient_smoothing = gradient_smoothing
-                    par.auto_parameters = True
+                # Convert tile to APR and save
+                apr, parts = pyapr.converter.get_apr(tile.data, params=par)
 
-                    # Convert tile to APR and save
-                    apr, parts = pyapr.converter.get_apr(tile.data, params=par)
+                if self.compression:
+                    parts.set_compression_type(1)
+                    parts.set_quantization_factor(self.quantization_factor)
+                    parts.set_background(self.bg)
 
-                    if self.compression:
-                        parts.set_compression_type(1)
-                        parts.set_quantization_factor(self.quantization_factor)
-                        parts.set_background(self.bg)
-
+                # Save converted data
+                if self.random:
                     basename, filename = os.path.split(tile.path)
                     pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts)
-                    bar()
-        else:
-            with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
-                for tile in self.tiles:
-                    tile.load_tile()
-
-                    # Set parameters
-                    par = pyapr.APRParameters()
-                    par.Ip_th = Ip_th
-                    par.rel_error = rel_error
-                    par.dx = dx
-                    par.dy = dy
-                    par.dz = dz
-                    par.gradient_smoothing = gradient_smoothing
-                    par.auto_parameters = True
-
-                    # Convert tile to APR and save
-                    apr, parts = pyapr.converter.get_apr(tile.data, params=par)
-
-                    if self.compression:
-                        parts.set_compression_type(1)
-                        parts.set_quantization_factor(self.quantization_factor)
-                        parts.set_background(self.bg)
-
+                else:
                     filename = '{}_{}.apr'.format(tile.row, tile.col)
                     pyapr.io.write(os.path.join(folder_apr, filename), apr, parts)
-                    bar()
 
+                bar()
+
+        if not self.random:
             # Modify tileParser object to use APR instead
             self.tiles = pipapr.parser.tileParser(folder_apr,
                                                   frame_size=self.tiles.frame_size,
                                                   overlap=self.tiles.overlap,
                                                   ftype='apr')
+
+    def batch_reconstruct_pixel(self, mode='constant'):
+
+        if self.tiles.type != 'apr':
+            raise TypeError('Error: data not in APR format.')
+
+        # Safely create folder to save apr data
+        base_folder, _ = os.path.split(self.path)
+        folder_tiff = os.path.join(base_folder, 'TIFF')
+        Path(folder_tiff).mkdir(parents=True, exist_ok=True)
+
+        with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
+            for tile in self.tiles:
+                tile.load_tile()
+
+                if mode == 'constant':
+                    data = pyapr.numerics.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
+                elif mode=='smoth':
+                    data = pyapr.numerics.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
+                elif mode=='level':
+                    data = pyapr.numerics.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
+                else:
+                    raise ValueError('Error: unknown mode for APR reconstruction.')
+
+                # Save converted data
+                if self.random:
+                    basename, filename = os.path.split(tile.path)
+                    imsave(os.path.join(folder_tiff, filename[:-4] + '.tif'), data, check_contrast=False)
+                else:
+                    filename = '{}_{}.tif'.format(tile.row, tile.col)
+                    imsave(os.path.join(folder_tiff, filename), data, check_contrast=False)
+
+                bar()
 
 
 

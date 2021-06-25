@@ -19,7 +19,7 @@ from alive_progress import alive_bar
 import os
 
 
-def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
+def _predict_on_APR_block(x, clf, n_parts=1e9, verbose=False):
     """
     Predict particle class with the trained classifier clf on the precomputed features f using a
     blocked strategy to avoid memory segfault.
@@ -161,15 +161,16 @@ class tileSegmenter():
         if tile.apr is None:
             tile.load_tile()
 
+        # Compute features on APR
         if self.verbose:
             t = time()
-            print('Computing features on AP')
+            print('Computing features on APR')
         f = self.func_to_compute_features(tile.apr, tile.parts)
         if self.verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
+        # Predict particle class
         parts_pred = _predict_on_APR_block(f, self.clf, verbose=self.verbose)
-
         if self.verbose:
             # Display inference info
             print('\n****** INFERENCE RESULTS ******')
@@ -178,7 +179,10 @@ class tileSegmenter():
                                                       np.sum(parts_pred == l) / len(parts_pred) * 100))
             print('*******************************')
 
-        cc = self.func_to_get_cc(tile.apr, parts_pred)
+        # Compute connected component from classification
+        if self.func_to_get_cc is not None:
+            cc = self.func_to_get_cc(tile.apr, parts_pred)
+            tile.parts_cc = cc
 
         # Save results
         if save_mask:
@@ -186,7 +190,6 @@ class tileSegmenter():
         if save_cc:
             self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
 
-        tile.parts_cc = cc
         tile.parts_mask = parts_pred
 
     def _save_segmentation(self, path, name, parts):
@@ -455,6 +458,7 @@ class tileTrainer():
         self.clf = None
         self.parts_mask = None
         self.parts_cc = None
+        self.f = None
 
     def manually_annotate(self, use_sparse_labels=True, **kwargs):
         """
@@ -594,7 +598,8 @@ class tileTrainer():
         self._remove_ambiguities(verbose=verbose)
 
         # We compute features and train the classifier
-        f = self.func_to_compute_features(self.apr, self.parts)
+        if self.f is None:
+            f = self.func_to_compute_features(self.apr, self.parts)
 
         # Fetch data that was manually labelled
         x = f[self.parts_train_idx]
@@ -602,7 +607,7 @@ class tileTrainer():
 
         # Train random forest
         clf = make_pipeline(preprocessing.StandardScaler(with_mean=True, with_std=True),
-                            RandomForestClassifier(n_estimators=100, class_weight='balanced'))
+                            RandomForestClassifier(n_estimators=10, class_weight='balanced'))
         t = time()
         clf.fit(x, y.ravel())
         print('Training took {} s.\n'.format(time() - t))

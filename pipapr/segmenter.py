@@ -115,7 +115,7 @@ class tileSegmenter():
     def from_classifier(cls,
                         classifier,
                         func_to_compute_features,
-                        func_to_get_cc,
+                        func_to_get_cc=None,
                         verbose=True):
         """
         Instantiate tileSegmenter object with a classifier, function to compute the features and to get the

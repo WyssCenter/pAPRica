@@ -150,8 +150,13 @@ class tileAtlaser():
         atlas_dir = os.path.join(output_dir, 'atlas')
         Path(atlas_dir).mkdir(parents=True, exist_ok=True)
 
-        path_merged_data = os.path.join(output_dir, merged_data_filename)
-        imsave(path_merged_data, self.merged_data)
+        # If merged_data is a path we ask brainreg to work on this file
+        if isinstance(self.merged_data, str):
+            path_merged_data = self.merged_data
+        # Else it means it's an array so we have to save it first
+        else:
+            path_merged_data = os.path.join(output_dir, merged_data_filename)
+            imsave(path_merged_data, self.merged_data)
 
         command = 'brainreg {} {} -v {} {} {} --orientation {}'.format('"' + path_merged_data + '"',
                                                             '"' + atlas_dir + '"',
@@ -165,7 +170,7 @@ class tileAtlaser():
         # Execute brainreg
         os.system(command)
 
-        self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tif'))
+        self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tiff'))
 
     def get_cells_id(self, cells):
 

@@ -155,8 +155,6 @@ def compute_features(apr, parts):
     lapl_of_gaussian = compute_laplacian(apr, gauss)
     print('Laplacian of Gaussian computed.')
 
-    print('Features computation took {} s.'.format(time()-t))
-
     # Aggregate filters in a feature array
     f = np.vstack((np.array(parts, copy=True),
                    lvl,
@@ -171,8 +169,8 @@ def compute_features(apr, parts):
 
 def get_cc_from_features(apr, parts_pred):
 
-    # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
-    parts_cells = (parts_pred == 0)
+    # Create a mask from particle classified as cells (cell=1, background=2, membrane=3)
+    parts_cells = (parts_pred == 1)
 
     # Use opening to separate touching cells
     pyapr.numerics.transform.opening(apr, parts_cells, binary=True, inplace=True)
@@ -182,13 +180,16 @@ def get_cc_from_features(apr, parts_pred):
     pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
 
     # Remove small and large objects
-    pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=4)
-    pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=256)
+    pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=1000)
+    pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=50000)
+    pyapr.numerics.transform.remove_small_holes(apr, cc, max_volume=3000)
 
     return cc
 
 # Parameters
-path = '/run/user/1000/gvfs/smb-share:server=fcbgnasc.campusbiotech.ch,share=fcbgdata/0063_CBT_UNIGE_LAMY/Tomas Jorda/COLM/MC_PV_LOC000_20210503_172011/APR'
+# path = '/run/user/1000/gvfs/smb-share:server=fcbgnasc.campusbiotech.ch,share=fcbgdata/0063_CBT_UNIGE_LAMY/Tomas_Jorda/COLM/MC_PV_LOC000_20210503_172011/APR'
+path = '/home/apr-benchmark/Desktop/data/tomas/APR'
+path_classifier = '/run/user/1000/gvfs/smb-share:server=fcbgnasc.campusbiotech.ch,share=fcbgdata/0063_CBT_UNIGE_LAMY/Tomas_Jorda/COLM/MC_PV_LOC000_20210503_172011/random_forest_n100.joblib'
 
 
 # Parse data
@@ -206,26 +207,36 @@ tiles = pipapr.parser.tileParser(path, frame_size=2048, overlap=512)
 # print('Elapsed time for stitching: {} s.'.format(time()-t))
 # stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 #
-# database = os.path.join(path, 'registration_results.csv')
+database = os.path.join(path, 'registration_results.csv')
 # viewer = pipapr.viewer.tileViewer(tiles, database)
 # viewer.display_all_tiles(pyramidal=True, contrast_limits=[100, 5000], rendering='attenuated_mip', colormap='bop orange',
 #                                  blending='additive')
+# viewer.display_all_tiles(pyramidal=True, contrast_limits=[0, 100])
 
-trainer = pipapr.segmenter.tileTrainer(tiles[2], func_to_compute_features=compute_features)
-trainer.load_labels()
-trainer.add_annotations()
+# trainer = pipapr.segmenter.tileTrainer(tiles[2], func_to_compute_features=compute_features, func_to_get_cc=get_cc_from_features)
+# trainer.load_labels()
+# trainer.add_annotations()
 # trainer.manually_annotate(use_sparse_labels=True)
-trainer.save_labels()
-trainer.train_classifier()
-trainer.segment_training_tile(bg_label=3)
-trainer.display_training_annotations()
+# trainer.save_labels()
+# trainer.train_classifier()
+# trainer.segment_training_tile(bg_label=3)
+# trainer.display_training_annotations()
+# trainer.save_classifier()
+# trainer.segment_training_tile()
 
-# # Merge Data
-# merger = tileMerger(tiles, database, n_planes=1167)
-# merger.set_downsample(1)
-# merger.initialize_merged_array()
-# merger.merge_max()
-#
-# for i in range(merger.merged_data.shape[0]):
-#     imsave('/mnt/Data/tomas/merged_data_{}.tif'.format(i), merger.merged_data[i])
-#     print('{}/{}'.format(i, merger.merged_data.shape[0]))
+# Apply the segmentation
+segmenter = pipapr.segmenter.tileSegmenter.from_classifier(classifier='/home/apr-benchmark/Desktop/data/tomas/random_forest_n100.joblib',
+                                                           func_to_compute_features=compute_features,
+                                                           func_to_get_cc=get_cc_from_features)
+cr = []
+et = []
+for tile in tiles:
+    t = time()
+    segmenter.compute_segmentation(tile)
+    print('Elapsed time segmentation: {} s.'.format(time()-t))
+    et.append(time()-t)
+    cr.append(tile.apr.computational_ratio())
+
+# viewer = pipapr.viewer.tileViewer(tiles, os.path.join(tiles.path, 'registration_results.csv'), segmentation=True)
+# viewer.display_all_tiles()
+

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import os
 from skimage.io import imsave
 
-path = r'/home/jules/Desktop/mouse_colm/multitile_auto'
+path = r'/home/jules/Desktop/data/tomas/mouse_colm'
 t = time()
 t_ini = time()
 tiles = tileParser(path, frame_size=2048, overlap=int(2048*0.20), ftype='apr')

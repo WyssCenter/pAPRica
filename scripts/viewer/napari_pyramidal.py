@@ -19,11 +19,11 @@ def get_pyramid(apr, parts, n):
     return p
 
 # Parameters
-path = '../../data/apr'
+path = '../../tests/data/apr'
 
 # Load APR file
 tiles = pipapr.parser.tileParser(path, frame_size=2048, overlap=512, ftype='apr')
-database = pd.read_csv('../../data/registration_results.csv')
+database = pd.read_csv('../../tests/data/registration_results.csv')
 
 # Display pyramidal file with Napari
 # tile = tiles[3]

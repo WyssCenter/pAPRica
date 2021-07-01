@@ -1,11 +1,9 @@
 """
-Script to compute segmentation performances against CR.
 
 By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
-
 
 import pyapr
 import pipapr
@@ -13,6 +11,7 @@ from glob import glob
 import os
 import numpy as np
 from time import time
+import speedscope
 
 def compute_gradients(apr, parts, sobel=True):
     """
@@ -180,41 +179,19 @@ def get_cc_from_features(apr, parts_pred):
 
     return cc
 
+
 # Parameters
-path = '/home/apr-benchmark/Desktop/data/synthetic'
+path = '/home/apr-benchmark/Desktop/data/synthetic_single_tile/'
+path_classifier = '/home/apr-benchmark/Desktop/data/synthetic/random_forest_n100.joblib'
 
-# Train segmentation algorithm
-tiles = pipapr.parser.tileParser('/home/apr-benchmark/Desktop/data/synthetic/ncells_65536', frame_size=512, overlap=128)
+# Load data and create segmenter
+tiles = pipapr.parser.randomParser(path, frame_size=512, ftype='apr')
+segmenter = pipapr.segmenter.tileSegmenter.from_classifier(classifier=path_classifier,
+                                                           # func_to_get_cc=get_cc_from_features,
+                                                           func_to_compute_features=compute_features)
 
-trainer = pipapr.segmenter.tileTrainer(tiles[0], func_to_compute_features=compute_features)
-# trainer.manually_annotate()
-trainer.load_labels()
-trainer.train_classifier()
-# trainer.save_labels()
-# trainer.segment_training_tile(bg_label=2)
-segmenter = pipapr.segmenter.tileSegmenter.from_trainer(trainer, verbose=False)
 
-folders = glob(os.path.join(path, '*/'))
-cr = []
-time_segmentation = []
-for folder in folders:
-    tiles = pipapr.parser.randomParser(folder, frame_size=512, ftype='apr')
-    tmp = []
-    t = time()
-    for tile in tiles:
-        tile.load_tile()
-        tmp.append(tile.apr.computational_ratio())
-        segmenter.compute_segmentation(tile, save_cc=False)
-    time_segmentation.append(time()-t)
-    cr.append(np.mean(tmp))
+with speedscope.track('segmentation_ncells_128.json'):
+    segmenter.compute_segmentation(tiles[0], save_cc=False)
 
-    print('CR {} - Elapsed time {} s.'.format(cr[-1], time_segmentation[-1]))
 
-import matplotlib.pyplot as plt
-plt.plot(cr, np.array(time_segmentation)/16, 'k+', label='APR')
-plt.plot([np.min(cr), np.max(cr)], [236.25, 236.25], 'r:', label='iLastik')
-plt.xlabel('Computational ratio')
-plt.ylabel('Segmentation time [s.]')
-plt.title('Time to segment a 2048x512x512 tile.')
-plt.legend()
-plt.xscale('log')

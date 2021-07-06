@@ -51,13 +51,13 @@ class tileLoader():
         Load the current tile.
 
         """
-        if self.data is None:
-            if self.type == 'apr':
+
+        if self.type == 'apr':
+            if self.apr is None:
                 self.apr, self.parts = self._load_data(self.path)
-            else:
-                self.data = self._load_data(self.path)
         else:
-            print('Tile already loaded.')
+            if self.data is None:
+                self.data = self._load_data(self.path)
 
     def load_neighbors(self):
         """

@@ -24,7 +24,7 @@ class tileParser():
             self.type = ftype
 
         if (nrow is not None) and (ncol is not None):
-            self.tiles_list = self._get_tile_list_LOC(nrow, ncol)
+            self.tiles_list = self._get_tile_list_LOC(ncol)
         else:
             self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
@@ -108,7 +108,7 @@ class tileParser():
             tiles.append(tile)
         return tiles
 
-    def _get_tile_list_LOC(self, nrow, ncol):
+    def _get_tile_list_LOC(self, ncol):
         """
         Returns a list of tiles as a dictionary for data saved as LOC00X.
         """
@@ -134,8 +134,8 @@ class tileParser():
             pattern_search = re.search('/LOC(\d+)', f)
             if pattern_search:
                 n = int(pattern_search.group(1))
-                row = n % ncol
-                col = n // ncol
+                row = n // ncol
+                col = n % ncol
             else:
                 raise TypeError('Couldn''t get the column/row.')
 

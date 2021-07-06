@@ -44,7 +44,7 @@ def _get_max_proj_apr(apr, parts, patch, plot=False):
         # dim=0: project along Y to produce a ZY plane
         # dim=1: project along X to produce a ZX plane
         # dim=2: project along Z to produce an YX plane
-        proj.append(pyapr.numerics.transform.projection.maximum_projection_patch(apr, parts, dim=d, patch=patch))
+        proj.append(pyapr.numerics.transform.projection.maximum_projection_alt_patch(apr, parts, dim=d, patch=patch))
 
     if plot:
         fig, ax = plt.subplots(1, 3)
@@ -85,6 +85,14 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
                                                upsample_factor=upsample_factor,
                                                overlap_ratio=0.3)
 
+    # Replace error == 0 with 1 otherwise the minimum spanning tree considers that vertex are not connected
+    if error_zy == 0:
+        error_zy = 1e-6
+    if error_zx == 0:
+        error_zx = 1e-6
+    if error_yx == 0:
+        error_yx = 1e-6
+
     # Keep only the most reliable registration
     # D/z
     if error_zx < error_zy:
@@ -110,7 +118,7 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
         dy = dzy[1]
         ry = error_zy
 
-    # if self.row==0 and self.col==0:
+    # if dx+dy+dz>4:
     #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
     #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
     #         ax[0].imshow(proj1[i], cmap='gray')
@@ -160,6 +168,14 @@ def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
                                   return_error=True, upsample_factor=upsample_factor,
                                   reference_mask=mask_ref[2], moving_mask=mask_move[2])
     error_yx = _get_registration_error(proj1[2], proj2[2])
+
+    # Replace error == 0 with 1e-6 otherwise the minimum spanning tree considers that vertex are not connected
+    if error_zy == 0:
+        error_zy = 1e-6
+    if error_zx == 0:
+        error_zx = 1e-6
+    if error_yx == 0:
+        error_yx = 1e-6
 
     # Keep only the most reliable registration
     # D/z
@@ -388,6 +404,7 @@ class tileStitcher(baseStitcher):
         self._optimize_sparse_graphs()
         _, _ = self._produce_registration_map()
         self._build_database()
+        self._print_info()
 
     def compute_registration_fast(self, on_disk=False):
         """
@@ -442,6 +459,7 @@ class tileStitcher(baseStitcher):
         self._optimize_sparse_graphs()
         _, _ = self._produce_registration_map()
         self._build_database()
+        self._print_info()
 
     def compute_registration_from_max_projs(self):
 
@@ -488,6 +506,7 @@ class tileStitcher(baseStitcher):
         self._optimize_sparse_graphs()
         _, _ = self._produce_registration_map()
         self._build_database()
+        self._print_info()
 
     def plot_graph(self, annotate=False):
         """
@@ -605,6 +624,18 @@ class tileStitcher(baseStitcher):
 
         with open(path, 'wb') as f:
             dill.dump(self, f)
+
+    def _print_info(self):
+        """
+        Display stitching result information.
+
+        """
+        overlap = np.median(np.diff(np.median(self.registration_map_abs[0], axis=0)))
+        self.effective_overlap_h = (self.frame_size-overlap)/self.frame_size*100
+        print('Effective horizontal overlap: {:0.2f}%'.format(self.effective_overlap_h))
+        overlap = np.median(np.diff(np.median(self.registration_map_abs[1], axis=1)))
+        self.effective_overlap_v = (self.frame_size-overlap)/self.frame_size*100
+        print('Effective vertical overlap: {:0.2f}%'.format(self.effective_overlap_v))
 
     def _save_max_projs(self):
 
@@ -1093,7 +1124,7 @@ class tileMerger():
         """
 
         if self.merged_data is None:
-            self.initialize_merged_array()
+            self._initialize_merged_array()
 
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
@@ -1132,7 +1163,7 @@ class tileMerger():
         """
 
         if self.merged_data is None:
-            self.initialize_merged_array()
+            self._initialize_merged_array()
 
         H_pos = self.database['ABS_H'].to_numpy()
         H_pos = (H_pos - H_pos.min())/self.downsample
@@ -1221,21 +1252,6 @@ class tileMerger():
         else:
             raise ValueError('Error: unknown method for adaptive histogram normalization.')
 
-    def initialize_merged_array(self):
-        """
-        Initialize the merged array in accordance with the asked downsampling.
-
-        Returns
-        -------
-        None
-        """
-
-        self.nx = int(np.ceil(self._get_nx() / self.downsample))
-        self.ny = int(np.ceil(self._get_ny() / self.downsample))
-        self.nz = int(np.ceil(self._get_nz() / self.downsample))
-
-        self.merged_data = np.zeros((self.nz, self.ny, self.nx), dtype='uint16')
-
     def set_downsample(self, downsample):
         """
         Set the downsampling value for the merging reconstruction.
@@ -1256,6 +1272,21 @@ class tileMerger():
 
         self.downsample = downsample
         self.level_delta = int(-np.log2(self.downsample))
+
+    def _initialize_merged_array(self):
+        """
+        Initialize the merged array in accordance with the asked downsampling.
+
+        Returns
+        -------
+        None
+        """
+
+        self.nx = int(np.ceil(self._get_nx() / self.downsample))
+        self.ny = int(np.ceil(self._get_ny() / self.downsample))
+        self.nz = int(np.ceil(self._get_nz() / self.downsample))
+
+        self.merged_data = np.zeros((self.nz, self.ny, self.nx), dtype='uint16')
 
     def _get_nx(self):
         """

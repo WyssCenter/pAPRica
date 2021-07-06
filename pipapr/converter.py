@@ -73,7 +73,7 @@ class tileConverter():
         self.bg = None
         self.quantization_factor = None
 
-    def batch_convert_to_apr(self, Ip_th=108, rel_error=0.2, gradient_smoothing=2, dx=1, dy=1, dz=1):
+    def batch_convert_to_apr(self, Ip_th=108, rel_error=0.2, gradient_smoothing=2, dx=1, dy=1, dz=1, path=None):
         """
         Convert all parsed tiles to APR using auto-parameters.
 
@@ -96,8 +96,11 @@ class tileConverter():
             raise TypeError('Error: data already in APR format.')
 
         # Safely create folder to save apr data
-        base_folder, _ = os.path.split(self.path)
-        folder_apr = os.path.join(base_folder, 'APR')
+        if path is None:
+            base_folder, _ = os.path.split(self.path)
+            folder_apr = os.path.join(base_folder, 'APR')
+        else:
+            folder_apr = path
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
         with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:

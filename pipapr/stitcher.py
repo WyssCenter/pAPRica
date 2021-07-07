@@ -21,6 +21,7 @@ from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
 import os
 from pathlib import Path
+import warnings
 
 
 def _get_max_proj_apr(apr, parts, patch, plot=False):
@@ -74,16 +75,13 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
     # Compute phase cross-correlation to extract shifts
     dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
                                                return_error=True,
-                                               upsample_factor=upsample_factor,
-                                               overlap_ratio=0.3)
+                                               upsample_factor=upsample_factor)
     dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
                                                return_error=True,
-                                               upsample_factor=upsample_factor,
-                                               overlap_ratio=0.3)
+                                               upsample_factor=upsample_factor)
     dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
                                                return_error=True,
-                                               upsample_factor=upsample_factor,
-                                               overlap_ratio=0.3)
+                                               upsample_factor=upsample_factor)
 
     # Replace error == 0 with 1 otherwise the minimum spanning tree considers that vertex are not connected
     if error_zy == 0:
@@ -240,8 +238,9 @@ class baseStitcher():
         self.nrow = tiles.nrow
         self.n_vertex = tiles.n_tiles
         self.n_edges = tiles.n_edges
-        self.overlap = tiles.overlap
         self.frame_size = tiles.frame_size
+        self.expected_overlap = tiles.overlap
+        self.overlap = int(self.expected_overlap*1.2)
 
         self.mask = False
         self.threshold = None
@@ -625,6 +624,27 @@ class tileStitcher(baseStitcher):
         with open(path, 'wb') as f:
             dill.dump(self, f)
 
+    def set_overlap_margin(self, margin):
+        """
+        Modify the overlaping area size. If the overlaping area is smaller than the true one, the stitching can't
+        be performed properly. If the overlaping area area is more than twice the size of the true one it will also
+        fail (due to the circular FFT in the phase cross correlation).
+
+        Parameters
+        ----------
+        margin: (float) safety margin in % to take the overlaping area.
+
+        Returns
+        -------
+        None
+        """
+        if margin > 45:
+            raise ValueError('Error: overlap margin is too big and will make the stitching fail.')
+        if margin < 1:
+            raise ValueError('Error: overlap margin is too small and may make the stitching fail.')
+
+        self.overlap = int(self.expected_overlap*(1+margin/100))
+
     def _print_info(self):
         """
         Display stitching result information.
@@ -636,6 +656,13 @@ class tileStitcher(baseStitcher):
         overlap = np.median(np.diff(np.median(self.registration_map_abs[1], axis=1)))
         self.effective_overlap_v = (self.frame_size-overlap)/self.frame_size*100
         print('Effective vertical overlap: {:0.2f}%'.format(self.effective_overlap_v))
+
+        if np.abs(self.effective_overlap_v*self.frame_size/100-self.expected_overlap)>0.2*self.expected_overlap:
+            warnings.warn('Expected overlap is very different from the computed one, the registration '
+                          'might be wrong.')
+        if np.abs(self.effective_overlap_h*self.frame_size/100-self.expected_overlap)>0.2*self.expected_overlap:
+            warnings.warn('Expected overlap is very different from the computed one, the registration '
+                          'might be wrong.')
 
     def _save_max_projs(self):
 

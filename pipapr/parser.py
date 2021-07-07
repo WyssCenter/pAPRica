@@ -17,6 +17,18 @@ class tileParser():
     Class used to parse multitile data.
     """
     def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None):
+        """
+        Parameters
+        ----------
+        path: (str) path where to look for the data.
+        frame_size: (int) size of each frame (camera resolution).
+        overlap: (float) expected amount of overlap in %. This value should be greater than the actual overlap or the
+                 algorithm will fail.
+        ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
+        nrow: (int) number of row for parsing COLM LOCXXX data
+        ncol: (int) number of col for parsing COLM LOCXXX data
+        """
+
         self.path = path
         if ftype is None:
             self.type = self._get_type()
@@ -28,13 +40,15 @@ class tileParser():
         else:
             self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
+        if self.n_tiles == 0:
+            raise FileNotFoundError('Error: no tile were found.')
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
         self._sort_tiles()
         self.tiles_pattern, self.tile_pattern_path = self._get_tiles_pattern()
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.path_list = self._get_path_list()
-        self.overlap = overlap
+        self.overlap = int(overlap*frame_size/100)
         self.frame_size = frame_size
         self._print_info()
 

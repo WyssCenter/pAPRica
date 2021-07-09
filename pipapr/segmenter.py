@@ -221,7 +221,8 @@ class tileCells():
 
     def __init__(self,
                  tiles: pipapr.parser.tileParser,
-                 database: (str, pd.DataFrame)):
+                 database: (str, pd.DataFrame),
+                 verbose=True):
         """
 
         Parameters
@@ -252,6 +253,7 @@ class tileCells():
         self.path_list = tiles.path_list
         self.overlap = tiles.overlap
         self.frame_size = tiles.frame_size
+        self.verbose = verbose
 
         self.cells = None
         self.atlas = None
@@ -276,6 +278,9 @@ class tileCells():
         for tile in self.tiles:
             tile.load_tile()
             tile.load_segmentation()
+            
+            # Remove objects on the edge
+            tile = self._remove_edge_cells(tile)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -299,6 +304,42 @@ class tileCells():
         """
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
+        
+    def _remove_edge_cells(self, tile):
+        
+        s_min = [np.nan, np.nan, np.nan]
+        s_max = [np.nan, np.nan, np.nan]
+        
+        # Find where there is a neighbor
+        for row, col in tile.neighbors:
+            if col < tile.col:
+                # WEST
+                s_min[1] = 0
+            if col > tile.col:
+                # EAST
+                s_max[1] = tile.apr.org_dims(1)
+            if row < tile.row:
+                # NORTH
+                s_min[2] = 0
+            if row > tile.row:
+                # SOUTH
+                s_max[2] = tile.apr.org_dims(2)
+        
+        minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
+
+        for i in range(1, minc.shape[0]):
+            if (minc[i, :] == 0).any():
+                ind = np.where(tile.parts_cc == i)
+                for ii in ind[0]:
+                    tile.parts_cc[ii] = 0
+                print('Removed label {}.'.format(i))
+            if (minc[i, :] == s_max).any():
+                ind = np.where(tile.parts_cc == i)
+                for ii in ind[0]:
+                    tile.parts_cc[ii] = 0
+                print('Removed label {}.'.format(i))
+
+        return tile
 
     def _merge_cells(self, tile, lowe_ratio, distance_max):
         """
@@ -382,7 +423,7 @@ class tileCells():
 
         return np.array([pz, py, px])
 
-    def _filter_cells_flann(self, c1, c2, lowe_ratio=0.7, distance_max=5, verbose=False):
+    def _filter_cells_flann(self, c1, c2, lowe_ratio=0.7, distance_max=5):
         """
         Remove cells duplicate using Flann criteria and distance threshold.
 
@@ -420,11 +461,11 @@ class tileCells():
         ind_c1 = [m.queryIdx for m in good]
         ind_c2 = [m.trainIdx for m in good]
 
-        # For now I just remove thee cells in c but merging strategies can be better
+        # For now I just remove the cells in c2 but merging strategies can be better
         c2 = np.delete(c2, ind_c2, axis=0)
 
         # Display info
-        if verbose:
+        if self.verbose:
             print('{:0.2f}% of cells were removed.'.format(len(ind_c2)/(c1.shape[0]+c2.shape[0]-len(ind_c2))*100))
 
         return np.vstack((c1, c2))

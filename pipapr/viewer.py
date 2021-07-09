@@ -514,16 +514,16 @@ class tileViewer():
                                                        translate=position,
                                                        level_delta=level_delta,
                                                        opacity=0.7))
-            if self.cells is not None:
-                par = apr.get_parameters()
-                layers.append(Points(self.cells, opacity=0.7, name='Cells center',
-                                     scale=[par.dz / downsample, par.dx / downsample, par.dy / downsample]))
+        if self.cells is not None:
+            par = apr.get_parameters()
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center',
+                                 scale=[par.dz / downsample, par.dx / downsample, par.dy / downsample]))
 
-            if self.atlaser is not None:
-                layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
-                                     scale=[self.atlaser.z_downsample / downsample,
-                                            self.atlaser.y_downsample / downsample,
-                                            self.atlaser.x_downsample / downsample]))
+        if self.atlaser is not None:
+            layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
+                                 scale=[self.atlaser.z_downsample / downsample,
+                                        self.atlaser.y_downsample / downsample,
+                                        self.atlaser.x_downsample / downsample]))
 
         # Display layers
         if pyramidal:

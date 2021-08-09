@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 from skimage.io import imsave
 import pyapr
+import speedscope
 
 def create_datasets():
     # Load data
@@ -146,7 +147,7 @@ def parse_xml(xml_path):
 
 # Parameters
 file_path = r'/run/user/1000/gvfs/smb-share:server=fcbgnasc.campusbiotech.ch,share=fcbgdata/0063_CBT_UNIGE_LAMY/Christophe/Mouse_Brain/200831_mouse iDISCO_FluoNissl_Sara/test_sample_from_DBE_in_ECI_20200825/647ECI.raw'
-output_folder_apr = r'/home/apr-benchmark/Desktop/data/synthetic/ncells_128'
+output_folder_apr = r'/home/apr-benchmark/Desktop/data/synthetic/APR/ncells_128'
 # output_folder_apr = r'/home/apr-benchmark/Desktop/data/sarah/multitile_apr/400Ip_0.8error'
 dH = 4
 dV = 4
@@ -163,7 +164,8 @@ tiles = pipapr.parser.tileParser(output_folder_apr, frame_size=512, overlap=128,
 # Stitch tiles
 stitcher = pipapr.stitcher.tileStitcher(tiles)
 t = time()
-stitcher.compute_registration_fast()
+with speedscope.track('stitching_ncells_128_alt.json'):
+    stitcher.compute_registration_fast()
 print('Elapsed time with APR: {} s.'.format(time()-t))
 
 # # Run Terastitcher from python (terastitcher folder must be in system path).

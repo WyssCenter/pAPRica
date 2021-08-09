@@ -12,10 +12,7 @@ os.environ['OMP_NUM_THREADS'] = '24'
 
 import pipapr
 from time import time
-from pathlib import Path
 import numpy as np
-from skimage.io import imsave
-import pyapr
 from glob import glob
 import matplotlib.pyplot as plt
 

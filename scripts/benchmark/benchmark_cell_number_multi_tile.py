@@ -7,16 +7,14 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 import numpy as np
-import pyapr
 import napari
+import pipapr
 from skimage.morphology import ball
 import pyapr
 import cv2 as cv
 import os
-from skimage.io import imsave, imread
 from pathlib import Path
-
-import pipapr.viewer
+import matplotlib.pyplot as plt
 
 def compute_gradients(apr, parts, sobel=True):
     """
@@ -253,9 +251,30 @@ def save_multitile(data, output_folder_apr):
             pyapr.io.write(os.path.join(output_folder_apr, '{}_{}.apr'.format(v, h)), apr, parts)
 
 
+def remove_edge(tile):
+
+    shape = tile.apr.shape()
+    s_min = np.array([np.nan, 0, 0])
+    s_max = np.array([np.nan, shape[1], shape[2]])
+
+    minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
+
+    for i in range(1, minc.shape[0]):
+        if (minc[i, :] == s_min).any():
+            ind = np.where(tile.parts_cc == i)
+            for ii in ind[0]:
+                tile.parts_cc[ii] = 0
+            print('Removed label {} cause min was {}.'.format(i, minc[i, :]))
+        if (maxc[i, :] == s_max).any():
+            ind = np.where(tile.parts_cc == i)
+            for ii in ind[0]:
+                tile.parts_cc[ii] = 0
+            print('Removed label {} cause max was {}.'.format(i, maxc[i, :]))
+
+
 # Parameters
 path = '/home/apr-benchmark/Desktop/data/synthetic_multitile_cells'
-n_cells = 32
+n_cells_array = [32, 64, 128, 256, 512, 1024, 2048, 4096]
 length = 1024-128
 par = pyapr.APRParameters()
 par.auto_parameters = True
@@ -263,32 +282,48 @@ par.Ip_th = 120
 par.rel_error = 0.2
 par.gradient_smoothing = 2
 
-# Create dataset
-data, c_ref = create_dataset(n_cells, length)
-save_multitile(data, path)
+n_ref = []
+n_merge = []
+for n_cells in n_cells_array:
+    # Create dataset
+    data, c_ref = create_dataset(n_cells, length)
+    save_multitile(data, path)
 
-# Stitch and segment
-tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=25)
-segmenter = pipapr.segmenter.tileSegmenter.from_classifier(classifier=os.path.join(path, 'classifier.joblib'),
-                                                           func_to_compute_features=compute_features,
-                                                           func_to_get_cc=get_cc_from_features)
-stitcher = pipapr.stitcher.tileStitcher(tiles)
-stitcher.activate_segmentation(segmenter)
-stitcher.compute_registration_fast()
+    # Stitch and segment
+    tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=25)
+    segmenter = pipapr.segmenter.tileSegmenter.from_classifier(classifier=os.path.join(path, 'classifier.joblib'),
+                                                               func_to_compute_features=compute_features,
+                                                               func_to_get_cc=get_cc_from_features)
+    stitcher = pipapr.stitcher.tileStitcher(tiles)
+    stitcher.activate_segmentation(segmenter)
+    stitcher.compute_registration_fast()
 
-# Find cells
-cells = pipapr.segmenter.tileCells(tiles, stitcher.database)
-cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=3)
+    # Find cells
+    cells = pipapr.segmenter.tileCells(tiles, stitcher.database)
+    cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=3)
+    n_merge.append(cells.cells.shape[0])
 
-# Compute reference number of cells
-apr, parts = pyapr.converter.get_apr(data, params=par)
-tile_ref = pipapr.loader.tileLoader(path=None, row=None, col=None, ftype='apr', neighbors_path=None, overlap=None,
-                                    frame_size=1024-128, folder_root=None, neighbors=None)
-tile_ref.apr = apr
-tile_ref.parts = parts
-segmenter.compute_segmentation(tile_ref, save_cc=False)
-cells_ref = pyapr.numerics.transform.find_label_centers(tile_ref.apr, tile_ref.parts_cc)
+    # Compute reference number of cells
+    apr, parts = pyapr.converter.get_apr(data, params=par)
+    tile_ref = pipapr.loader.tileLoader(path=None, row=None, col=None, ftype='apr', neighbors_path=None,
+                                        neighbors_tot=None, overlap=None,
+                                        frame_size=1024-128, folder_root=None, neighbors=None)
+    tile_ref.apr = apr
+    tile_ref.parts = parts
+    segmenter.compute_segmentation(tile_ref, save_cc=False)
+    remove_edge(tile_ref)
+    cells_ref = pyapr.numerics.transform.find_label_centers(tile_ref.apr, tile_ref.parts_cc)
+    n_ref.append(cells_ref.shape[0])
 
-# Display results
-viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
-viewer.display_all_tiles(contrast_limits=[0, 500])
+    # # Display results
+    viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
+    viewer.display_all_tiles(contrast_limits=[0, 500])
+
+plt.plot(n_cells_array, n_ref, '+', alpha=0.7, label='Single tile')
+plt.plot(n_cells_array, n_merge, 'o', alpha=0.7, label='Multi-tile')
+plt.xlabel('True number of object [#]')
+plt.ylabel('Number of detected object [#]')
+plt.legend()
+plt.xscale('log')
+plt.yscale('log')
+plt.savefig('merge_cells.pdf')

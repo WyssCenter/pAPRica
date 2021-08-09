@@ -47,6 +47,7 @@ class tileParser():
         self._sort_tiles()
         self.tiles_pattern, self.tile_pattern_path = self._get_tiles_pattern()
         self.neighbors, self.n_edges = self._get_neighbors_map()
+        self.neighbors_tot = self._get_total_neighbors_map()
         self.path_list = self._get_path_list()
         self.overlap = int(overlap*frame_size/100)
         self.frame_size = frame_size
@@ -211,31 +212,35 @@ class tileParser():
     def _get_total_neighbors_map(self):
         """
         Return the total neighbors maps (with redundancy in the case of undirected graph).
-
-        Note: this function is not used anymore.
         """
+
         # Initialize neighbors
-        neighbors = [None] * self.ncol
+        neighbors_tot = np.empty((self.nrow, self.ncol), dtype=object)
+        cnt = 0
         for x in range(self.ncol):
-            # Create new dimension
-            neighbors[x] = [None] * self.nrow
             for y in range(self.nrow):
+                if self.tiles_pattern[y, x] == 0:
+                    pass
                 # Fill up 2D list
                 tmp = []
-                if x > 0:
-                    # NORTH
-                    tmp.append([x-1, y])
-                if x < self.ncol-1:
-                    # SOUTH
-                    tmp.append([x+1, y])
-                if y > 0:
-                    # WEST
-                    tmp.append([x, y-1])
-                if y < self.nrow-1:
+                if x < self.ncol-1 and self.tiles_pattern[y, x+1] == 1:
                     # EAST
-                    tmp.append([x, y+1])
-                neighbors[x][y] = tmp
-        return neighbors
+                    tmp.append([y, x+1])
+                    cnt += 1
+                if y < self.nrow-1 and self.tiles_pattern[y+1, x] == 1:
+                    # SOUTH
+                    tmp.append([y+1, x])
+                    cnt += 1
+                if x > 0 and self.tiles_pattern[y, x-1] == 1:
+                    # WEST
+                    tmp.append([y, x-1])
+                    cnt += 1
+                if y > 0 and self.tiles_pattern[y-1, x] == 1:
+                    # NORTH
+                    tmp.append([y-1, x])
+                    cnt += 1
+                neighbors_tot[y, x] = tmp
+        return neighbors_tot
 
     def _get_neighbors_map(self):
         """
@@ -253,11 +258,11 @@ class tileParser():
                 # Fill up 2D list
                 tmp = []
                 if x < self.ncol-1 and self.tiles_pattern[y, x+1] == 1:
-                    # SOUTH
+                    # EAST
                     tmp.append([y, x+1])
                     cnt += 1
                 if y < self.nrow-1 and self.tiles_pattern[y+1, x] == 1:
-                    # EAST
+                    # SOUTH
                     tmp.append([y+1, x])
                     cnt += 1
                 neighbors[y, x] = tmp
@@ -283,6 +288,7 @@ class tileParser():
         col = t['col']
         row = t['row']
         neighbors = self.neighbors[row, col]
+        neighbors_tot = self.neighbors_tot[row, col]
 
         neighbors_path = []
         for r, c in neighbors:
@@ -294,6 +300,7 @@ class tileParser():
                                           col=col,
                                           ftype=self.type,
                                           neighbors=neighbors,
+                                          neighbors_tot=neighbors_tot,
                                           neighbors_path=neighbors_path,
                                           overlap=self.overlap,
                                           frame_size=self.frame_size,

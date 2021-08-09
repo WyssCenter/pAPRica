@@ -22,13 +22,14 @@ class tileLoader():
 
     Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
-    def __init__(self, path, row, col, ftype, neighbors, neighbors_path, overlap, frame_size, folder_root):
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, overlap, frame_size, folder_root):
 
         self.path = path
         self.row = row
         self.col = col
         self.type = ftype
         self.neighbors = neighbors
+        self.neighbors_tot = neighbors_tot
         self.neighbors_path = neighbors_path
         self.overlap = overlap
         self.frame_size = frame_size

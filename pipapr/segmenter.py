@@ -258,7 +258,7 @@ class tileCells():
         self.cells = None
         self.atlas = None
 
-    def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5):
+    def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5, verbose=True):
         """
         Function to extract cell positions in each tile and merging across all tiles.
         Identical cells on overlapping area are automatically detected using Flann method.
@@ -280,7 +280,7 @@ class tileCells():
             tile.load_segmentation()
             
             # Remove objects on the edge
-            tile = self._remove_edge_cells(tile)
+            tile = self._remove_edge_cells(tile, verbose=verbose)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -305,35 +305,54 @@ class tileCells():
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
         
-    def _remove_edge_cells(self, tile):
+    def _remove_edge_cells(self, tile, verbose):
+        """
+        Remove cells/objects that are touching the tile edge and if this edge is overlapping another tile.
+
+        Parameters
+        ----------
+        tile: (tileLoader) tile to remove the object on
+        verbose: option to display information
+
+        Returns
+        -------
+        tileLoader with removed objects.
+        """
         
-        s_min = [np.nan, np.nan, np.nan]
-        s_max = [np.nan, np.nan, np.nan]
-        
-        # Find where there is a neighbor
-        for row, col in tile.neighbors:
-            if col < tile.col:
-                # WEST
-                s_min[1] = 0
-            if col > tile.col:
-                # EAST
-                s_max[1] = tile.apr.org_dims(1)
-            if row < tile.row:
-                # NORTH
-                s_min[2] = 0
-            if row > tile.row:
-                # SOUTH
-                s_max[2] = tile.apr.org_dims(2)
+        # s_min = np.array([np.nan, np.nan, np.nan])
+        # s_max = np.array([np.nan, np.nan, np.nan])
+        # tile_shape = tile.apr.shape()
+        #
+        # print(('Tile row {} col {}'.format(tile.row, tile.col)))
+        #
+        # # Find where there is a neighbor
+        # for row, col in tile.neighbors_tot:
+        #     if col < tile.col:
+        #         # WEST
+        #         s_min[1] = 0
+        #     if col > tile.col:
+        #         # EAST
+        #         s_max[1] = tile_shape[1]
+        #     if row < tile.row:
+        #         # NORTH
+        #         s_min[2] = 0
+        #     if row > tile.row:
+        #         # SOUTH
+        #         s_max[2] = tile_shape[2]
+
+        shape = tile.apr.shape()
+        s_min = np.array([np.nan, 0, 0])
+        s_max = np.array([np.nan, shape[1], shape[2]])
         
         minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
 
         for i in range(1, minc.shape[0]):
-            if (minc[i, :] == 0).any():
+            if (minc[i, :] == s_min).any():
                 ind = np.where(tile.parts_cc == i)
                 for ii in ind[0]:
                     tile.parts_cc[ii] = 0
                 print('Removed label {}.'.format(i))
-            if (minc[i, :] == s_max).any():
+            if (maxc[i, :] == s_max).any():
                 ind = np.where(tile.parts_cc == i)
                 for ii in ind[0]:
                     tile.parts_cc[ii] = 0
@@ -361,7 +380,7 @@ class tileCells():
         r1 = np.max(self.cells, axis=0)
         r2 = self._get_tile_position(tile.row, tile.col)
 
-        v_size = np.array([tile.apr.org_dims(2), tile.apr.org_dims(1), tile.apr.org_dims(0)])
+        v_size = np.array(tile.apr.shape())
 
         # Define the overlapping area
         overlap_i = r2
@@ -487,7 +506,7 @@ class tileTrainer():
         self.apr = tile.apr
         self.parts = tile.parts
         self.apr_it = self.apr.iterator()
-        self.shape = [tile.apr.org_dims(i) for i in [2, 1, 0]]
+        self.shape = tile.apr.shape()
         self.func_to_compute_features = func_to_compute_features
         self.func_to_get_cc = func_to_get_cc
 

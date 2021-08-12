@@ -141,7 +141,7 @@ class tileLoader():
 
         """
         if self.type == 'tiff2D':
-            u = self._load_sequence(path)
+            u = self._load_sequence(path, channel=0)
         elif self.type == 'tiff3D':
             u = imread(path)
         elif self.type == 'apr':
@@ -174,7 +174,7 @@ class tileLoader():
         pipapr.viewer.display_apr(self.apr, self.parts)
 
     @staticmethod
-    def _load_sequence(path):
+    def _load_sequence(path, channel):
         """
         Load a sequence of images in a folder and return it as a 3D array.
 
@@ -185,7 +185,7 @@ class tileLoader():
         files_sorted = list(range(n_files))
         n_max = 0
         for i, pathname in enumerate(files):
-            number_search = re.search('CHN00_PLN(\d+).tif', pathname)
+            number_search = re.search('CHN0' + channel + '_PLN(\d+).tif', pathname)
             if number_search:
                 n = int(number_search.group(1))
                 files_sorted[n] = pathname

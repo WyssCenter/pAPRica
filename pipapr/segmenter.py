@@ -318,27 +318,6 @@ class tileCells():
         -------
         tileLoader with removed objects.
         """
-        
-        # s_min = np.array([np.nan, np.nan, np.nan])
-        # s_max = np.array([np.nan, np.nan, np.nan])
-        # tile_shape = tile.apr.shape()
-        #
-        # print(('Tile row {} col {}'.format(tile.row, tile.col)))
-        #
-        # # Find where there is a neighbor
-        # for row, col in tile.neighbors_tot:
-        #     if col < tile.col:
-        #         # WEST
-        #         s_min[1] = 0
-        #     if col > tile.col:
-        #         # EAST
-        #         s_max[1] = tile_shape[1]
-        #     if row < tile.row:
-        #         # NORTH
-        #         s_min[2] = 0
-        #     if row > tile.row:
-        #         # SOUTH
-        #         s_max[2] = tile_shape[2]
 
         shape = tile.apr.shape()
         s_min = np.array([np.nan, 0, 0])

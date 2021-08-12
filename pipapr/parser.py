@@ -16,7 +16,7 @@ class tileParser():
     """
     Class used to parse multitile data.
     """
-    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None):
+    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None, nchannel=None):
         """
         Parameters
         ----------
@@ -51,6 +51,7 @@ class tileParser():
         self.path_list = self._get_path_list()
         self.overlap = int(overlap*frame_size/100)
         self.frame_size = frame_size
+        self.channel = nchannel
         self._print_info()
 
         # Define some folders
@@ -327,6 +328,7 @@ class randomParser():
         self.nrow = None
         self.tiles_pattern, self.tile_pattern_path = None, None
         self.neighbors, self.n_edges = None, None
+        self.neighbors_tot = None
         self.path_list = self._get_path_list()
         self.overlap = None
         self.frame_size = frame_size

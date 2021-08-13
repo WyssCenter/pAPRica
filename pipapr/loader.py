@@ -1,5 +1,8 @@
 """
-Module containing classes and functions relative to data loading.
+Submodule containing classes and functions relative to data **loading**.
+
+Usually, tileLoader objects are instantiated directly by iterating over the parser. Alternatively, they can be
+instantiated directly by the constructor by calling *tile = pipapr.loader.tileLoader()*.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -24,6 +27,48 @@ class tileLoader():
     """
     def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path,
                  overlap, frame_size, folder_root, channel):
+        """
+        Constructor of tileLoader object.
+
+        Parameters
+        ----------
+        path: (str) path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)
+        row: (int) vertical position of the tile (for multi-tile acquisition)
+        col: (int) horizontal position of the tile (for multi-tile acquisition)
+        ftype: (str) tile file type ('apr', 'tiff3D', 'tiff2D')
+        neighbors: (list) neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
+                    neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
+                    represented by an 'o' while other tile are represented by an 'x':
+
+                            x --- o --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+
+                    in this case neighbors = [[0, 2], [1, 1]]
+
+        neighbors_tot: (list) neighbors list containing all the neighbors position [row, col]. For example, below the
+                        tile [0, 1] is represented by an 'o' while other tile are represented by an 'x':
+
+                            x --- o --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+
+                    in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
+        neighbors_path: (list) path of the neighbors whose coordinates are stored in neighbors
+        overlap: (float) overlap ratio in %. This number is used to correctly compute the stitching.
+        frame_size: (int) camera frame size (only square sensors are supported for now).
+        folder_root: (str) root folder where everything should be saved.
+        channel: (int) fluorescence channel for multi-channel acquisition. This is used to load the right data in the
+                        case of COLM acquisition where all the channel are saved in the same folder as tiff2D.
+        """
 
         self.path = path
         self.row = row
@@ -51,10 +96,9 @@ class tileLoader():
 
     def load_tile(self):
         """
-        Load the current tile.
+        Load the current tile if not already loaded.
 
         """
-
         if self.type == 'apr':
             if self.apr is None:
                 self.apr, self.parts = self._load_data(self.path)
@@ -64,7 +108,8 @@ class tileLoader():
 
     def load_neighbors(self):
         """
-        Load the current tile neighbors.
+        Load the current tile neighbors if not already loaded.
+
         """
         if self.data_neighbors is None:
             if self.type == 'apr':
@@ -86,9 +131,9 @@ class tileLoader():
 
     def load_segmentation(self, load_tree=False):
         """
-        Load the current tile cc.
-        """
+        Load the current tile connected component (cc) if not already loaded.
 
+        """
         if self.parts_cc is None:
             cc = pyapr.LongParticles()
             aprfile = pyapr.io.APRFile()
@@ -106,7 +151,8 @@ class tileLoader():
 
     def load_neighbors_segmentation(self, load_tree=False):
         """
-        Load the current tile neighbors cc.
+        Load the current tile neighbors connected component (cc) if not already loaded.
+
         """
         if self.data_neighbors is None:
             if self.type == 'apr':
@@ -139,8 +185,15 @@ class tileLoader():
 
     def _load_data(self, path):
         """
-        Load the current tile.
+        Load data at given path.
 
+        Parameters
+        ----------
+        path: (str) path to the data to be loaded.
+
+        Returns
+        -------
+        u: (array) numpy array containing the data.
         """
         if self.type == 'tiff2D':
             u = self._load_sequence(path)
@@ -160,8 +213,15 @@ class tileLoader():
 
     def _load_raw(self, path):
         """
-        Load a raw file (binary) using numpy.
+        Load raw data at given path.
 
+        Parameters
+        ----------
+        path: (str) path to the data to be loaded.
+
+        Returns
+        -------
+        u: (array) numpy array containing the data.
         """
         u = np.fromfile(path, dtype='uint16', count=-1)
         return u.reshape((-1, self.frame_size, self.frame_size))
@@ -179,6 +239,13 @@ class tileLoader():
         """
         Load a sequence of images in a folder and return it as a 3D array.
 
+        Parameters
+        ----------
+        path: (str) path to folder where the data should be loaded.
+
+        Returns
+        -------
+        v: (array) numpy array containing the data.
         """
         files = glob(os.path.join(path, '*tif'))
         n_files = len(files)

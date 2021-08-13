@@ -1,5 +1,8 @@
 """
-Module containing classes and functions relative to Converting.
+Submodule containing classes and functions relative to **converting** tiles to APR.
+
+The general workflow is first to parse tiles using a *parser* object and then convert using the tileConverter class.
+This class is essentially a wrapper to pylibapr which allows to facilitate batch conversions and batch reconstructions.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -143,6 +146,17 @@ class tileConverter():
                                                   ftype='apr')
 
     def batch_reconstruct_pixel(self, mode='constant'):
+        """
+        Reconstruct all APR tiles to pixel data.
+
+        Parameters
+        ----------
+        mode: (str) reconstruction mode, can be 'constant', 'smooth' or 'level'
+
+        Returns
+        -------
+        None
+        """
 
         if self.tiles.type != 'apr':
             raise TypeError('Error: data not in APR format.')

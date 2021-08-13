@@ -1,5 +1,24 @@
 """
-Module containing classes and functions relative to Stitching.
+Submodule containing classes and functions relative to **stitching**.
+
+With this submodule the user can stitch a previously parsed dataset, typically the autofluorescence channel:
+
+>>> import pipapr
+>>> tiles_autofluo = pipapr.parser.tileParser(path_to_autofluo, frame_size=1024, overlap=25)
+>>> stitcher = pipapr.stitcher.tileStitcher(tiles_autofluo)
+>>> stitcher.compute_registration_fast()
+
+Others channel can then easily stitched using the previous one as reference:
+
+>>> tiles_signal = pipapr.parser.tileParser(path_to_data, frame_size=1024, overlap=25)
+>>> stitcher_channel = pipapr.stitcher.channelStitcher(stitcher, tiles_autofluo, tiles_signal)
+>>> stitcher_channel.compute_rigid_registration()
+
+Doing that each tile in the second data set will be registered to the corresponding autofluorescence tile and
+then their spatial position will be adjusted.
+
+This submodule also contains a class for merging and reconstructing the data. It was intended to be used at lower
+resolution for atlasing. The generated data can quickly become out of hands, use with caution!
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -230,9 +249,20 @@ def _get_registration_error(proj1, proj2):
 
 
 class baseStitcher():
+    """
+    Base class for stitching multi-tile data.
+
+    """
     def __init__(self,
                  tiles: pipapr.parser.tileParser):
+        """
+        Constructor for the baseStitcher class.
 
+        Parameters
+        ----------
+        tiles: (tileParser) tileParser object containing the dataset to stitch.
+
+        """
         self.tiles = tiles
         self.ncol = tiles.ncol
         self.nrow = tiles.nrow
@@ -296,7 +326,6 @@ class baseStitcher():
         segmenter: (tileSegmenter) segmenter object for segmenting each tile.
 
         """
-
         self.segment = True
         self.segmenter = segmenter
 
@@ -327,6 +356,7 @@ class tileStitcher(baseStitcher):
     def __init__(self,
                  tiles: pipapr.parser.tileParser):
         """
+        Constructor for the tileStitcher class.
 
         Parameters
         ----------
@@ -1051,6 +1081,7 @@ class channelStitcher(baseStitcher):
                  ref: pipapr.parser.tileParser,
                  moving: pipapr.parser.tileParser):
         """
+        Constructor for the channelStitcher class.
 
         Parameters
         ----------
@@ -1106,6 +1137,7 @@ class tileMerger():
     """
     def __init__(self, tiles, database, n_planes):
         """
+        Constructor for the tileMerger class.
 
         Parameters
         ----------

@@ -27,6 +27,8 @@ class tileParser():
     """
     def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None, channel=None):
         """
+        Constructor of the tileParser object.
+
         Parameters
         ----------
         path: (str) path where to look for the data.
@@ -338,6 +340,16 @@ class randomParser():
 
     """
     def __init__(self, path, frame_size, ftype):
+        """
+        Constructor of the randomParser object.
+
+        Parameters
+        ----------
+        path: (str) path where to look for the data.
+        frame_size: (int) size of each frame (camera resolution).
+        ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
+
+        """
         self.path = path
         self.type = ftype
         self.tiles_list = self._get_tile_list()

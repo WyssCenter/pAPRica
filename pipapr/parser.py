@@ -1,5 +1,12 @@
 """
-Module containing classes and functions relative to Parsing.
+Submodule containing classes and functions relative to Parsing.
+
+The general idea of this submodule is to parse the data to be processed later on. This submodule was developed for
+our particular folder layout and was particularly adapted for COLM, mesoSPIM and ClearScope.
+
+There are two general way of parsing the data:
+- **multitile** parsing (tileParser class), where each tile has a given position on a 2D grid and can therefore be stitched
+- **random** parsing (randomParser class), where each tile is independent
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -14,9 +21,11 @@ import pipapr
 
 class tileParser():
     """
-    Class used to parse multitile data.
+    Class used to parse multi-tile data where each tile position in space matters. Tile parsed this way are usually
+    stitched later on.
+
     """
-    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None, nchannel=None):
+    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None, channel=None):
         """
         Parameters
         ----------
@@ -27,8 +36,9 @@ class tileParser():
         ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
         nrow: (int) number of row for parsing COLM LOCXXX data
         ncol: (int) number of col for parsing COLM LOCXXX data
-        """
+        channel: (int) fluorescence channel for parsing COLM LOCXXX data
 
+        """
         self.path = path
         if ftype is None:
             self.type = self._get_type()
@@ -51,7 +61,7 @@ class tileParser():
         self.path_list = self._get_path_list()
         self.overlap = int(overlap*frame_size/100)
         self.frame_size = frame_size
-        self.channel = nchannel
+        self.channel = channel
         self._print_info()
 
         # Define some folders
@@ -60,7 +70,10 @@ class tileParser():
         self.folder_max_projs = os.path.join(base, 'max_projs')
 
     def _print_info(self):
+        """
+        Display parsing summary in the terminal.
 
+        """
         print('\n**********  PARSING DATA **********')
         print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected.'.format(self.n_tiles))
@@ -90,8 +103,8 @@ class tileParser():
     def _get_tile_list(self):
         """
         Returns a list of tiles as a dictionary
-        """
 
+        """
         if self.type == 'apr':
             # If files are apr then their names are 'row_col.apr'
             files = glob(os.path.join(self.path, '*.apr'))
@@ -110,7 +123,7 @@ class tileParser():
         tiles = []
         for f in files:
 
-            pattern_search = re.search('/(\d+)_(\d+)', f)
+            pattern_search = re.search(os.path.sep + '(\d+)_(\d+)', f)
             if pattern_search:
                 row = int(pattern_search.group(1))
                 col = int(pattern_search.group(2))
@@ -127,8 +140,8 @@ class tileParser():
     def _get_tile_list_LOC(self, ncol):
         """
         Returns a list of tiles as a dictionary for data saved as LOC00X.
-        """
 
+        """
         if self.type == 'apr':
             # If files are apr then their names are 'row_col.apr'
             files = glob(os.path.join(self.path, '*.apr'))
@@ -181,6 +194,7 @@ class tileParser():
     def _get_ncol(self):
         """
         Returns the number of columns (H) to be stitched.
+
         """
         ncol = 0
         for tile in self.tiles_list:
@@ -191,6 +205,7 @@ class tileParser():
     def _get_nrow(self):
         """
         Returns the number of rows (V) to be stitched.
+
         """
         nrow = 0
         for tile in self.tiles_list:
@@ -213,8 +228,8 @@ class tileParser():
     def _get_total_neighbors_map(self):
         """
         Return the total neighbors maps (with redundancy in the case of undirected graph).
-        """
 
+        """
         # Initialize neighbors
         neighbors_tot = np.empty((self.nrow, self.ncol), dtype=object)
         cnt = 0
@@ -247,6 +262,7 @@ class tileParser():
         """
         Returns the non-redundant neighbors map: neighbors[row, col] gives a list of neighbors and the total
         number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.
+
         """
 
         # Initialize neighbors

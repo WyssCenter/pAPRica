@@ -264,7 +264,6 @@ class tileParser():
         number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.
 
         """
-
         # Initialize neighbors
         neighbors = np.empty((self.nrow, self.ncol), dtype=object)
         cnt = 0
@@ -289,6 +288,7 @@ class tileParser():
     def _get_path_list(self):
         """
         Returns a list containing the path to each tile.
+
         """
         path_list = []
         for tile in self.tiles_list:
@@ -298,8 +298,8 @@ class tileParser():
     def __getitem__(self, item):
         """
         Return tiles, add neighbors information before returning.
-        """
 
+        """
         t = self.tiles_list[item]
         path = t['path']
         col = t['col']
@@ -321,11 +321,13 @@ class tileParser():
                                           neighbors_path=neighbors_path,
                                           overlap=self.overlap,
                                           frame_size=self.frame_size,
-                                          folder_root=self.folder_root)
+                                          folder_root=self.folder_root,
+                                          channel=self.channel)
 
     def __len__(self):
         """
         Returns the number of tiles.
+
         """
         return self.n_tiles
 
@@ -333,8 +335,8 @@ class tileParser():
 class randomParser():
     """
     Class used to parse several independent tiles (not multitile).
-    """
 
+    """
     def __init__(self, path, frame_size, ftype):
         self.path = path
         self.type = ftype
@@ -356,7 +358,10 @@ class randomParser():
         self.folder_max_projs = None
 
     def _print_info(self):
+        """
+        Display parsing summary in the terminal.
 
+        """
         print('\n**********  PARSING DATA **********')
         print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected.'.format(self.n_tiles))
@@ -365,8 +370,8 @@ class randomParser():
     def _get_tile_list(self):
         """
         Returns a list of tiles as a dictionary
-        """
 
+        """
         if self.type == 'apr':
             # If files are apr then their names are 'row_col.apr'
             files = glob(os.path.join(self.path, '*.apr'))
@@ -394,6 +399,7 @@ class randomParser():
     def _get_path_list(self):
         """
         Returns a list containing the path to each tile.
+
         """
         path_list = []
         for tile in self.tiles_list:
@@ -403,8 +409,8 @@ class randomParser():
     def __getitem__(self, item):
         """
         Return tiles, add neighbors information before returning.
-        """
 
+        """
         t = self.tiles_list[item]
         path = t['path']
         col = t['col']
@@ -426,5 +432,6 @@ class randomParser():
     def __len__(self):
         """
         Returns the number of tiles.
+
         """
         return self.n_tiles

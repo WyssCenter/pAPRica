@@ -22,7 +22,8 @@ class tileLoader():
 
     Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
-    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, overlap, frame_size, folder_root):
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path,
+                 overlap, frame_size, folder_root, channel):
 
         self.path = path
         self.row = row
@@ -34,6 +35,7 @@ class tileLoader():
         self.overlap = overlap
         self.frame_size = frame_size
         self.folder_root = folder_root
+        self.channel = channel
 
         # Initialize attributes to load tile data
         self.data = None                    # Pixel data
@@ -141,7 +143,7 @@ class tileLoader():
 
         """
         if self.type == 'tiff2D':
-            u = self._load_sequence(path, channel=0)
+            u = self._load_sequence(path)
         elif self.type == 'tiff3D':
             u = imread(path)
         elif self.type == 'apr':
@@ -173,8 +175,7 @@ class tileLoader():
             self.load_tile()
         pipapr.viewer.display_apr(self.apr, self.parts)
 
-    @staticmethod
-    def _load_sequence(path, channel):
+    def _load_sequence(self, path):
         """
         Load a sequence of images in a folder and return it as a 3D array.
 
@@ -185,7 +186,7 @@ class tileLoader():
         files_sorted = list(range(n_files))
         n_max = 0
         for i, pathname in enumerate(files):
-            number_search = re.search('CHN0' + channel + '_PLN(\d+).tif', pathname)
+            number_search = re.search('CHN0' + str(self.channel) + '_PLN(\d+).tif', pathname)
             if number_search:
                 n = int(number_search.group(1))
                 files_sorted[n] = pathname

@@ -1,5 +1,9 @@
 """
-Module containing classes and functions relative to Atlasing.
+Submodule containing classes and functions relative to **atlasing**.
+
+This submodule is essentially a wrapper to Brainreg (https://github.com/brainglobe/brainreg) for atlasing and
+Allen Brain Atlas for ontology analysis. It contains many convenience method for manipulating data
+(per region, per superpixel, etc.).
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -8,6 +12,7 @@ By using this code you agree to the terms of the software license agreement.
 
 import pandas as pd
 from skimage.io import imread, imsave
+from skimage.filters import gaussian
 import pipapr
 import numpy as np
 import os
@@ -173,7 +178,17 @@ class tileAtlaser():
         self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tiff'))
 
     def get_cells_id(self, cells):
+        """
+        Returns the Allen Brain Atlas region ID for each cell.
 
+        Parameters
+        ----------
+        cells: (array) cell positions.
+
+        Returns
+        -------
+        labels: (array) containing the cell region ID.
+        """
         labels = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 1]/self.y_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 2]/self.x_downsample).astype('uint64')]
@@ -194,7 +209,6 @@ class tileAtlaser():
         -------
         ID at the queried position.
         """
-
         return self.atlas[int(z / self.z_downsample), int(y / self.y_downsample), int(x / self.x_downsample)]
 
     def get_ontology_mapping(self, labels, n=0):
@@ -260,6 +274,17 @@ class tileAtlaser():
         return pd.DataFrame.from_dict(area_count, orient='index')
 
     def get_cells_number_per_region(self, cells_id):
+        """
+        Retuns the number of cell per region.
+
+        Parameters
+        ----------
+        cells_id: (array) cells ID (typically computed by self.get_cells_id())
+
+        Returns
+        -------
+        heatmap: (array) 3D array where each brain region value is the number of cells contained in this region.
+        """
 
         # Remove 0s
         cells_id = np.delete(cells_id, cells_id==0)
@@ -277,6 +302,17 @@ class tileAtlaser():
         return heatmap
 
     def get_cells_density_per_region(self, cells_id):
+        """
+        Retuns the cell density (number of cell per voxel) per region.
+
+        Parameters
+        ----------
+        cells_id: (array) cells ID (typically computed by self.get_cells_id())
+
+        Returns
+        -------
+        heatmap: (array) 3D array where each brain region value is the cell density in this region.
+        """
 
         # Remove 0s
         cells_id = np.delete(cells_id, cells_id == 0)
@@ -295,6 +331,19 @@ class tileAtlaser():
         return heatmap
 
     def get_cells_density(self, cells, kernel_size):
+        """
+        Retuns the cell density (local average number of cell per voxel). The local average is computed using a gaussian
+        kernel.
+
+        Parameters
+        ----------
+        cells: (array) cell positions
+        kernel_size: (int) radius of the gaussian for local cell density estimation
+
+        Returns
+        -------
+
+        """
 
         heatmap = np.zeros((self.atlas.shape)).astype(int)
         for i in range(cells.shape[0]):
@@ -303,5 +352,4 @@ class tileAtlaser():
             x = int(cells[i, 2]/self.x_downsample)
             heatmap[z, y, x] = 1
 
-        from skimage.filters import gaussian
         return gaussian(heatmap, sigma=kernel_size)

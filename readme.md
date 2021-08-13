@@ -8,4 +8,12 @@
 - Install pipapr dependencies using environment.yml
 - Enjoy
 
-# How to use
+# How to generate documentation
+
+The documentation can be automatically generated using pdoc. First install pdoc:
+
+``pip install pdoc3``
+
+Then you can generate the doc:
+
+``pdoc3 --html --output-dir doc pipapr --force``

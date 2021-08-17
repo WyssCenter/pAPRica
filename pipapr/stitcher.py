@@ -1207,13 +1207,14 @@ class tileMerger():
             self.merged_data[z1:z2, y1:y2, x1:x2] = self.merged_data[z1:z2, y1:y2, x1:x2] + data
             self.merged_data = self.merged_data.astype('uint16')
 
-    def merge_max(self, mode='constant'):
+    def merge_max(self, mode='constant', debug=False):
         """
         Perform merging with a maximum algorithm for overlapping area.
 
         Parameters
         ----------
         mode: (str) APR reconstruction type among ('constant', 'smooth', 'level')
+        debug: (bool) add white border on the edge of each tile to see where it was overlapping.
 
         Returns
         -------
@@ -1237,6 +1238,15 @@ class tileMerger():
 
                 u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta, mode=mode)
                 data = u[:, :, :]
+
+                # In debug mode we highlight each tile edge to see where it was
+                if debug:
+                    data[0, :, :] = 2**16-1
+                    data[-1, :, :] = 2 ** 16 - 1
+                    data[:, 0, :] = 2 ** 16 - 1
+                    data[:, -1, :] = 2 ** 16 - 1
+                    data[:, :, 0] = 2 ** 16 - 1
+                    data[:, :, -1] = 2 ** 16 - 1
 
                 x1 = int(H_pos[i])
                 x2 = int(H_pos[i] + data.shape[2])

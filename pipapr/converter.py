@@ -76,7 +76,15 @@ class tileConverter():
         self.bg = None
         self.quantization_factor = None
 
-    def batch_convert_to_apr(self, Ip_th=108, rel_error=0.2, gradient_smoothing=2, dx=1, dy=1, dz=1, path=None):
+    def batch_convert_to_apr(self,
+                             Ip_th=108,
+                             rel_error=0.2,
+                             gradient_smoothing=2,
+                             dx=1,
+                             dy=1,
+                             dz=1,
+                             path=None,
+                             lazy_loading=True):
         """
         Convert all parsed tiles to APR using auto-parameters.
 
@@ -89,6 +97,8 @@ class tileConverter():
         dx: (float) PSF size in x, used to compute the gradient
         dy: (float) PSF size in y, used to compute the gradient
         dz: (float) PSF size in z, used to compute the gradient
+        lazy_loading: (bool) if lazy_loading is true then the converter save mean tree particle which are necessary
+                            for lazy loading of the APR. It will require about 1/7 more storage.
 
         Returns
         -------
@@ -121,20 +131,32 @@ class tileConverter():
                 par.auto_parameters = True
 
                 # Convert tile to APR and save
-                apr, parts = pyapr.converter.get_apr(tile.data, params=par)
+                apr = pyapr.APR()
+                parts = pyapr.ShortParticles()
+                converter = pyapr.converter.ShortConverter()
+                converter.set_parameters(par)
+                converter.verbose = True
+                converter.get_apr(apr, tile.data)
+                parts.sample_image(apr, tile.data)
 
                 if self.compression:
                     parts.set_compression_type(1)
                     parts.set_quantization_factor(self.quantization_factor)
                     parts.set_background(self.bg)
 
+                if lazy_loading:
+                    tree_parts = pyapr.ShortParticles()
+                    pyapr.numerics.fill_tree_mean(tile.apr, tile.parts, tree_parts)
+                else:
+                    tree_parts=None
+
                 # Save converted data
                 if self.random:
                     basename, filename = os.path.split(tile.path)
-                    pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts)
+                    pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts, tree_parts=tree_parts)
                 else:
                     filename = '{}_{}.apr'.format(tile.row, tile.col)
-                    pyapr.io.write(os.path.join(folder_apr, filename), apr, parts)
+                    pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
 
                 bar()
 
@@ -142,7 +164,6 @@ class tileConverter():
             # Modify tileParser object to use APR instead
             self.tiles = pipapr.parser.tileParser(folder_apr,
                                                   frame_size=self.tiles.frame_size,
-                                                  overlap=self.tiles.overlap,
                                                   ftype='apr')
 
     def batch_reconstruct_pixel(self, mode='constant'):

@@ -25,7 +25,7 @@ class tileParser():
     stitched later on.
 
     """
-    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None, channel=None):
+    def __init__(self, path, frame_size, ftype=None, nrow=None, ncol=None, channel=None):
         """
         Constructor of the tileParser object.
 
@@ -33,8 +33,6 @@ class tileParser():
         ----------
         path: (str) path where to look for the data.
         frame_size: (int) size of each frame (camera resolution).
-        overlap: (float) expected amount of overlap in %. This value should be greater than the actual overlap or the
-                 algorithm will fail.
         ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
         nrow: (int) number of row for parsing COLM LOCXXX data
         ncol: (int) number of col for parsing COLM LOCXXX data
@@ -51,6 +49,7 @@ class tileParser():
             self.tiles_list = self._get_tile_list_LOC(ncol)
         else:
             self.tiles_list = self._get_tile_list()
+        self._correct_offset()
         self.n_tiles = len(self.tiles_list)
         if self.n_tiles == 0:
             raise FileNotFoundError('Error: no tile were found.')
@@ -61,7 +60,6 @@ class tileParser():
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.neighbors_tot = self._get_total_neighbors_map()
         self.path_list = self._get_path_list()
-        self.overlap = int(overlap*frame_size/100)
         self.frame_size = frame_size
         self.channel = channel
         self._print_info()
@@ -70,6 +68,19 @@ class tileParser():
         base, _ = os.path.split(self.path)
         self.folder_root = base
         self.folder_max_projs = os.path.join(base, 'max_projs')
+
+    def _correct_offset(self):
+
+        col_min = 1000
+        row_min = 1000
+        for tile in self.tiles_list:
+            row_min = min(row_min, tile['row'])
+            col_min = min(col_min, tile['col'])
+
+        if (row_min > 0) or (col_min > 0):
+            for tile in self.tiles_list:
+                tile['row'] -= row_min
+                tile['col'] -= col_min
 
     def _print_info(self):
         """
@@ -321,7 +332,6 @@ class tileParser():
                                           neighbors=neighbors,
                                           neighbors_tot=neighbors_tot,
                                           neighbors_path=neighbors_path,
-                                          overlap=self.overlap,
                                           frame_size=self.frame_size,
                                           folder_root=self.folder_root,
                                           channel=self.channel)
@@ -427,19 +437,17 @@ class randomParser():
         path = t['path']
         col = t['col']
         row = t['row']
-        neighbors = None
-
-        neighbors_path = None
 
         return pipapr.loader.tileLoader(path=path,
                                           row=row,
                                           col=col,
                                           ftype=self.type,
-                                          neighbors=neighbors,
-                                          neighbors_path=neighbors_path,
-                                          overlap=self.overlap,
+                                          neighbors=self.neighbors,
+                                          neighbors_tot=self.neighbors_tot,
+                                          neighbors_path=None,
                                           frame_size=self.frame_size,
-                                          folder_root=self.folder_root)
+                                          folder_root=self.folder_root,
+                                          channel=None)
 
     def __len__(self):
         """

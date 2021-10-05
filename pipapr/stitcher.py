@@ -17,6 +17,10 @@ Others channel can then easily stitched using the previous one as reference:
 Doing that each tile in the second data set will be registered to the corresponding autofluorescence tile and
 then their spatial position will be adjusted.
 
+WARNING: when stitching, the expected overlap must be HIGHER than the real one. To enforce this, a margin of 20% is
+automatically taken (this margin can be set lower by the user for speed improvement). In order to get the best stitching
+quality it requires to have a good estimate of the overlap, hence why the full volume is not considered.
+
 This submodule also contains a class for merging and reconstructing the data. It was intended to be used at lower
 resolution for atlasing. The generated data can quickly become out of hands, use with caution!
 
@@ -30,7 +34,7 @@ from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
 from scipy.sparse import csr_matrix
 import pandas as pd
 # import cv2 as cv
-from skimage.exposure import equalize_adapthist
+from skimage.exposure import equalize_adapthist, rescale_intensity
 from alive_progress import alive_bar
 import dill
 import pipapr
@@ -41,7 +45,149 @@ from scipy.signal import correlate
 import os
 from pathlib import Path
 import warnings
+from tqdm import tqdm
 
+# def phase_cross_correlation(reference_image, moving_image,
+#                             upsample_factor=1,
+#                             return_error=True):
+#     """
+#     Phase cross correlation. Because skimage function compute the NORMAL cross correlation to estimate the shift I
+#     modified it to compute the TRUE phase cross correlation, as per the standard definition.
+#
+#     Parameters
+#     ----------
+#     reference_image : array
+#         Reference image.
+#     moving_image : array
+#         Image to register. Must be same dimensionality as
+#         ``reference_image``.
+#     upsample_factor : int, optional
+#         Upsampling factor. Images will be registered to within
+#         ``1 / upsample_factor`` of a pixel. For example
+#         ``upsample_factor == 20`` means the images will be registered
+#         within 1/20th of a pixel. Default is 1 (no upsampling).
+#         Not used if any of ``reference_mask`` or ``moving_mask`` is not None.
+#     return_error : bool, optional
+#         Returns error and phase difference if on, otherwise only
+#         shifts are returned. Has noeffect if any of ``reference_mask`` or
+#         ``moving_mask`` is not None. In this case only shifts is returned.
+#
+#     Returns
+#     -------
+#     shifts : ndarray
+#         Shift vector (in pixels) required to register ``moving_image``
+#         with ``reference_image``. Axis ordering is consistent with
+#         numpy (e.g. Z, Y, X)
+#     error : float
+#         Translation invariant normalized RMS error between
+#         ``reference_image`` and ``moving_image``.
+#     phasediff : float
+#         Global phase difference between the two images (should be
+#         zero if images are non-negative).
+#     """
+#
+#     # images must be the same shape
+#     if reference_image.shape != moving_image.shape:
+#         raise ValueError("images must be same shape")
+#
+#     src_freq = np.fft.fftn(reference_image)
+#     target_freq = np.fft.fftn(moving_image)
+#
+#     # Whole-pixel shift - Compute cross-correlation by an IFFT
+#     shape = src_freq.shape
+#     image_product = src_freq * target_freq.conj()
+#     eps = np.finfo(image_product.real.dtype).eps
+#     image_product /= (np.abs(image_product) + eps)
+#     cross_correlation = np.fft.ifftn(image_product)
+#
+#     # Locate maximum
+#     maxima = np.unravel_index(np.argmax(np.abs(cross_correlation)),
+#                               cross_correlation.shape)
+#     midpoints = np.array([np.fix(axis_size / 2) for axis_size in shape])
+#
+#     shifts = np.stack(maxima).astype(np.float64)
+#     shifts[shifts > midpoints] -= np.array(shape)[shifts > midpoints]
+#
+#     if upsample_factor == 1:
+#         if return_error:
+#             src_amp = np.sum(np.real(src_freq * src_freq.conj()))
+#             src_amp /= src_freq.size
+#             target_amp = np.sum(np.real(target_freq * target_freq.conj()))
+#             target_amp /= target_freq.size
+#             CCmax = cross_correlation[maxima]
+#     # If upsampling > 1, then refine estimate with matrix multiply DFT
+#     else:
+#         raise ValueError('Error: upsampled phase cross corrrelation not implemented here, use skimage.')
+#
+#     # If its only one row or column the shift along that dimension has no
+#     # effect. We set to zero.
+#     for dim in range(src_freq.ndim):
+#         if shape[dim] == 1:
+#             shifts[dim] = 0
+#
+#     if return_error:
+#         error = np.sqrt(np.abs(1.0 - CCmax * CCmax.conj() / (src_amp * target_amp)))
+#         phase_diff = np.arctan2(CCmax.imag, CCmax.real)
+#         return shifts, np.sqrt(np.abs(error)), phase_diff
+#     else:
+#         return shifts
+
+def reconstruct_middle_frame(tiles, 
+                             database,
+                             downsample,
+                             debug=False,
+                             z=None):
+
+    if isinstance(database, pipapr.stitcher.tileStitcher):
+        database = database.database
+    elif isinstance(database, pd.DataFrame):
+        database = database
+    elif isinstance(database, str):
+        database = pd.read_csv(database)
+    else:
+        raise TypeError('Error: unknown type for database.')
+    
+    level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+    
+    tile = tiles[0]
+    tile.lazy_load_tile(level_delta=level_delta)
+    frame_size = tile.lazy_data.shape[1:]
+    x_pos = database['ABS_H'].to_numpy()
+    nx = int(np.ceil((x_pos.max() - x_pos.min())/downsample + frame_size[1]))
+    y_pos = database['ABS_V'].to_numpy()
+    ny = int(np.ceil((y_pos.max() - y_pos.min())/downsample + frame_size[0]))
+
+    if z is None:
+        z = int(tile.lazy_data.shape[0] / 2)
+
+    merged_data = np.zeros((ny, nx), dtype='uint16')
+
+    H_pos = database['ABS_H'].to_numpy()
+    H_pos = (H_pos - H_pos.min()) / downsample
+    V_pos = database['ABS_V'].to_numpy()
+    V_pos = (V_pos - V_pos.min()) / downsample
+
+    with alive_bar(total=len(tiles), title='Merging', force_tty=True) as bar:
+        for i, tile in enumerate(tiles):
+            tile.lazy_load_tile(level_delta=level_delta)
+            data = tile.lazy_data[z]
+
+            # In debug mode we highlight each tile edge to see where it was
+            if debug:
+                data[0, :] = 2 ** 16 - 1
+                data[-1, :] = 2 ** 16 - 1
+                data[:, 0] = 2 ** 16 - 1
+                data[:, -1] = 2 ** 16 - 1
+
+            x1 = int(H_pos[i])
+            x2 = int(H_pos[i] + data.shape[1])
+            y1 = int(V_pos[i])
+            y2 = int(V_pos[i] + data.shape[0])
+
+            merged_data[y1:y2, x1:x2] = np.maximum(merged_data[y1:y2, x1:x2], data)
+            bar()
+
+    return merged_data
 
 def _get_max_proj_apr(apr, parts, patch, plot=False):
     """
@@ -64,7 +210,7 @@ def _get_max_proj_apr(apr, parts, patch, plot=False):
         # dim=0: project along Y to produce a ZY plane
         # dim=1: project along X to produce a ZX plane
         # dim=2: project along Z to produce an YX plane
-        proj.append(pyapr.numerics.transform.projection.maximum_projection_alt_patch(apr, parts, dim=d, patch=patch))
+        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts, dim=d, patch=patch, method='auto'))
 
     if plot:
         fig, ax = plt.subplots(1, 3)
@@ -135,14 +281,18 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
         dy = dzy[1]
         ry = error_zy
 
-    # if dx+dy+dz>4:
-    #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
-    #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-    #         ax[0].imshow(proj1[i], cmap='gray')
-    #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-    #         ax[1].imshow(proj2[i], cmap='gray')
-    #         ax[1].set_title(title)
-    #     print('ok')
+    # for i, title, vector in zip(range(3), ['ZY', 'ZX', 'YX'], [[dy, dz], [dx, dz], [dx, dy]]):
+    #     fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
+    #     ax[0].imshow(proj1[i], cmap='gray')
+    #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+    #     ax[1].imshow(proj2[i], cmap='gray')
+    #     ax[1].set_title(title)
+    #     from skimage.transform import warp, AffineTransform
+    #     from skimage.exposure import rescale_intensity
+    #     shifted = warp(proj1[i], AffineTransform(translation=vector), mode='wrap', preserve_range=True)
+    #     rgb = np.dstack([proj2[i], shifted, np.zeros_like(proj1[i])])
+    #     ax[2].imshow((rescale_intensity(rgb, out_range='uint8')).astype('uint8'))
+    # print('ok')
 
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
@@ -219,14 +369,18 @@ def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
         dy = dzy[1]
         ry = error_zy
 
-    # if self.row==0 and self.col==0:
-    #     for i, title in enumerate(['ZY', 'ZX', 'YX']):
-    #         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-    #         ax[0].imshow(proj1[i], cmap='gray')
-    #         ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
-    #         ax[1].imshow(proj2[i], cmap='gray')
-    #         ax[1].set_title(title)
-    #     print('ok')
+    # for i, title, vector in zip(range(3), ['ZY', 'ZX', 'YX'], [[dy, dz], [dx, dz], [dx, dy]]):
+    #     fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
+    #     ax[0].imshow(proj1[i], cmap='gray')
+    #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+    #     ax[1].imshow(proj2[i], cmap='gray')
+    #     ax[1].set_title(title)
+    #     from skimage.transform import warp, AffineTransform
+    #     from skimage.exposure import rescale_intensity
+    #     shifted = warp(proj1[i], AffineTransform(translation=vector), mode='wrap', preserve_range=True)
+    #     rgb = np.dstack([proj2[i], shifted, np.zeros_like(proj1[i])])
+    #     ax[2].imshow((rescale_intensity(rgb, out_range='uint8')).astype('uint8'))
+    # print('ok')
 
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
@@ -254,13 +408,17 @@ class baseStitcher():
 
     """
     def __init__(self,
-                 tiles: pipapr.parser.tileParser):
+                 tiles: pipapr.parser.tileParser,
+                 overlap_h: (int, float),
+                 overlap_v: (int, float)):
         """
         Constructor for the baseStitcher class.
 
         Parameters
         ----------
         tiles: (tileParser) tileParser object containing the dataset to stitch.
+        overlap_h: (float) expected horizontal overlap in %
+        overlap_v: (float) expected vertical overlap in %
 
         """
         self.tiles = tiles
@@ -269,8 +427,16 @@ class baseStitcher():
         self.n_vertex = tiles.n_tiles
         self.n_edges = tiles.n_edges
         self.frame_size = tiles.frame_size
-        self.expected_overlap = tiles.overlap
-        self.overlap = int(self.expected_overlap*1.2)
+
+        self.expected_overlap_h = int(overlap_h/100*self.frame_size)
+        self.expected_overlap_v = int(overlap_v/100*self.frame_size)
+
+        self.overlap_h = int(self.expected_overlap_h*1.2)
+        if self.expected_overlap_h > self.frame_size:
+            self.expected_overlap_h = self.frame_size
+        self.overlap_v = int(self.expected_overlap_v*1.2)
+        if self.expected_overlap_v > self.frame_size:
+            self.expected_overlap_v = self.frame_size
 
         self.mask = False
         self.threshold = None
@@ -337,6 +503,70 @@ class baseStitcher():
 
         self.segment = False
 
+    def reconstruct_slice(self, z=None, downsample=8, debug=False, plot=False):
+        """
+        Reconstruct and merge the sample at a given depth z.
+
+        Parameters
+        ----------
+        z: (int) reconstruction depth
+        downsample: (int) downsample for reconstruction (must be a power of 2)
+        debug: (bool) if true the border of each tile will be highlighted
+
+        Returns
+        -------
+        Merged frame at depth z.
+        """
+
+        level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+        tile = self.tiles[0]
+        tile.lazy_load_tile(level_delta=level_delta)
+
+        if z > tile.lazy_data.shape[0]:
+            raise ValueError('Error: z is too large ({}), maximum depth at this downsample is {}.'.format(z, tile.lazy_data.shape[0]))
+
+        frame_size = tile.lazy_data.shape[1:]
+        x_pos = self.database['ABS_H'].to_numpy()
+        nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + frame_size[1]))
+        y_pos = self.database['ABS_V'].to_numpy()
+        ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + frame_size[0]))
+
+        if z is None:
+            z = int(tile.lazy_data.shape[0] / 2)
+
+        merged_data = np.zeros((ny, nx), dtype='uint16')
+
+        H_pos = self.database['ABS_H'].to_numpy()
+        H_pos = (H_pos - H_pos.min()) / downsample
+        V_pos = self.database['ABS_V'].to_numpy()
+        V_pos = (V_pos - V_pos.min()) / downsample
+
+        with alive_bar(total=self.n_vertex, title='Merging', force_tty=True) as bar:
+            for i, tile in enumerate(self.tiles):
+                tile.lazy_load_tile(level_delta=level_delta)
+                data = tile.lazy_data[z]
+
+                # In debug mode we highlight each tile edge to see where it was
+                if debug:
+                    data[0, :] = 2**16-1
+                    data[-1, :] = 2**16-1
+                    data[:, 0] = 2**16-1
+                    data[:, -1] = 2**16-1
+
+                x1 = int(H_pos[i])
+                x2 = int(H_pos[i] + data.shape[1])
+                y1 = int(V_pos[i])
+                y2 = int(V_pos[i] + data.shape[0])
+
+                merged_data[y1:y2, x1:x2] = np.maximum(merged_data[y1:y2, x1:x2], data)
+                bar()
+
+        if plot:
+            plt.figure()
+            plt.imshow(np.log(merged_data), cmap='gray')
+
+        return merged_data
 
 class tileStitcher(baseStitcher):
     """
@@ -354,16 +584,20 @@ class tileStitcher(baseStitcher):
 
     """
     def __init__(self,
-                 tiles: pipapr.parser.tileParser):
+                 tiles: pipapr.parser.tileParser,
+                 overlap_h: (int, float),
+                 overlap_v: (int, float)):
         """
         Constructor for the tileStitcher class.
 
         Parameters
         ----------
         tiles: (tileParser) tileParser object containing the dataset to stitch.
+        overlap_h: (float) expected horizontal overlap in %
+        overlap_v: (float) expected vertical overlap in %
         """
 
-        super().__init__(tiles)
+        super().__init__(tiles, overlap_h, overlap_v)
 
         self.cgraph_from = []
         self.cgraph_to = []
@@ -393,41 +627,43 @@ class tileStitcher(baseStitcher):
 
     def compute_registration(self):
         """
-        Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
-        the redundancy).
+        Compute the pair-wise registration for all tiles. This implementation loads the data twice and is therefore
+        not efficient.
 
         """
-        for tile in self.tiles:
-            tile.load_tile()
-            tile.load_neighbors()
+        with alive_bar(total=self.n_vertex, title='Computing stitching', force_tty=True) as bar:
+            for tile in self.tiles:
+                tile.load_tile()
+                tile.load_neighbors()
 
-            if self.segment:
-                self.segmenter.compute_segmentation(tile)
+                if self.segment:
+                    self.segmenter.compute_segmentation(tile)
 
-            for apr, parts, coords in zip(tile.apr_neighbors, tile.parts_neighbors, tile.neighbors):
+                for apr, parts, coords in zip(tile.apr_neighbors, tile.parts_neighbors, tile.neighbors):
 
-                if tile.row == coords[0] and tile.col < coords[1]:
-                    # EAST
-                    reg, rel = self._compute_east_registration(tile.apr, tile.parts, apr, parts)
+                    if tile.row == coords[0] and tile.col < coords[1]:
+                        # EAST
+                        reg, rel = self._compute_east_registration(tile.apr, tile.parts, apr, parts)
 
-                elif tile.col == coords[1] and tile.row < coords[0]:
-                    # SOUTH
-                    reg, rel = self._compute_south_registration(tile.apr, tile.parts, apr, parts)
+                    elif tile.col == coords[1] and tile.row < coords[0]:
+                        # SOUTH
+                        reg, rel = self._compute_south_registration(tile.apr, tile.parts, apr, parts)
 
-                else:
-                    raise TypeError('Error: couldn''t determine registration to perform.')
+                    else:
+                        raise TypeError('Error: couldn''t determine registration to perform.')
 
-                self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
-                                                                    dims=(self.nrow, self.ncol)))
-                self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
-                                                                  dims=(self.nrow, self.ncol)))
-                # H=x, V=y, D=z
-                self.dH.append(reg[2])
-                self.dV.append(reg[1])
-                self.dD.append(reg[0])
-                self.relia_H.append(rel[2])
-                self.relia_V.append(rel[1])
-                self.relia_D.append(rel[0])
+                    self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
+                                                                        dims=(self.nrow, self.ncol)))
+                    self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
+                                                                      dims=(self.nrow, self.ncol)))
+                    # H=x, V=y, D=z
+                    self.dH.append(reg[2])
+                    self.dV.append(reg[1])
+                    self.dD.append(reg[0])
+                    self.relia_H.append(rel[2])
+                    self.relia_V.append(rel[1])
+                    self.relia_D.append(rel[0])
+                bar()
 
         self._build_sparse_graphs()
         self._optimize_sparse_graphs()
@@ -437,8 +673,8 @@ class tileStitcher(baseStitcher):
 
     def compute_registration_fast(self, on_disk=False):
         """
-        Compute the pair-wise registration for a given tile with all its neighbors (EAST and SOUTH to avoid
-        the redundancy).
+        Compute the pair-wise registration for all tiles. This implementation loads the data once by precomputing
+        the max-proj and is therefore efficient.
 
         """
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
@@ -449,40 +685,43 @@ class tileStitcher(baseStitcher):
             projs = self._precompute_max_projs()
 
         # Then we loop again through the tiles but now we have access to the max-proj
-        for tile in self.tiles:
-            proj1 = projs[tile.row, tile.col]
+        with alive_bar(total=self.n_vertex, title='Computing cross-correlations', force_tty=True) as bar:
+            for tile in self.tiles:
+                proj1 = projs[tile.row, tile.col]
 
-            for coords in tile.neighbors:
-                proj2 = projs[coords[0], coords[1]]
+                for coords in tile.neighbors:
+                    proj2 = projs[coords[0], coords[1]]
 
-                if tile.row == coords[0] and tile.col < coords[1]:
-                    # EAST
-                    if self.mask:
-                        reg, rel = _get_masked_proj_shifts(proj1['east'], proj2['west'], threshold=self.threshold)
+                    if tile.row == coords[0] and tile.col < coords[1]:
+                        # EAST
+                        if self.mask:
+                            reg, rel = _get_masked_proj_shifts(proj1['east'], proj2['west'], threshold=self.threshold)
+                        else:
+                            reg, rel = _get_proj_shifts(proj1['east'], proj2['west'])
+
+                    elif tile.col == coords[1] and tile.row < coords[0]:
+                        # SOUTH
+                        if self.mask:
+                            reg, rel = _get_masked_proj_shifts(proj1['south'], proj2['north'], threshold=self.threshold)
+                        else:
+                            reg, rel = _get_proj_shifts(proj1['south'], proj2['north'])
+
                     else:
-                        reg, rel = _get_proj_shifts(proj1['east'], proj2['west'])
+                        raise TypeError('Error: couldn''t determine registration to perform.')
 
-                elif tile.col == coords[1] and tile.row < coords[0]:
-                    # SOUTH
-                    if self.mask:
-                        reg, rel = _get_masked_proj_shifts(proj1['south'], proj2['north'], threshold=self.threshold)
-                    else:
-                        reg, rel = _get_proj_shifts(proj1['south'], proj2['north'])
+                    self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
+                                                                        dims=(self.nrow, self.ncol)))
+                    self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
+                                                                      dims=(self.nrow, self.ncol)))
+                    # H=x, V=y, D=z
+                    self.dH.append(reg[2])
+                    self.dV.append(reg[1])
+                    self.dD.append(reg[0])
+                    self.relia_H.append(rel[2])
+                    self.relia_V.append(rel[1])
+                    self.relia_D.append(rel[0])
 
-                else:
-                    raise TypeError('Error: couldn''t determine registration to perform.')
-
-                self.cgraph_from.append(np.ravel_multi_index([tile.row, tile.col],
-                                                                    dims=(self.nrow, self.ncol)))
-                self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
-                                                                  dims=(self.nrow, self.ncol)))
-                # H=x, V=y, D=z
-                self.dH.append(reg[2])
-                self.dV.append(reg[1])
-                self.dD.append(reg[0])
-                self.relia_H.append(rel[2])
-                self.relia_V.append(rel[1])
-                self.relia_D.append(rel[0])
+                bar()
 
         self._build_sparse_graphs()
         self._optimize_sparse_graphs()
@@ -491,6 +730,10 @@ class tileStitcher(baseStitcher):
         self._print_info()
 
     def compute_registration_from_max_projs(self):
+        '''
+        Compute the registration directly from the max-projections. Max-projections must have been computed before.
+
+        '''
 
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
         projs = self._load_max_projs()
@@ -534,6 +777,30 @@ class tileStitcher(baseStitcher):
         self._build_sparse_graphs()
         self._optimize_sparse_graphs()
         _, _ = self._produce_registration_map()
+        self._build_database()
+        self._print_info()
+
+    def compute_expected_registration(self):
+        """
+        Compute the expected registration if the expected overlap are correct.
+
+        """
+
+        reg_rel_map = np.zeros((3, self.nrow, self.ncol))
+
+        self.registration_map_rel = reg_rel_map
+
+        reg_abs_map = np.zeros_like(reg_rel_map)
+        # H
+        for x in range(reg_abs_map.shape[2]):
+            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size - self.expected_overlap_h)
+        # V
+        for x in range(reg_abs_map.shape[1]):
+            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size - self.expected_overlap_v)
+        # D
+        reg_abs_map[2] = reg_rel_map[2]
+        self.registration_map_abs = reg_abs_map
+
         self._build_database()
         self._print_info()
 
@@ -673,7 +940,12 @@ class tileStitcher(baseStitcher):
         if margin < 1:
             raise ValueError('Error: overlap margin is too small and may make the stitching fail.')
 
-        self.overlap = int(self.expected_overlap*(1+margin/100))
+        self.overlap_h = int(self.expected_overlap_h*(1+margin/100))
+        if self.expected_overlap_h > self.frame_size:
+            self.expected_overlap_h = self.frame_size
+        self.overlap_v = int(self.expected_overlap_v*(1+margin/100))
+        if self.expected_overlap_v > self.frame_size:
+            self.expected_overlap_v = self.frame_size
 
     def _print_info(self):
         """
@@ -687,11 +959,11 @@ class tileStitcher(baseStitcher):
         self.effective_overlap_v = (self.frame_size-overlap)/self.frame_size*100
         print('Effective vertical overlap: {:0.2f}%'.format(self.effective_overlap_v))
 
-        if np.abs(self.effective_overlap_v*self.frame_size/100-self.expected_overlap)>0.2*self.expected_overlap:
-            warnings.warn('Expected overlap is very different from the computed one, the registration '
+        if np.abs(self.effective_overlap_v*self.frame_size/100-self.expected_overlap_v)>0.2*self.expected_overlap_v:
+            warnings.warn('Expected vertical overlap is very different from the computed one, the registration '
                           'might be wrong.')
-        if np.abs(self.effective_overlap_h*self.frame_size/100-self.expected_overlap)>0.2*self.expected_overlap:
-            warnings.warn('Expected overlap is very different from the computed one, the registration '
+        if np.abs(self.effective_overlap_h*self.frame_size/100-self.expected_overlap_h)>0.2*self.expected_overlap_h:
+            warnings.warn('Expected horizontal overlap is very different from the computed one, the registration '
                           'might be wrong.')
 
     def _save_max_projs(self):
@@ -699,14 +971,14 @@ class tileStitcher(baseStitcher):
         # Safely create folder to save max-projs
         Path(self.tiles.folder_max_projs).mkdir(parents=True, exist_ok=True)
 
-        for tile in self.tiles:
+        for tile in tqdm(self.tiles):
             tile.load_tile()
             proj = {}
             if tile.col + 1 < self.tiles.ncol:
                 if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:
                     # EAST 1
                     patch = pyapr.ReconPatch()
-                    patch.y_begin = self.frame_size - self.overlap
+                    patch.y_begin = self.frame_size - self.overlap_h
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
                         np.save(os.path.join(self.tiles.folder_max_projs,
@@ -715,7 +987,7 @@ class tileStitcher(baseStitcher):
                 if self.tiles.tiles_pattern[tile.row, tile.col - 1] == 1:
                     # EAST 2
                     patch = pyapr.ReconPatch()
-                    patch.y_end = self.overlap
+                    patch.y_end = self.overlap_h
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
                         np.save(os.path.join(self.tiles.folder_max_projs,
@@ -724,7 +996,7 @@ class tileStitcher(baseStitcher):
                 if self.tiles.tiles_pattern[tile.row + 1, tile.col] == 1:
                     # SOUTH 1
                     patch = pyapr.ReconPatch()
-                    patch.x_begin = self.frame_size - self.overlap
+                    patch.x_begin = self.frame_size - self.overlap_v
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
                         np.save(os.path.join(self.tiles.folder_max_projs,
@@ -733,7 +1005,7 @@ class tileStitcher(baseStitcher):
                 if self.tiles.tiles_pattern[tile.row - 1, tile.col] == 1:
                     # SOUTH 2
                     patch = pyapr.ReconPatch()
-                    patch.x_end = self.overlap
+                    patch.x_end = self.overlap_v
                     proj = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     for i, d in enumerate(['zy', 'zx', 'yx']):
                         np.save(os.path.join(self.tiles.folder_max_projs,
@@ -785,38 +1057,49 @@ class tileStitcher(baseStitcher):
     def _precompute_max_projs(self):
 
         projs = np.empty((self.nrow, self.ncol), dtype=object)
-        for tile in self.tiles:
-            tile.load_tile()
-            proj = {}
-            if tile.col+1 < self.tiles.ncol:
-                if self.tiles.tiles_pattern[tile.row, tile.col+1] == 1:
-                    # EAST 1
-                    patch = pyapr.ReconPatch()
-                    patch.y_begin = self.frame_size - self.overlap
-                    proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-            if tile.col-1 >= 0:
-                if self.tiles.tiles_pattern[tile.row, tile.col-1] == 1:
-                    # EAST 2
-                    patch = pyapr.ReconPatch()
-                    patch.y_end = self.overlap
-                    proj['west'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-            if tile.row+1 < self.tiles.nrow:
-                if self.tiles.tiles_pattern[tile.row+1, tile.col] == 1:
-                    # SOUTH 1
-                    patch = pyapr.ReconPatch()
-                    patch.x_begin = self.frame_size - self.overlap
-                    proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
-            if tile.row-1 >= 0:
-                if self.tiles.tiles_pattern[tile.row-1, tile.col] == 1:
-                    # SOUTH 2
-                    patch = pyapr.ReconPatch()
-                    patch.x_end = self.overlap
-                    proj['north'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+        with alive_bar(total=self.n_vertex, title='Computing max. proj.', force_tty=True) as bar:
+            for tile in self.tiles:
+                tile.load_tile()
+                proj = {}
+                if tile.col+1 < self.tiles.ncol:
+                    if self.tiles.tiles_pattern[tile.row, tile.col+1] == 1:
+                        # EAST 1
+                        patch = pyapr.ReconPatch()
+                        patch.y_begin = self.frame_size - self.overlap_h
+                        # patch.z_begin = 1000
+                        # patch.z_end = 1100
+                        proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                if tile.col-1 >= 0:
+                    if self.tiles.tiles_pattern[tile.row, tile.col-1] == 1:
+                        # EAST 2
+                        patch = pyapr.ReconPatch()
+                        patch.y_end = self.overlap_h
+                        # patch.z_begin = 1000
+                        # patch.z_end = 1100
+                        proj['west'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                if tile.row+1 < self.tiles.nrow:
+                    if self.tiles.tiles_pattern[tile.row+1, tile.col] == 1:
+                        # SOUTH 1
+                        patch = pyapr.ReconPatch()
+                        patch.x_begin = self.frame_size - self.overlap_v
+                        # patch.z_begin = 1000
+                        # patch.z_end = 1100
+                        proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
+                if tile.row-1 >= 0:
+                    if self.tiles.tiles_pattern[tile.row-1, tile.col] == 1:
+                        # SOUTH 2
+                        patch = pyapr.ReconPatch()
+                        patch.x_end = self.overlap_v
+                        # patch.z_begin = 1000
+                        # patch.z_end = 1100
+                        proj['north'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
 
-            projs[tile.row, tile.col] = proj
+                projs[tile.row, tile.col] = proj
 
-            if self.segment:
-                self.segmenter.compute_segmentation(tile)
+                if self.segment:
+                    self.segmenter.compute_segmentation(tile)
+
+                bar()
 
         return projs
 
@@ -916,10 +1199,10 @@ class tileStitcher(baseStitcher):
         reg_abs_map = np.zeros_like(reg_rel_map)
         # H
         for x in range(reg_abs_map.shape[2]):
-            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size-self.overlap)
+            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size-self.overlap_h)
         # V
         for x in range(reg_abs_map.shape[1]):
-            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap)
+            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap_v)
         # D
         reg_abs_map[2] = reg_rel_map[2]
         self.registration_map_abs = reg_abs_map
@@ -1002,11 +1285,11 @@ class tileStitcher(baseStitcher):
         """
 
         patch = pyapr.ReconPatch()
-        patch.y_begin = self.frame_size - self.overlap
+        patch.y_begin = self.frame_size - self.overlap_h
         proj_zy1, proj_zx1, proj_yx1 = _get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
         patch = pyapr.ReconPatch()
-        patch.y_end = self.overlap
+        patch.y_end = self.overlap_h
         proj_zy2, proj_zx2, proj_yx2 = _get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
         # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
@@ -1041,11 +1324,11 @@ class tileStitcher(baseStitcher):
         """
 
         patch = pyapr.ReconPatch()
-        patch.x_begin = self.frame_size - self.overlap
+        patch.x_begin = self.frame_size - self.overlap_v
         proj_zy1, proj_zx1, proj_yx1 = _get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
         patch = pyapr.ReconPatch()
-        patch.x_end = self.overlap
+        patch.x_end = self.overlap_v
         proj_zy2, proj_zx2, proj_yx2 = _get_max_proj_apr(apr_2, parts_2, patch, plot=False)
 
         # proj1, proj2 = [proj_zy1, proj_zx1, proj_yx1], [proj_zy2, proj_zx2, proj_yx2]
@@ -1090,7 +1373,9 @@ class channelStitcher(baseStitcher):
         tiles_channel: (tileParser) tiles to be registered to tiles_stitched
         """
 
-        super().__init__(ref)
+        super().__init__(ref,
+                         stitcher.overlap_h,
+                         stitcher.overlap_v)
 
         self.stitcher = stitcher
         self.tiles_channel = moving

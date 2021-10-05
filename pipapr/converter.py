@@ -146,9 +146,9 @@ class tileConverter():
 
                 if lazy_loading:
                     tree_parts = pyapr.ShortParticles()
-                    pyapr.numerics.fill_tree_mean(tile.apr, tile.parts, tree_parts)
+                    pyapr.numerics.fill_tree_mean(apr, parts, tree_parts)
                 else:
-                    tree_parts=None
+                    tree_parts = None
 
                 # Save converted data
                 if self.random:

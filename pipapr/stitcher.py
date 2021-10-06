@@ -281,15 +281,15 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
         dy = dzy[1]
         ry = error_zy
 
-    # for i, title, vector in zip(range(3), ['ZY', 'ZX', 'YX'], [[dy, dz], [dx, dz], [dx, dy]]):
+    # for i, title, vector in zip(range(3), ['ZY', 'ZX', 'YX'], [dzy, dzx, dyx]):
     #     fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
     #     ax[0].imshow(proj1[i], cmap='gray')
-    #     ax[0].set_title('dx={}, dy={}, dz={}'.format(dx, dy, dz))
+    #     ax[0].set_title('d={}'.format(vector))
     #     ax[1].imshow(proj2[i], cmap='gray')
     #     ax[1].set_title(title)
     #     from skimage.transform import warp, AffineTransform
     #     from skimage.exposure import rescale_intensity
-    #     shifted = warp(proj1[i], AffineTransform(translation=vector), mode='wrap', preserve_range=True)
+    #     shifted = warp(proj1[i], AffineTransform(translation=[vector[1], vector[0]]), mode='wrap', preserve_range=True)
     #     rgb = np.dstack([proj2[i], shifted, np.zeros_like(proj1[i])])
     #     ax[2].imshow((rescale_intensity(rgb, out_range='uint8')).astype('uint8'))
     # print('ok')
@@ -568,6 +568,7 @@ class baseStitcher():
 
         return merged_data
 
+
 class tileStitcher(baseStitcher):
     """
     Class used to perform the stitching. The stitching is performed in 4 steps:
@@ -713,6 +714,15 @@ class tileStitcher(baseStitcher):
                                                                         dims=(self.nrow, self.ncol)))
                     self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
                                                                       dims=(self.nrow, self.ncol)))
+
+                    # Regularize
+                    if np.abs(reg[2] - (self.overlap_h - self.expected_overlap_h)) > 30:
+                        reg[2] = (self.overlap_h - self.expected_overlap_h)
+                    if np.abs(reg[1] - (self.overlap_v - self.expected_overlap_v)) > 30:
+                        reg[1] = (self.overlap_v - self.expected_overlap_v)
+                    if np.abs(reg[0]) > 30:
+                        reg[0] = 0
+
                     # H=x, V=y, D=z
                     self.dH.append(reg[2])
                     self.dV.append(reg[1])
@@ -1111,11 +1121,11 @@ class tileStitcher(baseStitcher):
         """
 
         self.graph_relia_H = csr_matrix((self.relia_H, (self.cgraph_from, self.cgraph_to)),
-                                        shape=(self.n_edges, self.n_edges))
+                                        shape=(self.n_vertex, self.n_vertex))
         self.graph_relia_V = csr_matrix((self.relia_V, (self.cgraph_from, self.cgraph_to)),
-                                        shape=(self.n_edges, self.n_edges))
+                                        shape=(self.n_vertex, self.n_vertex))
         self.graph_relia_D = csr_matrix((self.relia_D, (self.cgraph_from, self.cgraph_to)),
-                                        shape=(self.n_edges, self.n_edges))
+                                        shape=(self.n_vertex, self.n_vertex))
 
     def _optimize_sparse_graphs(self):
         """

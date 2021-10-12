@@ -28,109 +28,142 @@ By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
-
+import cv2
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
 from scipy.sparse import csr_matrix
 import pandas as pd
-# import cv2 as cv
+import cv2 as cv
 from skimage.exposure import equalize_adapthist, rescale_intensity
 from alive_progress import alive_bar
 import dill
 import pipapr
 import matplotlib.pyplot as plt
 import pyapr
-from skimage.registration import phase_cross_correlation
+# from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
 import os
 from pathlib import Path
 import warnings
 from tqdm import tqdm
 
-# def phase_cross_correlation(reference_image, moving_image,
-#                             upsample_factor=1,
-#                             return_error=True):
-#     """
-#     Phase cross correlation. Because skimage function compute the NORMAL cross correlation to estimate the shift I
-#     modified it to compute the TRUE phase cross correlation, as per the standard definition.
-#
-#     Parameters
-#     ----------
-#     reference_image : array
-#         Reference image.
-#     moving_image : array
-#         Image to register. Must be same dimensionality as
-#         ``reference_image``.
-#     upsample_factor : int, optional
-#         Upsampling factor. Images will be registered to within
-#         ``1 / upsample_factor`` of a pixel. For example
-#         ``upsample_factor == 20`` means the images will be registered
-#         within 1/20th of a pixel. Default is 1 (no upsampling).
-#         Not used if any of ``reference_mask`` or ``moving_mask`` is not None.
-#     return_error : bool, optional
-#         Returns error and phase difference if on, otherwise only
-#         shifts are returned. Has noeffect if any of ``reference_mask`` or
-#         ``moving_mask`` is not None. In this case only shifts is returned.
-#
-#     Returns
-#     -------
-#     shifts : ndarray
-#         Shift vector (in pixels) required to register ``moving_image``
-#         with ``reference_image``. Axis ordering is consistent with
-#         numpy (e.g. Z, Y, X)
-#     error : float
-#         Translation invariant normalized RMS error between
-#         ``reference_image`` and ``moving_image``.
-#     phasediff : float
-#         Global phase difference between the two images (should be
-#         zero if images are non-negative).
-#     """
-#
-#     # images must be the same shape
-#     if reference_image.shape != moving_image.shape:
-#         raise ValueError("images must be same shape")
-#
-#     src_freq = np.fft.fftn(reference_image)
-#     target_freq = np.fft.fftn(moving_image)
-#
-#     # Whole-pixel shift - Compute cross-correlation by an IFFT
-#     shape = src_freq.shape
-#     image_product = src_freq * target_freq.conj()
-#     eps = np.finfo(image_product.real.dtype).eps
-#     image_product /= (np.abs(image_product) + eps)
-#     cross_correlation = np.fft.ifftn(image_product)
-#
-#     # Locate maximum
-#     maxima = np.unravel_index(np.argmax(np.abs(cross_correlation)),
-#                               cross_correlation.shape)
-#     midpoints = np.array([np.fix(axis_size / 2) for axis_size in shape])
-#
-#     shifts = np.stack(maxima).astype(np.float64)
-#     shifts[shifts > midpoints] -= np.array(shape)[shifts > midpoints]
-#
-#     if upsample_factor == 1:
-#         if return_error:
-#             src_amp = np.sum(np.real(src_freq * src_freq.conj()))
-#             src_amp /= src_freq.size
-#             target_amp = np.sum(np.real(target_freq * target_freq.conj()))
-#             target_amp /= target_freq.size
-#             CCmax = cross_correlation[maxima]
-#     # If upsampling > 1, then refine estimate with matrix multiply DFT
-#     else:
-#         raise ValueError('Error: upsampled phase cross corrrelation not implemented here, use skimage.')
-#
-#     # If its only one row or column the shift along that dimension has no
-#     # effect. We set to zero.
-#     for dim in range(src_freq.ndim):
-#         if shape[dim] == 1:
-#             shifts[dim] = 0
-#
-#     if return_error:
-#         error = np.sqrt(np.abs(1.0 - CCmax * CCmax.conj() / (src_amp * target_amp)))
-#         phase_diff = np.arctan2(CCmax.imag, CCmax.real)
-#         return shifts, np.sqrt(np.abs(error)), phase_diff
-#     else:
-#         return shifts
+def phase_cross_correlation(reference_image,
+                            moving_image,
+                            upsample_factor=1,
+                            return_error=True):
+    """
+    Phase cross correlation. Because skimage function compute the NORMAL cross correlation to estimate the shift I
+    modified it to compute the TRUE phase cross correlation, as per the standard definition.
+
+    Parameters
+    ----------
+    reference_image : array
+        Reference image.
+    moving_image : array
+        Image to register. Must be same dimensionality as
+        ``reference_image``.
+    upsample_factor : int, optional
+        Upsampling factor. Images will be registered to within
+        ``1 / upsample_factor`` of a pixel. For example
+        ``upsample_factor == 20`` means the images will be registered
+        within 1/20th of a pixel. Default is 1 (no upsampling).
+        Not used if any of ``reference_mask`` or ``moving_mask`` is not None.
+    return_error : bool, optional
+        Returns error and phase difference if on, otherwise only
+        shifts are returned. Has noeffect if any of ``reference_mask`` or
+        ``moving_mask`` is not None. In this case only shifts is returned.
+
+    Returns
+    -------
+    shifts : ndarray
+        Shift vector (in pixels) required to register ``moving_image``
+        with ``reference_image``. Axis ordering is consistent with
+        numpy (e.g. Z, Y, X)
+    error : float
+        Translation invariant normalized RMS error between
+        ``reference_image`` and ``moving_image``.
+    phasediff : float
+        Global phase difference between the two images (should be
+        zero if images are non-negative).
+    """
+
+    # images must be the same shape
+    if reference_image.shape != moving_image.shape:
+        raise ValueError("images must be same shape")
+
+    src_freq = np.fft.fftn(reference_image)
+    target_freq = np.fft.fftn(moving_image)
+
+    # Whole-pixel shift - Compute cross-correlation by an IFFT
+    shape = src_freq.shape
+    image_product = src_freq * target_freq.conj()
+    eps = np.finfo(image_product.real.dtype).eps
+    image_product /= (np.abs(image_product) + eps)
+    cross_correlation = np.fft.ifftn(image_product)
+
+    # Locate maximum
+    maxima = np.unravel_index(np.argmax(np.abs(cross_correlation)),
+                              cross_correlation.shape)
+    midpoints = np.array([np.fix(axis_size / 2) for axis_size in shape])
+
+    shifts = np.stack(maxima).astype(np.float64)
+    shifts[shifts > midpoints] -= np.array(shape)[shifts > midpoints]
+
+    if upsample_factor == 1:
+        if return_error:
+            src_amp = np.sum(np.real(src_freq * src_freq.conj()))
+            src_amp /= src_freq.size
+            target_amp = np.sum(np.real(target_freq * target_freq.conj()))
+            target_amp /= target_freq.size
+            CCmax = cross_correlation[maxima]
+    # If upsampling > 1, then refine estimate with matrix multiply DFT
+    else:
+        raise ValueError('Error: upsampled phase cross corrrelation not implemented here, use skimage.')
+
+    # If its only one row or column the shift along that dimension has no
+    # effect. We set to zero.
+    for dim in range(src_freq.ndim):
+        if shape[dim] == 1:
+            shifts[dim] = 0
+
+    if return_error:
+        error = np.real(1.0 - CCmax * CCmax.conj())
+        phase_diff = np.arctan2(CCmax.imag, CCmax.real)
+        return shifts, np.sqrt(np.abs(error)), phase_diff
+    else:
+        return shifts
+
+def phase_cross_correlation_cv(reference_image, moving_image):
+    """
+    Compute openCV to compute the phase cross correlation. It is around 16 times faster than the implementation using
+    numpy FFT (same as skimage).
+
+    Parameters
+    ----------
+    reference_image : array
+        Reference image.
+    moving_image : array
+        Image to register. Must be same dimensionality as
+        ``reference_image``.
+
+    Returns
+    -------
+    shifts : ndarray
+        Shift vector (in pixels) required to register ``moving_image``
+        with ``reference_image``. Axis ordering is consistent with
+        numpy (e.g. Z, Y, X)
+    error : float
+        Peak response (see opencv description here:
+        https://docs.opencv.org/4.5.3/d7/df3/group__imgproc__motion.html#ga552420a2ace9ef3fb053cd630fdb4952)
+    """
+
+    d, e = cv.phaseCorrelate(reference_image.astype(np.float32), moving_image.astype(np.float32))
+
+    d_correct = [-np.round(d[1]).astype(np.int), -np.round(d[0]).astype(np.int)]
+    e = 1 - e
+
+    return d_correct, e
+
 
 def reconstruct_middle_frame(tiles, 
                              database,
@@ -238,15 +271,21 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
 
     """
     # Compute phase cross-correlation to extract shifts
-    dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
-                                               return_error=True,
-                                               upsample_factor=upsample_factor)
-    dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
-                                               return_error=True,
-                                               upsample_factor=upsample_factor)
-    dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
-                                               return_error=True,
-                                               upsample_factor=upsample_factor)
+    # dzy, error_zy, _ = phase_cross_correlation(proj1[0], proj2[0],
+    #                                            return_error=True,
+    #                                            upsample_factor=upsample_factor)
+    # dzx, error_zx, _ = phase_cross_correlation(proj1[1], proj2[1],
+    #                                            return_error=True,
+    #                                            upsample_factor=upsample_factor)
+    # dyx, error_yx, _ = phase_cross_correlation(proj1[2], proj2[2],
+    #                                            return_error=True,
+    #                                            upsample_factor=upsample_factor)
+
+    dzy, error_zy = phase_cross_correlation_cv(proj1[0], proj2[0])
+    dzx, error_zx = phase_cross_correlation_cv(proj1[1], proj2[1])
+    dyx, error_yx = phase_cross_correlation_cv(proj1[2], proj2[2])
+
+
 
     # Replace error == 0 with 1 otherwise the minimum spanning tree considers that vertex are not connected
     if error_zy == 0:
@@ -281,10 +320,10 @@ def _get_proj_shifts(proj1, proj2, upsample_factor=1):
         dy = dzy[1]
         ry = error_zy
 
-    # for i, title, vector in zip(range(3), ['ZY', 'ZX', 'YX'], [dzy, dzx, dyx]):
+    # for i, title, vector, err in zip(range(3), ['ZY', 'ZX', 'YX'], [dzy, dzx, dyx], [error_zy, error_zx, error_yx]):
     #     fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
     #     ax[0].imshow(proj1[i], cmap='gray')
-    #     ax[0].set_title('d={}'.format(vector))
+    #     ax[0].set_title('d={}, e={:0.3f}'.format(vector, err))
     #     ax[1].imshow(proj2[i], cmap='gray')
     #     ax[1].set_title(title)
     #     from skimage.transform import warp, AffineTransform
@@ -326,15 +365,15 @@ def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
     dzy = phase_cross_correlation(proj1[0], proj2[0],
                                   return_error=True, upsample_factor=upsample_factor,
                                   reference_mask=mask_ref[0], moving_mask=mask_move[0])
-    error_zy = _get_registration_error(proj1[0], proj2[0])
+    error_zy = np.sqrt(1-correlate(proj1[0], proj2[0]).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
     dzx = phase_cross_correlation(proj1[1], proj2[1],
                                   return_error=True, upsample_factor=upsample_factor,
                                   reference_mask=mask_ref[1], moving_mask=mask_move[1])
-    error_zx = _get_registration_error(proj1[1], proj2[1])
+    error_zx = np.sqrt(1-correlate(proj1[1], proj2[1]).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
     dyx = phase_cross_correlation(proj1[2], proj2[2],
                                   return_error=True, upsample_factor=upsample_factor,
                                   reference_mask=mask_ref[2], moving_mask=mask_move[2])
-    error_yx = _get_registration_error(proj1[2], proj2[2])
+    error_yx = np.sqrt(1-correlate(proj1[2], proj2[2]).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
 
     # Replace error == 0 with 1e-6 otherwise the minimum spanning tree considers that vertex are not connected
     if error_zy == 0:
@@ -383,23 +422,6 @@ def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
     # print('ok')
 
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
-
-
-def _get_registration_error(proj1, proj2):
-    """
-    Return registration error estimate using the peak height.
-
-    Parameters
-    ----------
-    proj1: (np.array) first projection
-    proj2: (np.array) second projection
-
-    Returns
-    -------
-    (float) registration error estimate
-
-    """
-    return np.sqrt(1-correlate(proj1, proj2).max()**2/(np.sum(proj1**2)*np.sum(proj2**2)))
 
 
 class baseStitcher():
@@ -503,7 +525,7 @@ class baseStitcher():
 
         self.segment = False
 
-    def reconstruct_slice(self, z=None, downsample=8, debug=False, plot=False):
+    def reconstruct_slice(self, z=None, downsample=1, debug=False, plot=True):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -523,6 +545,9 @@ class baseStitcher():
         tile = self.tiles[0]
         tile.lazy_load_tile(level_delta=level_delta)
 
+        if z is None:
+            z = int(tile.lazy_data.shape[0] / 2)
+
         if z > tile.lazy_data.shape[0]:
             raise ValueError('Error: z is too large ({}), maximum depth at this downsample is {}.'.format(z, tile.lazy_data.shape[0]))
 
@@ -531,9 +556,6 @@ class baseStitcher():
         nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + frame_size[1]))
         y_pos = self.database['ABS_V'].to_numpy()
         ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + frame_size[0]))
-
-        if z is None:
-            z = int(tile.lazy_data.shape[0] / 2)
 
         merged_data = np.zeros((ny, nx), dtype='uint16')
 
@@ -716,11 +738,11 @@ class tileStitcher(baseStitcher):
                                                                       dims=(self.nrow, self.ncol)))
 
                     # Regularize
-                    if np.abs(reg[2] - (self.overlap_h - self.expected_overlap_h)) > 30:
+                    if np.abs(reg[2] - (self.overlap_h - self.expected_overlap_h)) > 80:
                         reg[2] = (self.overlap_h - self.expected_overlap_h)
-                    if np.abs(reg[1] - (self.overlap_v - self.expected_overlap_v)) > 30:
+                    if np.abs(reg[1] - (self.overlap_v - self.expected_overlap_v)) > 80:
                         reg[1] = (self.overlap_v - self.expected_overlap_v)
-                    if np.abs(reg[0]) > 30:
+                    if np.abs(reg[0]) > 80:
                         reg[0] = 0
 
                     # H=x, V=y, D=z

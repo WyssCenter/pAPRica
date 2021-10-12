@@ -25,8 +25,7 @@ class tileLoader():
 
     Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
-    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path,
-                 overlap, frame_size, folder_root, channel):
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root, channel):
         """
         Constructor of tileLoader object.
 
@@ -63,7 +62,6 @@ class tileLoader():
 
                     in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
         neighbors_path: (list) path of the neighbors whose coordinates are stored in neighbors
-        overlap: (float) overlap ratio in %. This number is used to correctly compute the stitching.
         frame_size: (int) camera frame size (only square sensors are supported for now).
         folder_root: (str) root folder where everything should be saved.
         channel: (int) fluorescence channel for multi-channel acquisition. This is used to load the right data in the
@@ -77,7 +75,6 @@ class tileLoader():
         self.neighbors = neighbors
         self.neighbors_tot = neighbors_tot
         self.neighbors_path = neighbors_path
-        self.overlap = overlap
         self.frame_size = frame_size
         self.folder_root = folder_root
         self.channel = channel
@@ -87,6 +84,7 @@ class tileLoader():
         self.apr = None                     # APR tree
         self.parts = None                   # Particles
         self.parts_cc = None                # Connected component
+        self.lazy_data = None               # Lazy reconstructed data
 
         # Initialize attributes to load neighbors data
         self.data_neighbors = None
@@ -105,6 +103,13 @@ class tileLoader():
         else:
             if self.data is None:
                 self.data = self._load_data(self.path)
+
+    def lazy_load_tile(self, level_delta=0):
+
+        if self.type != 'apr':
+            raise TypeError('Error: lazy loading is only supported for APR data.')
+
+        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
 
     def load_neighbors(self):
         """
@@ -247,21 +252,21 @@ class tileLoader():
         -------
         v: (array) numpy array containing the data.
         """
-        files = glob(os.path.join(path, '*tif'))
-        n_files = len(files)
-
-        files_sorted = list(range(n_files))
-        n_max = 0
-        for i, pathname in enumerate(files):
-            number_search = re.search('CHN0' + str(self.channel) + '_PLN(\d+).tif', pathname)
-            if number_search:
-                n = int(number_search.group(1))
-                files_sorted[n] = pathname
-                if n > n_max:
-                    n_max = n
-
-        files_sorted = files_sorted[:n_max]
+        files_sorted = sorted(glob(os.path.join(path, '*tif')))
         n_files = len(files_sorted)
+        #
+        # files_sorted = list(range(n_files))
+        # n_max = 0
+        # for i, pathname in enumerate(files):
+        #     number_search = re.search('CHN0' + str(self.channel) + '_PLN(\d+).tif', pathname)
+        #     if number_search:
+        #         n = int(number_search.group(1))
+        #         files_sorted[n] = pathname
+        #         if n > n_max:
+        #             n_max = n
+        #
+        # files_sorted = files_sorted[:n_max]
+        # n_files = len(files_sorted)
 
         u = imread(files_sorted[0])
         v = np.empty((n_files, *u.shape), dtype='uint16')

@@ -531,6 +531,45 @@ class tileViewer():
         else:
             display_layers(layers)
 
+    def check_stitching(self, downsample=8, color=False, **kwargs):
+
+        # Compute layers to be displayed by Napari
+        layers = []
+
+        # Convert downsample to level delta
+        level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
+
+        for tile in self.tiles:
+            tile.lazy_load_tile(level_delta=level_delta)
+            position = self._get_tile_position(tile.row, tile.col)
+
+            if level_delta != 0:
+                position = [x/downsample for x in position]
+
+            if color:
+                if tile.col % 2:
+                    if tile.col % 2:
+                        color = 'red'
+                    else:
+                        color = 'green'
+                else:
+                    if tile.col + 1  % 2:
+                        color = 'green'
+                    else:
+                        color = 'red'
+            else:
+                color = 'gray'
+
+            layers.append(Image(tile.lazy_data,
+                              name='Tile [{}, {}]'.format(tile.row, tile.col),
+                              translate=position,
+                              opacity=0.7,
+                              colormap=color,
+                              **kwargs))
+
+        display_layers(layers)
+
+
     def _is_tile_loaded(self, row, col):
         """
         Returns True is tile is loaded, False otherwise.

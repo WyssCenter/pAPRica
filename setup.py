@@ -11,8 +11,8 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'PyLibAPR',
-        'alive-progress',
+        #'PyLibAPR',
+        'tqdm',
         'pandas',
         'scikit-image',
         'opencv-contrib-python-headless',

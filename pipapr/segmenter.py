@@ -15,11 +15,11 @@ from time import time
 import cv2 as cv
 import sparse
 import napari
-from alive_progress import alive_bar
+import tqdm as tqdm
 import os
 
 
-def _predict_on_APR_block(x, clf, n_parts=1e9, verbose=False):
+def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
     """
     Predict particle class with the trained classifier clf on the precomputed features f using a
     blocked strategy to avoid memory segfault.
@@ -471,7 +471,7 @@ class tileCells():
 
 class tileTrainer():
     """
-    Class used to train a classifier that works directly on PAR data. It uses Napari to manually add labels.
+    Class used to train a classifier that works directly on APR data. It uses Napari to manually add labels.
 
     """
 
@@ -840,12 +840,10 @@ class tileTrainer():
         """
         self.parts_train_idx = np.empty(self.pixel_list.shape[0], dtype='uint64')
 
-        with alive_bar(total=self.pixel_list.shape[0], title='Sampling labels on APR.', force_tty=True) as bar:
-            for i in range(self.pixel_list.shape[0]):
-                idx = self._find_particle(self.pixel_list[i, :])
+        for i in tqdm(range(self.pixel_list.shape[0]), desc='Sampling labels on APR.'):
+            idx = self._find_particle(self.pixel_list[i, :])
 
-                self.parts_train_idx[i] = idx
-                bar()
+            self.parts_train_idx[i] = idx
 
     def _find_particle(self, coords):
         """

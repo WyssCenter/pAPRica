@@ -13,7 +13,7 @@ import pipapr
 import pyapr
 import os
 from pathlib import Path
-from alive_progress import alive_bar
+from tqdm import tqdm
 from skimage.io import imsave
 
 class tileConverter():
@@ -116,49 +116,46 @@ class tileConverter():
             folder_apr = path
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
-        with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
-            for tile in self.tiles:
-                tile.load_tile()
+        for tile in tqdm(self.tiles, desc='Converting tiles'):
+            tile.load_tile()
 
-                # Set parameters
-                par = pyapr.APRParameters()
-                par.Ip_th = Ip_th
-                par.rel_error = rel_error
-                par.dx = dx
-                par.dy = dy
-                par.dz = dz
-                par.gradient_smoothing = gradient_smoothing
-                par.auto_parameters = True
+            # Set parameters
+            par = pyapr.APRParameters()
+            par.Ip_th = Ip_th
+            par.rel_error = rel_error
+            par.dx = dx
+            par.dy = dy
+            par.dz = dz
+            par.gradient_smoothing = gradient_smoothing
+            par.auto_parameters = True
 
-                # Convert tile to APR and save
-                apr = pyapr.APR()
-                parts = pyapr.ShortParticles()
-                converter = pyapr.converter.ShortConverter()
-                converter.set_parameters(par)
-                converter.verbose = True
-                converter.get_apr(apr, tile.data)
-                parts.sample_image(apr, tile.data)
+            # Convert tile to APR and save
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            converter = pyapr.converter.ShortConverter()
+            converter.set_parameters(par)
+            converter.verbose = True
+            converter.get_apr(apr, tile.data)
+            parts.sample_image(apr, tile.data)
 
-                if self.compression:
-                    parts.set_compression_type(1)
-                    parts.set_quantization_factor(self.quantization_factor)
-                    parts.set_background(self.bg)
+            if self.compression:
+                parts.set_compression_type(1)
+                parts.set_quantization_factor(self.quantization_factor)
+                parts.set_background(self.bg)
 
-                if lazy_loading:
-                    tree_parts = pyapr.ShortParticles()
-                    pyapr.numerics.fill_tree_mean(apr, parts, tree_parts)
-                else:
-                    tree_parts = None
+            if lazy_loading:
+                tree_parts = pyapr.ShortParticles()
+                pyapr.numerics.fill_tree_mean(apr, parts, tree_parts)
+            else:
+                tree_parts = None
 
-                # Save converted data
-                if self.random:
-                    basename, filename = os.path.split(tile.path)
-                    pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts, tree_parts=tree_parts)
-                else:
-                    filename = '{}_{}.apr'.format(tile.row, tile.col)
-                    pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
-
-                bar()
+            # Save converted data
+            if self.random:
+                basename, filename = os.path.split(tile.path)
+                pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts, tree_parts=tree_parts)
+            else:
+                filename = '{}_{}.apr'.format(tile.row, tile.col)
+                pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
 
         if not self.random:
             # Modify tileParser object to use APR instead
@@ -187,28 +184,25 @@ class tileConverter():
         folder_tiff = os.path.join(base_folder, 'TIFF')
         Path(folder_tiff).mkdir(parents=True, exist_ok=True)
 
-        with alive_bar(total=self.n_tiles, title='Converting tiles', force_tty=True) as bar:
-            for tile in self.tiles:
-                tile.load_tile()
+        for tile in tqdm(self.tiles, desc='Converting tiles'):
+            tile.load_tile()
 
-                if mode == 'constant':
-                    data = pyapr.numerics.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
-                elif mode=='smoth':
-                    data = pyapr.numerics.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
-                elif mode=='level':
-                    data = pyapr.numerics.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
-                else:
-                    raise ValueError('Error: unknown mode for APR reconstruction.')
+            if mode == 'constant':
+                data = pyapr.numerics.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
+            elif mode=='smoth':
+                data = pyapr.numerics.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
+            elif mode=='level':
+                data = pyapr.numerics.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
+            else:
+                raise ValueError('Error: unknown mode for APR reconstruction.')
 
-                # Save converted data
-                if self.random:
-                    basename, filename = os.path.split(tile.path)
-                    imsave(os.path.join(folder_tiff, filename[:-4] + '.tif'), data, check_contrast=False)
-                else:
-                    filename = '{}_{}.tif'.format(tile.row, tile.col)
-                    imsave(os.path.join(folder_tiff, filename), data, check_contrast=False)
-
-                bar()
+            # Save converted data
+            if self.random:
+                basename, filename = os.path.split(tile.path)
+                imsave(os.path.join(folder_tiff, filename[:-4] + '.tif'), data, check_contrast=False)
+            else:
+                filename = '{}_{}.tif'.format(tile.row, tile.col)
+                imsave(os.path.join(folder_tiff, filename), data, check_contrast=False)
 
 
 

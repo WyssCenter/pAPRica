@@ -1,7 +1,5 @@
 """
 This script compares the segmentation perf. using the same classifier but on APR computed with different parameters.
-"""
-"""
 
 By using this code you agree to the terms of the software license agreement.
 

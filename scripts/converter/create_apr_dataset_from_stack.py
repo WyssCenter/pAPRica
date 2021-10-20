@@ -14,12 +14,13 @@ from pathlib import Path
 import pyapr
 
 # Parameters
-file_path = r'/mnt/Data/Interneurons/PV_interneurons.tif'
-output_folder = r'/mnt/Data/Interneurons/apr'
+file_path = r'/home/hbm/Desktop/data/PV/PV_interneurons.tif'
+output_folder = r'/home/hbm/Desktop/data/PV/apr'
 dH = 4
 dV = 4
 overlap_H = 25
 overlap_V = 25
+sigma = 5
 output_format = 'apr'
 
 # Load data
@@ -30,27 +31,36 @@ dh = int(data.shape[2]*(1-overlap_H/100)/dH)
 def get_coordinates(v, dV, h, dH):
     x = int(v*dV)
     y = int(h*dH)
-    x_noise = int(max(v*dV + np.random.randn(1)*5, 0))
-    y_noise = int(max(h*dH + np.random.randn(1)*5, 0))
-    return (x, y, x_noise, y_noise)
+    x_noise = int(max(v*dV + np.random.randn(1)*sigma, 0))
+    y_noise = int(max(h*dH + np.random.randn(1)*sigma, 0))
+    z_noise = int(np.random.randn(1)*sigma)
+    return (x, y, x_noise, y_noise, z_noise)
 
 # Save data as separate tiles
-noise_coordinates = np.zeros((dH*dV, 4))
+noise_coordinates = np.zeros((dH*dV, 5))
 for v in range(dV):
     for h in range(dH):
-        (x, y, x_noise, y_noise) = get_coordinates(v, dv, h, dh)
-        noise_coordinates[v*dH+h, :] = [x_noise, y_noise, x_noise+int(data.shape[1]/dV), y_noise+int(data.shape[1]/dV)]
+        (x, y, x_noise, y_noise, z_noise) = get_coordinates(v, dv, h, dh)
+        noise_coordinates[v*dH+h, :] = [x_noise, y_noise, x_noise+int(data.shape[1]/dV), y_noise+int(data.shape[1]/dV), z_noise]
+        data_loc = data[:, x_noise:x_noise+int(data.shape[1]/dV), y_noise:y_noise+int(data.shape[1]/dV)].copy()
+
+        if z_noise > 0:
+            data_loc[z_noise:] = data_loc[:-z_noise]
+            data_loc[:z_noise] = 0
+        elif z_noise < 0:
+            data_loc[:z_noise] = data_loc[-z_noise:]
+            data_loc[z_noise:] = 0
 
         if output_format == 'tiff2D':
             folder_sequence = os.path.join(output_folder, '{}_{}'.format(v, h))
             Path(folder_sequence).mkdir(parents=True, exist_ok=True)
             for i in range(data.shape[0]):
                 imsave(os.path.join(folder_sequence, '{:06d}.tif'.format(10*i)),
-                       data[i, x_noise:x_noise+int(data.shape[1]/dV), y_noise:y_noise+int(data.shape[1]/dV)],
+                       data_loc[i],
                        check_contrast=False)
         elif output_format == 'tiff3D':
             imsave(os.path.join(output_folder, '{}_{}.tif'.format(v, h)),
-                   data[:, x_noise:x_noise + int(data.shape[1] / dV), y_noise:y_noise + int(data.shape[1] / dV)],
+                   data_loc,
                    check_contrast=False)
 
         elif output_format == 'apr':
@@ -65,7 +75,7 @@ for v in range(dV):
             par.gradient_smoothing = 2.0
             par.dx = 1
             par.dy = 1
-            par.dz = 3
+            par.dz = 1
 
             # Parameters for Nissl on 2P mouse
             # par.auto_parameters = False  # really heuristic and not working
@@ -79,10 +89,10 @@ for v in range(dV):
             # par.dz = 1
 
             # Convert data to APR
-            apr, parts = pyapr.converter.get_apr(
-                image=data[:, x_noise:x_noise + int(data.shape[1] / dV), y_noise:y_noise + int(data.shape[1] / dV)]
-                , params=par, verbose=False)
-            pyapr.io.write(os.path.join(output_folder, '{}_{}.apr'.format(v, h)), apr, parts)
+            apr, parts = pyapr.converter.get_apr(image=data_loc, params=par, verbose=False)
+            tree_parts = pyapr.ShortParticles()
+            pyapr.numerics.fill_tree_mean(apr, parts, tree_parts)
+            pyapr.io.write(os.path.join(output_folder, '{}_{}.apr'.format(v, h)), apr, parts, tree_parts=tree_parts)
 
         else:
             raise ValueError('Error: unknown tiletype.')

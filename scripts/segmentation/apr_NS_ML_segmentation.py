@@ -78,6 +78,7 @@ def display_segmentation(u, lmap, vdim=2):
         # add labels
         viewer.add_labels(lmap, name='segmentation')
 
+
 def scatter_plot_3D(y, x, subsample=1000):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')

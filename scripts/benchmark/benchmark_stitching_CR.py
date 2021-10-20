@@ -8,7 +8,7 @@ By using this code you agree to the terms of the software license agreement.
 
 # We restrict the number of cores to the optimal setup.
 import os
-os.environ['OMP_NUM_THREADS'] = '24'
+os.environ['OMP_NUM_THREADS'] = '8'
 
 import pipapr
 from time import time
@@ -17,7 +17,7 @@ from glob import glob
 import matplotlib.pyplot as plt
 
 # Parameters
-output_folder_apr = r'/home/apr-benchmark/Desktop/data/synthetic/APR'
+output_folder_apr = r'/home/hbm/Desktop/data/synthetic/APR'
 
 #
 folders = glob(os.path.join(output_folder_apr, '*/'))
@@ -27,7 +27,7 @@ cr = []
 
 for folder in folders:
     # Parse data
-    tiles = pipapr.parser.tileParser(folder, frame_size=512, overlap=128, ftype='apr')
+    tiles = pipapr.parser.tileParser(folder, frame_size=512, overlap=25, ftype='apr')
 
     # Stitch tiles
     stitcher = pipapr.stitcher.tileStitcher(tiles)

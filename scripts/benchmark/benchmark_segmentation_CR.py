@@ -181,14 +181,14 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 # Parameters
-path = '/home/apr-benchmark/Desktop/data/synthetic'
+path = '/home/hbm/Desktop/data/synthetic/APR'
 
 # Train segmentation algorithm
-tiles = pipapr.parser.tileParser('/home/apr-benchmark/Desktop/data/synthetic/ncells_65536', frame_size=512, overlap=128)
+tiles = pipapr.parser.tileParser('/home/hbm/Desktop/data/synthetic/APR/ncells_65536', frame_size=512, overlap=25)
 
 trainer = pipapr.segmenter.tileTrainer(tiles[0], func_to_compute_features=compute_features)
 # trainer.manually_annotate()
-trainer.load_labels()
+trainer.load_labels('/home/hbm/Desktop/data/synthetic/manual_labels.npy')
 trainer.train_classifier()
 # trainer.save_labels()
 # trainer.segment_training_tile(bg_label=2)

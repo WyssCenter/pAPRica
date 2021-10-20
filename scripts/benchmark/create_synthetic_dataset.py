@@ -23,7 +23,7 @@ def get_coordinates(v, dV, h, dH):
     return (x, y, x_noise, y_noise)
 
 # Parameters
-path = '/home/apr-benchmark/Desktop/data/synthetic_single_tile'
+path = '/home/hbm/Desktop/Data/synthetic_single_tile'
 length = 2048
 cell_radius = 5
 dH = 4

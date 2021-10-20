@@ -273,7 +273,7 @@ def remove_edge(tile):
 
 
 # Parameters
-path = '/home/apr-benchmark/Desktop/data/synthetic_multitile_cells'
+path = '/home/hbm/Desktop/data/synthetic_multitile_cells'
 n_cells_array = [32, 64, 128, 256, 512, 1024, 2048, 4096]
 length = 1024-128
 par = pyapr.APRParameters()
@@ -315,9 +315,9 @@ for n_cells in n_cells_array:
     cells_ref = pyapr.numerics.transform.find_label_centers(tile_ref.apr, tile_ref.parts_cc)
     n_ref.append(cells_ref.shape[0])
 
-    # # Display results
-    viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
-    viewer.display_all_tiles(contrast_limits=[0, 500])
+    # Display results
+    # viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
+    # viewer.display_all_tiles(contrast_limits=[0, 500])
 
 plt.plot(n_cells_array, n_ref, '+', alpha=0.7, label='Single tile')
 plt.plot(n_cells_array, n_merge, 'o', alpha=0.7, label='Multi-tile')

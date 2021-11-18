@@ -25,7 +25,7 @@ class tileParser():
     stitched later on.
 
     """
-    def __init__(self, path, frame_size, ftype=None, nrow=None, ncol=None, channel=None):
+    def __init__(self, path, frame_size=2048, ftype=None, nrow=None, ncol=None, channel=0):
         """
         Constructor of the tileParser object.
 
@@ -70,6 +70,10 @@ class tileParser():
         self.folder_max_projs = os.path.join(base, 'max_projs')
 
     def _correct_offset(self):
+        """
+        If the row or column do not start at 0, then we subtract the min_row and min_col so that it starts at 0.
+
+        """
 
         col_min = 1000
         row_min = 1000
@@ -88,6 +92,7 @@ class tileParser():
 
         """
         print('\n**********  PARSING DATA **********')
+        print('{}'.format(self.path))
         print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected.'.format(self.n_tiles))
         print('{} rows and {} columns.'.format(self.nrow, self.ncol))
@@ -155,27 +160,15 @@ class tileParser():
         Returns a list of tiles as a dictionary for data saved as LOC00X.
 
         """
-        if self.type == 'apr':
-            # If files are apr then their names are 'row_col.apr'
-            files = glob(os.path.join(self.path, '*.apr'))
-        elif self.type == 'tiff3D':
-            # If files are 3D tiff then their names are 'row_col.tif'
-            files = glob(os.path.join(self.path, '*.tif'))
-        elif self.type == 'tiff2D':
-            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
-            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
-            files = glob(os.path.join(self.path, '*/'))
-        elif self.type == 'raw':
-            files = glob(os.path.join(self.path, '*.raw'))
-        else:
-            raise TypeError('Error: file type {} not supported.'.format(self.type))
+
+        files = glob(os.path.join(self.path, '*/'))
 
         tiles = []
         for f in files:
 
-            pattern_search = re.search('/LOC(\d+)', f)
-            if pattern_search:
-                n = int(pattern_search.group(1))
+            pattern_search = re.findall('/LOC(\d+)', f)
+            if pattern_search != []:
+                n = int(pattern_search[-1])
                 row = n // ncol
                 col = n % ncol
             else:
@@ -349,7 +342,7 @@ class randomParser():
     Class used to parse several independent tiles (not multitile).
 
     """
-    def __init__(self, path, frame_size, ftype):
+    def __init__(self, path, frame_size, ftype, channel=0):
         """
         Constructor of the randomParser object.
 
@@ -373,6 +366,7 @@ class randomParser():
         self.overlap = None
         self.frame_size = frame_size
         self._print_info()
+        self.channel = channel
 
         # Define some folders
         base, _ = os.path.split(self.path)
@@ -447,7 +441,7 @@ class randomParser():
                                           neighbors_path=None,
                                           frame_size=self.frame_size,
                                           folder_root=self.folder_root,
-                                          channel=None)
+                                          channel=self.channel)
 
     def __len__(self):
         """

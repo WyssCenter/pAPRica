@@ -15,8 +15,25 @@ from skimage.io import imread
 import numpy as np
 import pipapr
 import pyapr
-import re
-from alive_progress import alive_bar
+from tqdm import tqdm
+
+def tile_from_apr(apr, parts):
+
+    tile = tileLoader(path=None,
+                      row=None,
+                      col=None,
+                      ftype='apr',
+                      neighbors=None,
+                      neighbors_tot=None,
+                      neighbors_path=None,
+                      frame_size=2048,
+                      folder_root=None,
+                      channel=None)
+
+    tile.apr = apr
+    tile.parts = parts
+
+    return tile
 
 
 class tileLoader():
@@ -252,7 +269,7 @@ class tileLoader():
         -------
         v: (array) numpy array containing the data.
         """
-        files_sorted = sorted(glob(os.path.join(path, '*tif')))
+        files_sorted = sorted(glob(os.path.join(path, '*CHN0' + str(self.channel) + '_*tif')))
         n_files = len(files_sorted)
         #
         # files_sorted = list(range(n_files))
@@ -272,9 +289,7 @@ class tileLoader():
         v = np.empty((n_files, *u.shape), dtype='uint16')
         v[0] = u
         files_sorted.pop(0)
-        with alive_bar(n_files, force_tty=True, title='Loading sequence') as bar:
-            for i, f in enumerate(files_sorted):
-                v[i + 1] = imread(f)
-                bar()
+        for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
+            v[i + 1] = imread(f)
 
         return v

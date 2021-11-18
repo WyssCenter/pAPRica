@@ -15,7 +15,7 @@ from time import time
 import cv2 as cv
 import sparse
 import napari
-import tqdm as tqdm
+from tqdm import tqdm
 import os
 
 
@@ -863,8 +863,8 @@ class tileTrainer():
             z_l, x_l, y_l = coords // particle_size
             for idx in range(self.apr_it.begin(level, z_l, x_l), self.apr_it.end()):
                 if self.apr_it.y(idx) == y_l:
-                    if np.sqrt(np.sum((coords-np.array([z_l, x_l, y_l])*particle_size)**2))/particle_size > np.sqrt(3):
-                        print('ich')
+                    # if np.sqrt(np.sum((coords-np.array([z_l, x_l, y_l])*particle_size)**2))/particle_size > np.sqrt(3):
+                    #     print('ich')
                     return idx
 
     def _order_labels(self):

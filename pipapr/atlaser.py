@@ -80,7 +80,7 @@ class tileAtlaser():
         return cls(original_pixel_size=original_pixel_size,
                    downsample=merger.downsample,
                    atlas=None,
-                   merger=merger)
+                   merged_data=merger.merged_data)
 
     @classmethod
     def from_atlas(cls,
@@ -130,7 +130,8 @@ class tileAtlaser():
                           output_dir='./',
                           orientation='spr',
                           merged_data_filename='merged_data.tif',
-                          **kwargs):
+                          debug = False,
+                          params = None):
         """
         Function to compute the registration to the Atlas. It is just a wrapper to call brainreg.
 
@@ -143,7 +144,7 @@ class tileAtlaser():
                          from origin to x = xlim we go from right to left part)
         merged_data_filename: (str) named of the merged array (Brainreg reads data from files so we need to save
                                 the merged volume beforehand.
-        kwargs: (dict) dictionnary with keys as brainreg options and values as parameters (see here:
+        params: (dict) dictionary with keys as brainreg options and values as parameters (see here:
                 https://docs.brainglobe.info/brainreg/user-guide/parameters)
 
         Returns
@@ -165,12 +166,16 @@ class tileAtlaser():
 
         command = 'brainreg {} {} -v {} {} {} --orientation {}'.format('"' + path_merged_data + '"',
                                                             '"' + atlas_dir + '"',
-                                                            self.pixel_size_data[0]*self.z_downsample,
-                                                            self.pixel_size_data[1]*self.y_downsample,
-                                                            self.pixel_size_data[2]*self.x_downsample,
+                                                            self.pixel_size_data[0]*self.downsample,
+                                                            self.pixel_size_data[1]*self.downsample,
+                                                            self.pixel_size_data[2]*self.downsample,
                                                             orientation)
-        for key, value in kwargs.items():
-            command += ' --{} {}'.format(key, value)
+        if params is not None:
+            for key, value in params.items():
+                command += ' --{} {}'.format(key, value)
+
+        if debug:
+            command += ' --debug'
 
         # Execute brainreg
         os.system(command)

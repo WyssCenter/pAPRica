@@ -10,6 +10,7 @@ from glob import glob
 import os
 import pandas as pd
 from skimage.io import imread
+from skimage.transform import resize
 import numpy as np
 import pyapr
 import napari
@@ -274,6 +275,40 @@ def display_heatmap(heatmap, atlas=None, data=None, log=False):
                 viewer.add_image(data, name='Intensity data', blending='additive',
                                  scale=np.array(heatmap.shape)/np.array(data.shape), opacity=0.7)
 
+
+def compare_stitching(z, stitcher1, stitcher2, downsample=1, rel_map=False):
+    """
+    Compare two stitching at a given depth z.
+
+    Parameters
+    ----------
+    z: (int) depth
+    stitcher1: (tileStitcher) stitcher object 1
+    stitcher2: (tileStitcher) stitcher object 2
+    rel_map: (bool) overlay reliability map on the reconstructed data
+
+    Returns
+    -------
+    None
+    """
+    u1 = stitcher1.reconstruct_slice(z=z, downsample=downsample, debug=True, plot=False)
+    u2 = stitcher2.reconstruct_slice(z=z, downsample=downsample, debug=True, plot=False)
+
+    fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+    ax[0].imshow(np.log(u1), cmap='gray')
+    if rel_map:
+        try:
+            rel_map =  resize(np.mean(stitcher1.plot_stitching_info(), axis=0), u1.shape, order=1)
+            ax[0].imshow(rel_map, cmap='turbo', alpha=0.5)
+        except:
+            pass
+    ax[1].imshow(np.log(u2), cmap='gray')
+    if rel_map:
+        try:
+            rel_map =  resize(np.mean(stitcher2.plot_stitching_info(), axis=0), u1.shape, order=1)
+            ax[1].imshow(rel_map, cmap='turbo', alpha=0.5)
+        except:
+            pass
 
 class tileViewer():
     """
@@ -547,24 +582,27 @@ class tileViewer():
                 position = [x/downsample for x in position]
 
             if color:
+                blending = 'additive'
                 if tile.col % 2:
-                    if tile.col % 2:
-                        color = 'red'
+                    if tile.row % 2:
+                        cmap = 'red'
                     else:
-                        color = 'green'
+                        cmap = 'green'
                 else:
-                    if tile.col + 1  % 2:
-                        color = 'green'
+                    if tile.row % 2:
+                        cmap = 'green'
                     else:
-                        color = 'red'
+                        cmap = 'red'
             else:
-                color = 'gray'
+                cmap = 'gray'
+                blending = 'translucent'
 
             layers.append(Image(tile.lazy_data,
                               name='Tile [{}, {}]'.format(tile.row, tile.col),
                               translate=position,
                               opacity=0.7,
-                              colormap=color,
+                              colormap=cmap,
+                              blending=blending,
                               **kwargs))
 
         display_layers(layers)

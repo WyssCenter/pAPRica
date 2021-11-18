@@ -151,8 +151,12 @@ class tileConverter():
 
             # Save converted data
             if self.random:
-                basename, filename = os.path.split(tile.path)
-                pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts, tree_parts=tree_parts)
+                if tile.type == 'tiff2D':
+                    basename, filename = os.path.split(tile.path[:-1])
+                    pyapr.io.write(os.path.join(folder_apr, filename + '.apr'), apr, parts, tree_parts=tree_parts)
+                else:
+                    basename, filename = os.path.split(tile.path)
+                    pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts, tree_parts=tree_parts)
             else:
                 filename = '{}_{}.apr'.format(tile.row, tile.col)
                 pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)

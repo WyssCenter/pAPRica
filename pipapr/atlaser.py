@@ -123,8 +123,6 @@ class tileAtlaser():
         """
 
         self.atlas = imread(path)
-        self.atlas = np.swapaxes(self.atlas, 0, 1)
-        self.atlas = np.flip(self.atlas, 1)
 
     def register_to_atlas(self,
                           output_dir='./',
@@ -169,7 +167,8 @@ class tileAtlaser():
                                                             self.pixel_size_data[0]*self.downsample,
                                                             self.pixel_size_data[1]*self.downsample,
                                                             self.pixel_size_data[2]*self.downsample,
-                                                            orientation)
+                                                            orientation,
+                                                            '--save-original-orientation')
         if params is not None:
             for key, value in params.items():
                 command += ' --{} {}'.format(key, value)

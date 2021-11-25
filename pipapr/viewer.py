@@ -94,8 +94,13 @@ def apr_to_napari_Image(apr: pyapr.APR,
         cmin = apr.level_min() if mode == 'level' else parts.min()
         cmax = apr.level_max() if mode == 'level' else parts.max()
         contrast_limits = [cmin, cmax]
+    if 'tree_mode' in kwargs:
+        tree_mode = kwargs.get('tree_mode')
+        del kwargs['tree_mode']
+    else:
+        tree_mode = 'mean'
     par = apr.get_parameters()
-    return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
+    return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode=tree_mode),
                  rgb=False, multiscale=False, contrast_limits=contrast_limits,
                  scale=[par.dz, par.dx, par.dy], **kwargs)
 

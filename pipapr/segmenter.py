@@ -19,7 +19,7 @@ from tqdm import tqdm
 import os
 
 
-def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
+def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
     """
     Predict particle class with the trained classifier clf on the precomputed features f using a
     blocked strategy to avoid memory segfault.
@@ -28,6 +28,8 @@ def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
     ----------
     x: (np.array) features (n_particle, n_features) for particle prediction
     n_parts: (int) number of particles in the batch to predict
+    output: (str) output type, can be 'class' where each particle get assigned a class or 'proba' where each
+                particle get assigned a probability of belonging to each class.
     verbose: (bool) control function verbosity
 
     Returns
@@ -39,24 +41,67 @@ def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
     if verbose:
         t = time()
 
-    y_pred = np.empty((x.shape[0]))
     n_block = int(np.ceil(x.shape[0] / n_parts))
     if int(n_parts) != n_parts:
         raise ValueError('Error: n_parts must be an int.')
     n_parts = int(n_parts)
-
     clf[1].set_params(n_jobs=-1)
-    for i in range(n_block):
-        y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = clf.predict(
-            x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+
+    if output == 'class':
+        y_pred = np.empty((x.shape[0]))
+        for i in tqdm(range(n_block), desc='Predicting particle type'):
+            y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = clf.predict(
+                x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+        # Transform numpy array to ParticleData
+        parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
+
+    elif output == 'proba':
+        y_pred = np.empty((x.shape[0], len(clf.classes_)))
+        for i in tqdm(range(n_block), desc='Predicting particle type'):
+            y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0]), :] = clf.predict_proba(
+                x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+        # Transform numpy array to ParticleData
+        parts_pred = []
+        for i in range(len(clf.classes_)):
+            parts_pred.append(pyapr.ShortParticles(
+                                                   (y_pred[:, i]*(2**16-1))
+                                                    .astype('uint16')))
+    else:
+        raise ValueError('Unknown output \'{}\' for APR block prediction.'.format(output))
 
     if verbose:
         print('Blocked prediction took {:0.3f} s.\n'.format(time() - t))
 
-    # Transform numpy array to ParticleData
-    parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
 
     return parts_pred
+
+
+def map_feature(data, hash_idx, features):
+    """
+    Map feature values to segmented particle data.
+
+    Parameters
+    ----------
+    data: (ParticleData) connected component particle array
+    hash_idx: (array) array containing the number of each connected component in ascendant order
+    features: (array) array containing the values to map
+
+    Returns
+    -------
+    Array of mapped values
+    """
+
+    if len(hash_idx) != len(features):
+        raise ValueError('Error: hash_idx and features must have the same length.')
+
+    # Create hash dict
+    hash_dict = {x: y for x, y in zip(hash_idx, features)}
+    # Replace 0 by 0
+    hash_dict[0] = 0
+
+    mp = np.arange(0, data.max() + 1)
+    mp[list(hash_dict.keys())] = list(hash_dict.values())
+    return mp[np.array(data, copy=False)]
 
 
 class tileSegmenter():
@@ -776,7 +821,7 @@ class tileTrainer():
 
         Returns
         -------
-
+        None
         """
         from joblib import dump
 
@@ -784,6 +829,25 @@ class tileTrainer():
             path = os.path.join(self.tile.folder_root, 'random_forest_n100.joblib')
 
         dump(self.clf, path)
+
+    def load_classifier(self, path=None):
+        """
+        Load a trained classifier.
+
+        Parameters
+        ----------
+        path: (str) path for loading the classifier. By default, it is loaded from root folder.
+
+        Returns
+        -------
+        None
+        """
+        from joblib import load
+
+        if path is None:
+            path = os.path.join(self.tile.folder_root, 'random_forest_n100.joblib')
+
+        self.clf = load(path)
 
     def _remove_ambiguities(self, verbose):
         """

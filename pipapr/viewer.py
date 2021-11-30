@@ -11,6 +11,7 @@ import os
 import pandas as pd
 from skimage.io import imread
 from skimage.transform import resize
+from skimage.exposure import rescale_intensity
 import numpy as np
 import pyapr
 import napari
@@ -280,40 +281,60 @@ def display_heatmap(heatmap, atlas=None, data=None, log=False):
                 viewer.add_image(data, name='Intensity data', blending='additive',
                                  scale=np.array(heatmap.shape)/np.array(data.shape), opacity=0.7)
 
-
-def compare_stitching(z, stitcher1, stitcher2, downsample=1, rel_map=False):
+def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsample=2, color=False, rel_map=False):
     """
     Compare two stitching at a given depth z.
 
     Parameters
     ----------
-    z: (int) depth
     stitcher1: (tileStitcher) stitcher object 1
     stitcher2: (tileStitcher) stitcher object 2
+    loc: (int) position in the given dimension
+    n_proj: (int) number of plane to perform the max-projection
+    downsample: (int) downsampling factor for the reconstruction
+    color: (bool) option to display in color
     rel_map: (bool) overlay reliability map on the reconstructed data
 
     Returns
     -------
     None
     """
-    u1 = stitcher1.reconstruct_slice(z=z, downsample=downsample, debug=True, plot=False)
-    u2 = stitcher2.reconstruct_slice(z=z, downsample=downsample, debug=True, plot=False)
 
-    fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-    ax[0].imshow(np.log(u1), cmap='gray')
-    if rel_map:
-        try:
-            rel_map =  resize(np.mean(stitcher1.plot_stitching_info(), axis=0), u1.shape, order=1)
-            ax[0].imshow(rel_map, cmap='turbo', alpha=0.5)
-        except:
-            pass
-    ax[1].imshow(np.log(u2), cmap='gray')
-    if rel_map:
-        try:
-            rel_map =  resize(np.mean(stitcher2.plot_stitching_info(), axis=0), u1.shape, order=1)
-            ax[1].imshow(rel_map, cmap='turbo', alpha=0.5)
-        except:
-            pass
+
+    u1 = stitcher1.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=downsample, color=color, plot=False)
+    u2 = stitcher2.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=downsample, color=color, plot=False)
+
+    if color:
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        data_to_display = np.ones_like(u, dtype='uint8')
+        for i in range(2):
+            tmp = np.log(u1[:, :, i] + 200)
+            vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
+            data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+        ax[0].imshow(data_to_display)
+        data_to_display = np.ones_like(u2, dtype='uint8')
+        for i in range(2):
+            tmp = np.log(u2[:, :, i] + 200)
+            vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
+            data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+        ax[1].imshow(data_to_display)
+    else:
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        ax[0].imshow(np.log(u1), cmap='gray')
+        if rel_map:
+            try:
+                rel_map = resize(np.mean(stitcher1.plot_stitching_info(), axis=0), u1.shape, order=1)
+                ax[0].imshow(rel_map, cmap='turbo', alpha=0.5)
+            except:
+                pass
+        ax[1].imshow(np.log(u2), cmap='gray')
+        if rel_map:
+            try:
+                rel_map = resize(np.mean(stitcher2.plot_stitching_info(), axis=0), u1.shape, order=1)
+                ax[1].imshow(rel_map, cmap='turbo', alpha=0.5)
+            except:
+                pass
+
 
 class tileViewer():
     """
@@ -425,7 +446,7 @@ class tileViewer():
 
         return layers
 
-    def display_all_tiles(self, pyramidal=True, downsample=1, **kwargs):
+    def display_all_tiles(self, pyramidal=True, downsample=1, color=False, **kwargs):
         """
         Display all parsed tiles.
 
@@ -464,6 +485,23 @@ class tileViewer():
                     self.loaded_segmentation[ind] = cc
 
             position = self._get_tile_position(tile.row, tile.col)
+
+            if color:
+                blending = 'additive'
+                if tile.col % 2:
+                    if tile.row % 2:
+                        cmap = 'red'
+                    else:
+                        cmap = 'green'
+                else:
+                    if tile.row % 2:
+                        cmap = 'green'
+                    else:
+                        cmap = 'red'
+            else:
+                cmap = 'gray'
+                blending = 'translucent'
+
             if level_delta != 0:
                 position = [x/downsample for x in position]
             layers.append(apr_to_napari_Image(apr, parts,
@@ -479,6 +517,8 @@ class tileViewer():
                                                    name='Segmentation [{}, {}]'.format(tile.row, tile.col),
                                                    translate=position,
                                                    level_delta=level_delta,
+                                                   colormap=cmap,
+                                                   blending=blending,
                                                    opacity=0.7))
         if self.cells is not None:
             par = apr.get_parameters()
@@ -497,7 +537,7 @@ class tileViewer():
         else:
             display_layers(layers)
 
-    def display_tiles(self, coords, pyramidal=True, downsample=1, **kwargs):
+    def display_tiles(self, coords, pyramidal=True, downsample=1, color=False, **kwargs):
         """
         Display tiles at position coords.
 
@@ -507,6 +547,7 @@ class tileViewer():
         downsample: (int) downsampling parameter for APRSlicer
                             (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
         kwargs: (dict) dictionary passed to Napari for custom option
+        color: (bool) option to display in color
 
         Returns
         -------
@@ -540,12 +581,31 @@ class tileViewer():
                 position = self._get_tile_position(tile.row, tile.col)
                 if level_delta != 0:
                     position = [x / downsample for x in position]
+
+                if color:
+                    blending = 'additive'
+                    if tile.col % 2:
+                        if tile.row % 2:
+                            cmap = 'red'
+                        else:
+                            cmap = 'green'
+                    else:
+                        if tile.row % 2:
+                            cmap = 'green'
+                        else:
+                            cmap = 'red'
+                else:
+                    cmap = 'gray'
+                    blending = 'translucent'
+
                 layers.append(apr_to_napari_Image(apr, parts,
                                                   mode='constant',
                                                   name='Tile [{}, {}]'.format(tile.row, tile.col),
                                                   translate=position,
                                                   opacity=0.7,
                                                   level_delta=level_delta,
+                                                  colormap=cmap,
+                                                  blending=blending,
                                                   **kwargs))
                 if self.segmentation:
                     layers.append(apr_to_napari_Labels(apr, cc,

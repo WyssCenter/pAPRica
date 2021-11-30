@@ -49,8 +49,6 @@ import warnings
 from tqdm import tqdm
 
 
-
-
 def max_sum_over_single_max(reference_image, moving_image, d):
     """
     This function is a reliability metric which works well for sparse data. It computes the 99 percentile of the sum
@@ -363,7 +361,16 @@ class baseStitcher():
 
         self.segment = False
 
-    def reconstruct_slice(self, z=None, downsample=1, debug=False, plot=True):
+    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True):
+
+        if dim == 0:
+            return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+        elif dim == 1:
+            return self._reconstruct_y_slice(y=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+        elif dim == 2:
+            return self._reconstruct_x_slice(x=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+
+    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -395,16 +402,22 @@ class baseStitcher():
         y_pos = self.database['ABS_V'].to_numpy()
         ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + frame_size[0]))
 
-        merged_data = np.zeros((ny, nx), dtype='uint16')
+        if color:
+            merged_data = np.ones((ny, nx, 3), dtype='uint16')
+            merged_data[:, :, 2] = 0
+        else:
+            merged_data = np.zeros((ny, nx), dtype='uint16')
 
-        H_pos = self.database['ABS_H'].to_numpy()
-        H_pos = (H_pos - H_pos.min()) / downsample
-        V_pos = self.database['ABS_V'].to_numpy()
-        V_pos = (V_pos - V_pos.min()) / downsample
+        H_pos = (x_pos - x_pos.min()) / downsample
+        V_pos = (y_pos - y_pos.min()) / downsample
 
         for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
             tile.lazy_load_tile(level_delta=level_delta)
-            data = tile.lazy_data[z]
+            zf = min(z+n_proj, tile.lazy_data.shape[0])
+            if zf > z:
+                data = tile.lazy_data[z:zf].max(axis=0)
+            else:
+                data = tile.lazy_data[z]
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
@@ -418,11 +431,229 @@ class baseStitcher():
             y1 = int(V_pos[i])
             y2 = int(V_pos[i] + data.shape[0])
 
-            merged_data[y1:y2, x1:x2] = np.maximum(merged_data[y1:y2, x1:x2], data)
+            if color:
+                if tile.col % 2:
+                    if tile.row % 2:
+                        merged_data[y1:y2, x1:x2, 0] = np.maximum(merged_data[y1:y2, x1:x2, 1], data)
+                    else:
+                        merged_data[y1:y2, x1:x2, 1] = np.maximum(merged_data[y1:y2, x1:x2, 0], data)
+                else:
+                    if tile.row % 2:
+                        merged_data[y1:y2, x1:x2, 1] = np.maximum(merged_data[y1:y2, x1:x2, 1], data)
+                    else:
+                        merged_data[y1:y2, x1:x2, 0] = np.maximum(merged_data[y1:y2, x1:x2, 0], data)
+            else:
+                merged_data[y1:y2, x1:x2] = np.maximum(merged_data[y1:y2, x1:x2], data)
 
         if plot:
             plt.figure()
-            plt.imshow(np.log(merged_data), cmap='gray')
+            if color:
+                data_to_display = np.zeros_like(merged_data, dtype='uint8')
+                for i in range(2):
+                    tmp = np.log(merged_data[:, :, i]+200)
+                    vmin, vmax = np.percentile(tmp[tmp>np.log(1+200)], (1, 99.9))
+                    data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+                plt.imshow(data_to_display)
+            else:
+                plt.imshow(np.log(merged_data), cmap='gray')
+
+        return merged_data
+
+    def _reconstruct_y_slice(self, y=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
+        """
+        Reconstruct and merge the sample at a given depth z.
+
+        Parameters
+        ----------
+        y: (int) reconstruction location in y
+        downsample: (int) downsample for reconstruction (must be a power of 2)
+        debug: (bool) if true the border of each tile will be highlighted
+
+        Returns
+        -------
+        Merged frame at position y.
+        """
+
+        level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+        tile = self.tiles[0]
+        tile.lazy_load_tile(level_delta=level_delta)
+        tile_shape = tile.lazy_data.shape
+
+        if y is None:
+            y = int(tile_shape[1]*self.tiles.nrow/2)
+
+        if y > tile.lazy_data.shape[1]*self.tiles.nrow:
+            raise ValueError('Error: y is too large ({}), maximum depth at this downsample is {}.'
+                             .format(y, tile.lazy_data.shape[1]*self.tiles.nrow))
+
+        x_pos = self.database['ABS_H'].to_numpy()
+        nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + tile_shape[2]))
+        y_pos = self.database['ABS_V'].to_numpy()
+        ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + tile_shape[1]))
+        z_pos = self.database['ABS_D'].to_numpy()
+        nz = int(np.ceil((z_pos.max() - z_pos.min()) / downsample + tile_shape[0]))
+
+        # Determine tiles to load
+        tiles_to_load = []
+        tiles_pos = []
+        for x_loc, y_loc, z_loc, tile in zip(x_pos/downsample, y_pos/downsample, z_pos/downsample, self.tiles):
+            if (y > y_loc) and (y < y_loc+tile_shape[1]):
+                tiles_to_load.append(tile)
+                tiles_pos.append([z_loc, y_loc, x_loc])
+        tiles_pos = np.array(tiles_pos).astype('uint64')
+
+        if color:
+            merged_data = np.ones((nz, nx, 3), dtype='uint16')
+            merged_data[:, :, 2] = 0
+        else:
+            merged_data = np.zeros((nz, nx), dtype='uint16')
+
+        for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging')):
+            tile.lazy_load_tile(level_delta=level_delta)
+            y_tile = int(y - tiles_pos[i, 1])
+            yf = min(y_tile+n_proj, tiles_pos[i, 1]+tile.lazy_data.shape[1])
+            if yf > y:
+                data = tile.lazy_data[:, y_tile:yf, :].max(axis=1)
+            else:
+                data = tile.lazy_data[:, y_tile, :]
+
+            # In debug mode we highlight each tile edge to see where it was
+            if debug:
+                data[0, :] = 2**16-1
+                data[-1, :] = 2**16-1
+                data[:, 0] = 2**16-1
+                data[:, -1] = 2**16-1
+
+            x1 = int(tiles_pos[i, 2])
+            x2 = int(tiles_pos[i, 2] + data.shape[1])
+            z1 = int(tiles_pos[i, 0])
+            z2 = int(tiles_pos[i, 0] + data.shape[0])
+            
+            if color:
+                if tile.col % 2:
+                    if tile.row % 2:
+                        merged_data[z1:z2, x1:x2, 0] = np.maximum(merged_data[z1:z2, x1:x2, 1], data)
+                    else:
+                        merged_data[z1:z2, x1:x2, 1] = np.maximum(merged_data[z1:z2, x1:x2, 0], data)
+                else:
+                    if tile.row % 2:
+                        merged_data[z1:z2, x1:x2, 1] = np.maximum(merged_data[z1:z2, x1:x2, 1], data)
+                    else:
+                        merged_data[z1:z2, x1:x2, 0] = np.maximum(merged_data[z1:z2, x1:x2, 0], data)
+            else:
+                merged_data[z1:z2, x1:x2] = np.maximum(merged_data[z1:z2, x1:x2], data)
+
+        if plot:
+            plt.figure()
+            if color:
+                data_to_display = np.zeros_like(merged_data, dtype='uint8')
+                for i in range(2):
+                    tmp = np.log(merged_data[:, :, i]+200)
+                    vmin, vmax = np.percentile(tmp[tmp>np.log(1+200)], (1, 99.9))
+                    data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+                plt.imshow(data_to_display)
+            else:
+                plt.imshow(np.log(merged_data), cmap='gray')
+
+        return merged_data
+
+    def _reconstruct_x_slice(self, x=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
+        """
+        Reconstruct and merge the sample at a given depth z.
+
+        Parameters
+        ----------
+        x: (int) reconstruction location in x
+        downsample: (int) downsample for reconstruction (must be a power of 2)
+        debug: (bool) if true the border of each tile will be highlighted
+
+        Returns
+        -------
+        Merged frame at position x.
+        """
+
+        level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+        tile = self.tiles[0]
+        tile.lazy_load_tile(level_delta=level_delta)
+        tile_shape = tile.lazy_data.shape
+
+        if x is None:
+            x = int(tile_shape[2]*self.tiles.ncol/2)
+
+        if x > tile.lazy_data.shape[2]*self.tiles.ncol:
+            raise ValueError('Error: y is too large ({}), maximum depth at this downsample is {}.'
+                             .format(x, tile.lazy_data.shape[2]*self.tiles.ncol))
+
+        x_pos = self.database['ABS_H'].to_numpy()
+        nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + tile_shape[2]))
+        y_pos = self.database['ABS_V'].to_numpy()
+        ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + tile_shape[1]))
+        z_pos = self.database['ABS_D'].to_numpy()
+        nz = int(np.ceil((z_pos.max() - z_pos.min()) / downsample + tile_shape[0]))
+
+        # Determine tiles to load
+        tiles_to_load = []
+        tiles_pos = []
+        for x_loc, y_loc, z_loc, tile in zip(x_pos/downsample, y_pos/downsample, z_pos/downsample, self.tiles):
+            if (x > x_loc) and (x < x_loc+tile_shape[2]):
+                tiles_to_load.append(tile)
+                tiles_pos.append([z_loc, y_loc, x_loc])
+        tiles_pos = np.array(tiles_pos).astype('uint64')
+
+        if color:
+            merged_data = np.ones((nz, ny, 3), dtype='uint16')
+            merged_data[:, :, 2] = 0
+        else:
+            merged_data = np.zeros((nz, ny), dtype='uint16')
+
+        for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging')):
+            tile.lazy_load_tile(level_delta=level_delta)
+            x_tile = int(x - tiles_pos[i, 2])
+            xf = min(x_tile+n_proj, tiles_pos[i, 2]+tile.lazy_data.shape[2])
+            if xf > x:
+                data = tile.lazy_data[:, :, x_tile:xf].max(axis=2)
+            else:
+                data = tile.lazy_data[:, :, x_tile]
+
+            # In debug mode we highlight each tile edge to see where it was
+            if debug:
+                data[0, :] = 2**16-1
+                data[-1, :] = 2**16-1
+                data[:, 0] = 2**16-1
+                data[:, -1] = 2**16-1
+
+            y1 = int(tiles_pos[i, 1])
+            y2 = int(tiles_pos[i, 1] + data.shape[1])
+            z1 = int(tiles_pos[i, 0])
+            z2 = int(tiles_pos[i, 0] + data.shape[0])
+            
+            if color:
+                if tile.col % 2:
+                    if tile.row % 2:
+                        merged_data[z1:z2, y1:y2, 0] = np.maximum(merged_data[z1:z2, y1:y2, 1], data)
+                    else:
+                        merged_data[z1:z2, y1:y2, 1] = np.maximum(merged_data[z1:z2, y1:y2, 0], data)
+                else:
+                    if tile.row % 2:
+                        merged_data[z1:z2, y1:y2, 1] = np.maximum(merged_data[z1:z2, y1:y2, 1], data)
+                    else:
+                        merged_data[z1:z2, y1:y2, 0] = np.maximum(merged_data[z1:z2, y1:y2, 0], data)
+            else:
+                merged_data[z1:z2, y1:y2] = np.maximum(merged_data[z1:z2, y1:y2], data)
+
+        if plot:
+            plt.figure()
+            if color:
+                data_to_display = np.zeros_like(merged_data, dtype='uint8')
+                for i in range(2):
+                    tmp = np.log(merged_data[:, :, i]+200)
+                    vmin, vmax = np.percentile(tmp[tmp>np.log(1+200)], (1, 99.9))
+                    data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+                plt.imshow(data_to_display)
+            else:
+                plt.imshow(np.log(merged_data), cmap='gray')
 
         return merged_data
 
@@ -586,7 +817,7 @@ class baseStitcher():
         else:
             dy = dzy[1]
             ry = error_zy
-        #
+
         # for i, title, vector, err in zip(range(3), ['ZY', 'ZX', 'YX'], [dzy, dzx, dyx], [error_zy, error_zx, error_yx]):
         #     fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
         #     ax[0].imshow(np.log(proj1[i]+1), cmap='gray')
@@ -595,7 +826,7 @@ class baseStitcher():
         #     ax[1].set_title(title)
         #
         #     shifted = warp(proj1[i], AffineTransform(translation=[vector[1], vector[0]]), mode='wrap', preserve_range=True)
-        #     rgb = np.dstack((proj2[i], shifted, np.zeros_like(proj1[i])))
+        #     rgb = np.dstack((np.log(proj2[i]+1), np.log(shifted+1), np.zeros_like(proj1[i])))
         #     ax[2].imshow((rescale_intensity(rgb, out_range='uint8')).astype('uint8'))
         #
         # print('ok')
@@ -836,7 +1067,7 @@ class tileStitcher(baseStitcher):
                 self.cgraph_to.append(np.ravel_multi_index([coords[0], coords[1]],
                                                                   dims=(self.nrow, self.ncol)))
 
-                # Regularize in cas of aberrant displacements
+                # Regularize in case of aberrant displacements
                 reg, rel = self._regularize(reg, rel)
 
                 # H=x, V=y, D=z
@@ -930,7 +1161,6 @@ class tileStitcher(baseStitcher):
         self.registration_map_abs = reg_abs_map
 
         self._build_database()
-        self._print_info()
 
     def plot_graph(self, annotate=False):
         """
@@ -977,6 +1207,7 @@ class tileStitcher(baseStitcher):
                                    xy=((V1[ii, 1]+V2[ii, 1])/2, (V1[ii, 0]+V2[ii, 0])/2),
                                    ha='center',
                                    va='center',
+                                   fontsize=8,
                                    rotation=rot,
                                    backgroundcolor='w',
                                    color=color)

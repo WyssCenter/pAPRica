@@ -296,7 +296,6 @@ class tileCells():
         self.neighbors = tiles.neighbors
         self.n_edges = tiles.n_edges
         self.path_list = tiles.path_list
-        self.overlap = tiles.overlap
         self.frame_size = tiles.frame_size
         self.verbose = verbose
 
@@ -350,7 +349,7 @@ class tileCells():
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
         
-    def _remove_edge_cells(self, tile, verbose):
+    def _remove_edge_cells(self, tile):
         """
         Remove cells/objects that are touching the tile edge and if this edge is overlapping another tile.
 
@@ -375,12 +374,10 @@ class tileCells():
                 ind = np.where(tile.parts_cc == i)
                 for ii in ind[0]:
                     tile.parts_cc[ii] = 0
-                print('Removed label {}.'.format(i))
             if (maxc[i, :] == s_max).any():
                 ind = np.where(tile.parts_cc == i)
                 for ii in ind[0]:
                     tile.parts_cc[ii] = 0
-                print('Removed label {}.'.format(i))
 
         return tile
 

@@ -370,6 +370,28 @@ class baseStitcher():
         elif dim == 2:
             return self._reconstruct_x_slice(x=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
 
+    def set_regularization(self, reg_x, reg_y, reg_z):
+        """
+        Set the regularization for the stitching to prevent aberrant displacements.
+
+        Parameters
+        ----------
+        reg_x: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
+                     reg_x (in pixel unit) then the expected displacement (from motor position) is taken.
+        reg_y: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
+                     reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
+        reg_z: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
+                     reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
+
+        Returns
+        -------
+
+        """
+
+        self.reg_x = reg_x
+        self.reg_y = reg_y
+        self.reg_z = reg_z
+
     def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
         Reconstruct and merge the sample at a given depth z.
@@ -657,28 +679,6 @@ class baseStitcher():
 
         return merged_data
 
-    def set_regularization(self, reg_x, reg_y, reg_z):
-        """
-        Set the regularization for the stitching to prevent aberrant displacements.
-
-        Parameters
-        ----------
-        reg_x: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
-                     reg_x (in pixel unit) then the expected displacement (from motor position) is taken.
-        reg_y: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
-                     reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
-        reg_z: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
-                     reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
-
-        Returns
-        -------
-
-        """
-
-        self.reg_x = reg_x
-        self.reg_y = reg_y
-        self.reg_z = reg_z
-
     def check_files_integrity(self):
         cnt = 0
         for tile in self.tiles:
@@ -919,6 +919,23 @@ class baseStitcher():
         # print('ok')
 
         return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
+    def _regularize(self, reg, rel):
+        """
+        Remove too large displacement and replace them with expected one with a large uncertainty.
+
+        """
+        if np.abs(reg[2] - (self.overlap_h - self.expected_overlap_h)) > self.reg_x:
+            reg[2] = (self.overlap_h - self.expected_overlap_h)
+            rel[2] = 2
+        if np.abs(reg[1] - (self.overlap_v - self.expected_overlap_v)) > self.reg_y:
+            reg[1] = (self.overlap_v - self.expected_overlap_v)
+            rel[1] = 2
+        if np.abs(reg[0]) > self.reg_z:
+            reg[0] = 0
+            rel[0] = 2
+
+        return reg, rel
 
 
 class tileStitcher(baseStitcher):
@@ -1536,23 +1553,6 @@ class tileStitcher(baseStitcher):
 
         return projs
 
-    def _regularize(self, reg, rel):
-        """
-        Remove too large displacement and replace them with expected one with a large uncertainty.
-
-        """
-        if np.abs(reg[2] - (self.overlap_h - self.expected_overlap_h)) > self.reg_x:
-            reg[2] = (self.overlap_h - self.expected_overlap_h)
-            rel[2] = 2
-        if np.abs(reg[1] - (self.overlap_v - self.expected_overlap_v)) > self.reg_y:
-            reg[1] = (self.overlap_v - self.expected_overlap_v)
-            rel[1] = 2
-        if np.abs(reg[0]) > self.reg_z:
-            reg[0] = 0
-            rel[0] = 2
-
-        return reg, rel
-
     def _build_sparse_graphs(self):
         """
         Build the sparse graph from the reliability and (row, col). This method needs to be called after the
@@ -1830,20 +1830,22 @@ class channelStitcher(baseStitcher):
         tiles_channel: (tileParser) tiles to be registered to tiles_stitched
         """
 
-        super().__init__(ref,
+        super().__init__(moving,
                          stitcher.overlap_h,
                          stitcher.overlap_v)
 
         self.stitcher = stitcher
-        self.tiles_channel = moving
+        self.tiles_ref = ref
         self.database = stitcher.database.copy()
+        # Change tiles path for the channel tiles
+        self.database.path = self.tiles.path_list
 
         self.segment = False
         self.segmentation_verbose = None
 
     def compute_rigid_registration(self):
 
-        for tile1, tile2 in zip(tqdm(self.tiles), self.tiles_channel):
+        for tile1, tile2 in zip(tqdm(self.tiles_ref), self.tiles):
 
             tile1.load_tile()
             tile2.load_tile()
@@ -1858,11 +1860,15 @@ class channelStitcher(baseStitcher):
             proj2 = self._get_max_proj_apr(tile2.apr, tile2.parts, patch)
 
             if self.mask:
-                d, error = self._get_masked_proj_shifts(proj1, proj2, self.threshold)
+                reg, rel = self._get_masked_proj_shifts(proj1, proj2, self.threshold)
             else:
-                d, error = self._get_proj_shifts(proj1, proj2)
+                reg, rel = self._get_proj_shifts(proj1, proj2)
 
-            self._update_database(tile2.row, tile2.col, d)
+            reg, rel = self._regularize(reg, rel)
+
+
+
+            self._update_database(tile2.row, tile2.col, reg)
 
     def _update_database(self, row, col, d):
         d = np.concatenate([d, d])
@@ -1877,7 +1883,7 @@ class tileMerger():
     the sample to an Atlas.
 
     """
-    def __init__(self, tiles, database, n_planes):
+    def __init__(self, tiles, database):
         """
         Constructor for the tileMerger class.
 
@@ -1893,9 +1899,10 @@ class tileMerger():
         else:
             self.database = database
         self.tiles = tiles
+        self.lazy = self._find_if_lazy()
         self.type = tiles.type
         self.frame_size = tiles.frame_size
-        self.n_planes = n_planes
+        self.n_planes = self._get_n_planes()
         self.n_tiles = tiles.n_tiles
         self.n_row = tiles.nrow
         self.n_col = tiles.ncol
@@ -1975,10 +1982,14 @@ class tileMerger():
         D_pos = (D_pos - D_pos.min())/self.downsample
 
         for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
-            tile.load_tile()
 
-            u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta, mode=mode)
-            data = u[:, :, :]
+            if self.lazy:
+                tile.lazy_load_tile(level_delta=self.level_delta)
+                data = tile.lazy_data[:, :, :]
+            else:
+                tile.load_tile()
+                u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta, mode=mode)
+                data = u[:, :, :]
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
@@ -2129,3 +2140,37 @@ class tileMerger():
         """
         z_pos = self.database['ABS_D'].to_numpy()
         return z_pos.max() - z_pos.min() + self.n_planes
+
+    def _get_n_planes(self):
+        """
+        Load a tile and check the number of planes per tile.
+
+        Returns
+        -------
+        (int) Number of planes per tile;
+        """
+
+        tile = self.tiles[0]
+        if self.lazy:
+            tile.lazy_load_tile()
+            return tile.lazy_data.shape[0]
+        else:
+            tile.load_tile()
+            return tile.apr.shape()[0]
+
+    def _find_if_lazy(self):
+        """
+        Function to test if all tile can be lazy loaded.
+
+        Returns
+        -------
+        (bool)
+        """
+
+        try:
+            for tile in self.tiles:
+                tile.lazy_load_tile()
+        except:
+            return False
+
+        return True

@@ -128,8 +128,8 @@ class tileAtlaser():
                           output_dir='./',
                           orientation='spr',
                           merged_data_filename='merged_data.tif',
-                          debug = False,
-                          params = None):
+                          debug=False,
+                          params=None):
         """
         Function to compute the registration to the Atlas. It is just a wrapper to call brainreg.
 
@@ -162,13 +162,13 @@ class tileAtlaser():
             path_merged_data = os.path.join(output_dir, merged_data_filename)
             imsave(path_merged_data, self.merged_data)
 
-        command = 'brainreg {} {} -v {} {} {} --orientation {}'.format('"' + path_merged_data + '"',
+        command = 'brainreg {} {} -v {} {} {} --orientation {} --save-original-orientation'.format('"' + path_merged_data + '"',
                                                             '"' + atlas_dir + '"',
                                                             self.pixel_size_data[0]*self.downsample,
                                                             self.pixel_size_data[1]*self.downsample,
                                                             self.pixel_size_data[2]*self.downsample,
-                                                            orientation,
-                                                            '--save-original-orientation')
+                                                            orientation)
+
         if params is not None:
             for key, value in params.items():
                 command += ' --{} {}'.format(key, value)

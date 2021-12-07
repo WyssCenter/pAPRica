@@ -27,10 +27,12 @@ cr = []
 
 for folder in folders:
     # Parse data
-    tiles = pipapr.parser.tileParser(folder, frame_size=512, overlap=25, ftype='apr')
+    tiles = pipapr.parser.tileParser(folder, frame_size=512, ftype='apr')
 
     # Stitch tiles
-    stitcher = pipapr.stitcher.tileStitcher(tiles)
+    stitcher = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
+    stitcher.set_overlap_margin(2)
+
     t = time()
     stitcher.compute_registration_fast()
     elapsed_time.append(time()-t)
@@ -47,5 +49,7 @@ plt.plot(cr, elapsed_time, 'k+', label='APR')
 plt.plot([np.min(cr), np.max(cr)], [52, 52], 'r:', label='TeraStitcher multicore')
 plt.xlabel('Computational ratio')
 plt.ylabel('Stitching time [s.]')
+plt.title('Stitching benchmark with 4x4 (512x512x2048) tile')
 plt.legend()
 plt.xscale('log')
+plt.yscale('log')

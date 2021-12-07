@@ -184,7 +184,7 @@ def get_cc_from_features(apr, parts_pred):
 path = '/home/hbm/Desktop/data/synthetic/APR'
 
 # Train segmentation algorithm
-tiles = pipapr.parser.tileParser('/home/hbm/Desktop/data/synthetic/APR/ncells_65536', frame_size=512, overlap=25)
+tiles = pipapr.parser.tileParser('/home/hbm/Desktop/data/synthetic/APR/ncells_65536', frame_size=512)
 
 trainer = pipapr.segmenter.tileTrainer(tiles[0], func_to_compute_features=compute_features)
 # trainer.manually_annotate()
@@ -218,3 +218,4 @@ plt.ylabel('Segmentation time [s.]')
 plt.title('Time to segment a 2048x512x512 tile.')
 plt.legend()
 plt.xscale('log')
+plt.yscale('log')

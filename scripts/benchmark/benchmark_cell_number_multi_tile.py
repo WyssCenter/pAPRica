@@ -290,11 +290,12 @@ for n_cells in n_cells_array:
     save_multitile(data, path)
 
     # Stitch and segment
-    tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=25)
+    tiles = pipapr.parser.tileParser(path, frame_size=512)
     segmenter = pipapr.segmenter.tileSegmenter.from_classifier(classifier=os.path.join(path, 'classifier.joblib'),
                                                                func_to_compute_features=compute_features,
                                                                func_to_get_cc=get_cc_from_features)
-    stitcher = pipapr.stitcher.tileStitcher(tiles)
+    stitcher = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
+    stitcher.set_overlap_margin(2)
     stitcher.activate_segmentation(segmenter)
     stitcher.compute_registration_fast()
 
@@ -305,11 +306,7 @@ for n_cells in n_cells_array:
 
     # Compute reference number of cells
     apr, parts = pyapr.converter.get_apr(data, params=par)
-    tile_ref = pipapr.loader.tileLoader(path=None, row=None, col=None, ftype='apr', neighbors_path=None,
-                                        neighbors_tot=None, overlap=None,
-                                        frame_size=1024-128, folder_root=None, neighbors=None)
-    tile_ref.apr = apr
-    tile_ref.parts = parts
+    tile_ref = pipapr.loader.tile_from_apr(apr, parts)
     segmenter.compute_segmentation(tile_ref, save_cc=False)
     remove_edge(tile_ref)
     cells_ref = pyapr.numerics.transform.find_label_centers(tile_ref.apr, tile_ref.parts_cc)
@@ -326,4 +323,12 @@ plt.ylabel('Number of detected object [#]')
 plt.legend()
 plt.xscale('log')
 plt.yscale('log')
-plt.savefig('merge_cells.pdf')
+
+
+plt.figure()
+plt.plot(n_cells_array, np.array(n_merge)-np.array(n_ref), 'k+')
+plt.xlabel('True number of object [#]')
+plt.ylabel('ifference of detected object [#]')
+plt.legend()
+plt.xscale('log')
+plt.yscale('log')

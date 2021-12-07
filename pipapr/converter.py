@@ -132,7 +132,7 @@ class tileConverter():
             # Convert tile to APR and save
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
-            converter = pyapr.converter.ShortConverter()
+            converter = pyapr.converter.FloatConverter()
             converter.set_parameters(par)
             converter.verbose = True
             converter.get_apr(apr, tile.data)

@@ -306,7 +306,15 @@ class tileParser():
         Return tiles, add neighbors information before returning.
 
         """
-        t = self.tiles_list[item]
+        if isinstance(item, tuple):
+            if (item[0] > self.nrow) or (item[0] < 0):
+                raise ValueError('Error: tile at requested coordinates does not exists.')
+            if (item[1] > self.ncol) or (item[1] < 0):
+                raise ValueError('Error: tile at requested coordinates does not exists.')
+            t = self.tiles_list[item[0]*self.ncol + item[1]]
+        else:
+            t = self.tiles_list[item]
+
         path = t['path']
         col = t['col']
         row = t['row']

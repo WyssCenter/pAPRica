@@ -306,7 +306,7 @@ def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsampl
 
     if color:
         fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-        data_to_display = np.ones_like(u, dtype='uint8')
+        data_to_display = np.ones_like(u1, dtype='uint8')
         for i in range(2):
             tmp = np.log(u1[:, :, i] + 200)
             vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))

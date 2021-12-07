@@ -35,7 +35,7 @@ from scipy.sparse import csr_matrix
 import pandas as pd
 import cv2 as cv
 from skimage.exposure import equalize_adapthist, rescale_intensity
-from skimage.transform import warp, AffineTransform
+from skimage.transform import warp, AffineTransform, downscale_local_mean
 from skimage.metrics import normalized_root_mse, structural_similarity, peak_signal_noise_ratio
 import dill
 import pipapr
@@ -1916,10 +1916,10 @@ class tileMerger():
         self.level_delta = 0
         self.merged_data = None
 
-    def merge_additive(self, mode='constant'):
+    def merge_additive(self, reconstruction_mode='constant', tree_mode='mean'):
         """
-        Perform merging with an additive algorithm for overlapping area. Maximum merging should be prefered to
-        avoid integer overflowing and higher signals and the overlapping areas.
+        Perform merging with a mean algorithm for overlapping areas. Maximum merging should be preferred to
+        avoid integer overflowing and higher signals on the overlapping areas.
 
         Parameters
         ----------
@@ -1941,10 +1941,20 @@ class tileMerger():
         D_pos = self.database['ABS_D'].to_numpy()
         D_pos = (D_pos - D_pos.min())/self.downsample
 
-        for i in range(self.n_tiles):
-            apr, parts = self._load_tile(i)
-            u = pyapr.data_containers.APRSlicer(apr, parts, level_delta=self.level_delta, mode=mode)
-            data = u[:, :, :]
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+
+            if self.type == 'apr':
+                if self.lazy:
+                    tile.lazy_load_tile(level_delta=self.level_delta)
+                    data = tile.lazy_data[:, :, :]
+                else:
+                    tile.load_tile()
+                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
+                                                        mode=reconstruction_mode, tree_mode=tree_mode)
+                    data = u[:, :, :]
+            else:
+                tile.load_tile()
+                data = tile.data
 
             x1 = int(H_pos[i])
             x2 = int(H_pos[i] + data.shape[2])
@@ -1956,9 +1966,9 @@ class tileMerger():
             self.merged_data[z1:z2, y1:y2, x1:x2] = self.merged_data[z1:z2, y1:y2, x1:x2] + data
             self.merged_data = self.merged_data.astype('uint16')
 
-    def merge_max(self, mode='constant', debug=False):
+    def merge_max(self, reconstruction_mode='constant', tree_mode='mean', debug=False):
         """
-        Perform merging with a maximum algorithm for overlapping area.
+        Perform merging with a maximum algorithm for overlapping areas.
 
         Parameters
         ----------
@@ -1983,13 +1993,18 @@ class tileMerger():
 
         for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
 
-            if self.lazy:
-                tile.lazy_load_tile(level_delta=self.level_delta)
-                data = tile.lazy_data[:, :, :]
+            if self.type == 'apr':
+                if self.lazy:
+                    tile.lazy_load_tile(level_delta=self.level_delta)
+                    data = tile.lazy_data[:, :, :]
+                else:
+                    tile.load_tile()
+                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
+                                                        mode=reconstruction_mode, tree_mode=tree_mode)
+                    data = u[:, :, :]
             else:
                 tile.load_tile()
-                u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta, mode=mode)
-                data = u[:, :, :]
+                data = downscale_local_mean(tile.data, factors=(self.downsample, self.downsample, self.downsample))
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
@@ -2151,12 +2166,16 @@ class tileMerger():
         """
 
         tile = self.tiles[0]
-        if self.lazy:
-            tile.lazy_load_tile()
-            return tile.lazy_data.shape[0]
+        if self.type == 'apr':
+            if self.lazy:
+                tile.lazy_load_tile()
+                return tile.lazy_data.shape[0]
+            else:
+                tile.load_tile()
+                return tile.apr.shape()[0]
         else:
             tile.load_tile()
-            return tile.apr.shape()[0]
+            return tile.data.shape[0]
 
     def _find_if_lazy(self):
         """

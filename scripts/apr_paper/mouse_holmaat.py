@@ -218,65 +218,49 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 
-def compare_expected(loc, n_proj, dim, stitcher, stitcher_th):
-    u = stitcher.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=2, color=True, plot=False)
-    uth = stitcher_th.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=2, color=True, plot=False)
-    # rel_map = np.mean(stitcher.plot_stitching_info(), axis=0)
-    # rel_map = resize(rel_map, u.shape, order=1)
-    fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
-    data_to_display = np.ones_like(u, dtype='uint8')
-    for i in range(2):
-        tmp = np.log(u[:, :, i] + 200)
-        vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
-        data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
-    ax[0].imshow(data_to_display)
-    data_to_display = np.ones_like(uth, dtype='uint8')
-    for i in range(2):
-        tmp = np.log(uth[:, :, i] + 200)
-        vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
-        data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
-    ax[1].imshow(data_to_display)
-
 # Convert data to APR
 # path = '/media/hbm/HDD_data/HOLT_011398_LOC000_20210721_170347/VW0'
-# path = '/run/user/1000/gvfs/smb-share:server=wyssnasc.campusbiotech.ch,share=computingdata/Alice/8004_CBT_WYSS_HBM/Jules/COLM/HOLT_011398_LOC000_20210721_170347/VW0/test'
 # for c in [2]:
-    # tiles = pipapr.parser.tileParser(path, frame_size=2048, ncol=1, nrow=1, ftype='tiff2D', channel=c)
-    # converter = pipapr.converter.tileConverter(tiles)
-    # converter.set_compression(bg=1000)
-    # converter.batch_convert_to_apr(Ip_th=110, rel_error=0.2, gradient_smoothing=10, path='/media/hbm/SSD1/COLM/Holmaat/chl' + str(c))
+#     tiles = pipapr.parser.tileParser(path, frame_size=2048, ncol=7, nrow=7, ftype='tiff2D', channel=c)
+#     converter = pipapr.converter.tileConverter(tiles)
+#     converter.batch_convert_to_apr(Ip_th=105, rel_error=0.4, gradient_smoothing=10, path='/media/hbm/SSD1/COLM/Holmaat/chlll' + str(c))
 
 # # Stitch data
-path = '/media/hbm/SSD1/COLM/Holmaat/ch1'
-tiles1 = pipapr.parser.tileParser(path, frame_size=2048, ftype='apr')
+tiles1 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/ch1', frame_size=2048, ftype='apr')
 stitcher1 = pipapr.stitcher.tileStitcher(tiles1, overlap_h=29.402, overlap_v=22.175)
 stitcher1.set_overlap_margin(5)
-stitcher1.compute_registration_fast()
+# stitcher1.compute_registration_fast()
 # stitcher1.compute_registration_from_max_projs()
 # stitcher1.save_database(os.path.join(path, 'registration_results.csv'))
-stitcher1.database = pd.read_csv(os.path.join(path, 'registration_results.csv'))
+stitcher1.database = pd.read_csv(os.path.join('/media/hbm/SSD1/COLM/Holmaat/ch1/registration_results.csv'))
 
+# Compare segmentation with theoretical one from motor position
 stitcher_th = pipapr.stitcher.tileStitcher(tiles1, overlap_h=29.402, overlap_v=22.175)
 stitcher_th.compute_expected_registration()
+pipapr.viewer.compare_stitching(loc=None, dim=0, n_proj=10, stitcher1=stitcher1, stitcher2=stitcher_th, color=True)
 
-compare_expected(loc=None, dim=0, n_proj=0, stitcher=stitcher1, stitcher_th=stitcher_th)
+# Apply stitching to other tiles
+tiles0 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/ch0', frame_size=2048, ftype='apr')
+stitcher01 = pipapr.stitcher.tileStitcher(tiles0, overlap_h=29.402, overlap_v=22.175)
+stitcher01.database = stitcher1.database
+stitcher0 = pipapr.stitcher.channelStitcher(stitcher1, ref=tiles1, moving=tiles0)
+stitcher0.set_regularization(reg_y=20, reg_x=20, reg_z=20)
+# stitcher0.compute_rigid_registration()
+# pipapr.viewer.compare_stitching(stitcher1=stitcher0, stitcher2=stitcher01, loc=None, dim=0, n_proj=0)
 
-viewer = pipapr.viewer.tileViewer(tiles1, stitcher1.database)
-# viewer.display_tiles(coords=[(x, 0) for x in range(6)], contrast_limits=[0, 1000], color=True)
-# viewer.check_stitching(downsample=8, contrast_limits=[0, 1000], color=True)
+# Atlas data
+# tiles2 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/chlll2', frame_size=2048, ftype='apr')
+tiles2 = pipapr.parser.tileParser('/media/hbm/HDD_data/HOLT_011398_LOC000_20210721_170347/VW0', frame_size=2048, ncol=7, nrow=7, ftype='tiff2D', channel=2)
+merger = pipapr.stitcher.tileMerger(tiles2, stitcher1.database)
+merger.set_downsample(8)
+merger.merge_max()
+merger.merged_data[merger.merged_data>500] = 500
+merger.merged_data[merger.merged_data<110] = 110
+atlaser = pipapr.atlaser.tileAtlaser.from_merger(merger=merger, original_pixel_size=[5, 1.42, 1.42])
+par = {'affine-n-steps': 7,
+       'affine-use-n-steps': 9}
+atlaser.register_to_atlas(output_dir='/media/hbm/SSD1/COLM/Holmaat/atlas3', orientation='sal', debug=True, params=par)
 
-# viewer.check_stitching(contrast_limits=[0, 2000], color=True)
-# viewer.display_all_tiles(downsample=8, contrast_limits=[0, 2000])
-
-# viewer = pipapr.viewer.tileViewer(tiles1, stitcher_th.database)
-# viewer.check_stitching(contrast_limits=[0, 2000], color=True)
-
-# path = '/media/hbm/SSD1/COLM/Holmaat/ch0'
-# tiles2 = pipapr.parser.tileParser(path, frame_size=2048, ftype='apr')
-# stitcher2 = pipapr.stitcher.tileStitcher(tiles2, overlap_h=29.402, overlap_v=22.175)
-# stitcher2.database = pd.read_csv('/media/hbm/SSD1/COLM/Holmaat/ch1/registration_results.csv')
-#
-# stitcher2.reconstruct_slice(z=200, downsample=8, debug=False)
 
 # Segment dataset
 trainer = pipapr.segmenter.tileTrainer(tiles1[6+2],

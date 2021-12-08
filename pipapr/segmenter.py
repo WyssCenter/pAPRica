@@ -17,7 +17,7 @@ import sparse
 import napari
 from tqdm import tqdm
 import os
-
+from time import sleep
 
 def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
     """
@@ -566,7 +566,7 @@ class tileTrainer():
         image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
         viewer.add_layer(image_layer)
         viewer.add_labels(self.labels_manual)
-        napari.run()
+        viewer.show(block=True)
 
         # We extract labels and pixel coordinate from the sparse array
         if self.sparse:
@@ -603,7 +603,7 @@ class tileTrainer():
         image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
         viewer.add_layer(image_layer)
         viewer.add_labels(self.labels_manual)
-        napari.run()
+        viewer.show(block=True)
 
         # We extract labels and pixel coordinate from the sparse array
         if self.sparse:

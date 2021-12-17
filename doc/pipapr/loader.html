@@ -1,0 +1,929 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>pipapr.loader API documentation</title>
+<meta name="description" content="Submodule containing classes and functions relative to data **loading** …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>pipapr.loader</code></h1>
+</header>
+<section id="section-intro">
+<p>Submodule containing classes and functions relative to data <strong>loading</strong>.</p>
+<p>Usually, tileLoader objects are instantiated directly by iterating over the parser. Alternatively, they can be
+instantiated directly by the constructor by calling <em>tile = pipapr.loader.tileLoader()</em>.</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;
+Submodule containing classes and functions relative to data **loading**.
+
+Usually, tileLoader objects are instantiated directly by iterating over the parser. Alternatively, they can be
+instantiated directly by the constructor by calling *tile = pipapr.loader.tileLoader()*.
+
+By using this code you agree to the terms of the software license agreement.
+
+© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
+&#34;&#34;&#34;
+
+from glob import glob
+import os
+from skimage.io import imread
+import numpy as np
+import pipapr
+import pyapr
+from tqdm import tqdm
+
+def tile_from_apr(apr, parts):
+
+    tile = tileLoader(path=None,
+                      row=None,
+                      col=None,
+                      ftype=&#39;apr&#39;,
+                      neighbors=None,
+                      neighbors_tot=None,
+                      neighbors_path=None,
+                      frame_size=2048,
+                      folder_root=None,
+                      channel=None)
+
+    tile.apr = apr
+    tile.parts = parts
+
+    return tile
+
+def tile_from_path(path):
+
+    return tileLoader(path=path,
+                      row=1,
+                      col=1,
+                      ftype=&#39;apr&#39;,
+                      neighbors=None,
+                      neighbors_tot=None,
+                      neighbors_path=None,
+                      frame_size=2048,
+                      folder_root=os.path.basename(path),
+                      channel=None)
+
+class tileLoader():
+    &#34;&#34;&#34;
+    Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.
+
+    Tile post processing is done on APR data, so if the input data is tiff it is first converted.
+    &#34;&#34;&#34;
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root, channel):
+        &#34;&#34;&#34;
+        Constructor of tileLoader object.
+
+        Parameters
+        ----------
+        path: (str) path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)
+        row: (int) vertical position of the tile (for multi-tile acquisition)
+        col: (int) horizontal position of the tile (for multi-tile acquisition)
+        ftype: (str) tile file type (&#39;apr&#39;, &#39;tiff3D&#39;, &#39;tiff2D&#39;)
+        neighbors: (list) neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
+                    neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
+                    represented by an &#39;o&#39; while other tile are represented by an &#39;x&#39;:
+
+                            x --- o --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+
+                    in this case neighbors = [[0, 2], [1, 1]]
+
+        neighbors_tot: (list) neighbors list containing all the neighbors position [row, col]. For example, below the
+                        tile [0, 1] is represented by an &#39;o&#39; while other tile are represented by an &#39;x&#39;:
+
+                            x --- o --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+
+                    in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
+        neighbors_path: (list) path of the neighbors whose coordinates are stored in neighbors
+        frame_size: (int) camera frame size (only square sensors are supported for now).
+        folder_root: (str) root folder where everything should be saved.
+        channel: (int) fluorescence channel for multi-channel acquisition. This is used to load the right data in the
+                        case of COLM acquisition where all the channel are saved in the same folder as tiff2D.
+        &#34;&#34;&#34;
+
+        self.path = path
+        self.row = row
+        self.col = col
+        self.type = ftype
+        self.neighbors = neighbors
+        self.neighbors_tot = neighbors_tot
+        self.neighbors_path = neighbors_path
+        self.frame_size = frame_size
+        self.folder_root = folder_root
+        self.channel = channel
+
+        # Initialize attributes to load tile data
+        self.data = None                    # Pixel data
+        self.apr = None                     # APR tree
+        self.parts = None                   # Particles
+        self.parts_cc = None                # Connected component
+        self.lazy_data = None               # Lazy reconstructed data
+
+        # Initialize attributes to load neighbors data
+        self.data_neighbors = None
+        self.apr_neighbors = None
+        self.parts_neighbors = None
+        self.parts_cc_neighbors = None
+
+    def load_tile(self):
+        &#34;&#34;&#34;
+        Load the current tile if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.type == &#39;apr&#39;:
+            if self.apr is None:
+                self.apr, self.parts = self._load_data(self.path)
+        else:
+            if self.data is None:
+                self.data = self._load_data(self.path)
+
+    def lazy_load_tile(self, level_delta=0):
+
+        if self.type != &#39;apr&#39;:
+            raise TypeError(&#39;Error: lazy loading is only supported for APR data.&#39;)
+
+        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
+
+    def load_neighbors(self):
+        &#34;&#34;&#34;
+        Load the current tile neighbors if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.data_neighbors is None:
+            if self.type == &#39;apr&#39;:
+                aprs = []
+                partss = []
+                for path_neighbor in self.neighbors_path:
+                    apr, parts = self._load_data(path_neighbor)
+                    aprs.append(apr)
+                    partss.append(parts)
+                self.apr_neighbors = aprs
+                self.parts_neighbors = partss
+            else:
+                u = []
+                for path_neighbor in self.neighbors_path:
+                    u.append(self._load_data(path_neighbor))
+                self.data_neighbors = u
+        else:
+            print(&#39;Tile neighbors already loaded.&#39;)
+
+    def load_segmentation(self, load_tree=False):
+        &#34;&#34;&#34;
+        Load the current tile connected component (cc) if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.parts_cc is None:
+            cc = pyapr.LongParticles()
+            aprfile = pyapr.io.APRFile()
+            aprfile.set_read_write_tree(True)
+            aprfile.open(self.path, &#39;READ&#39;)
+            if load_tree:
+                apr = pyapr.APR()
+                aprfile.read_apr(apr, t=0, channel_name=&#39;t&#39;)
+                self.apr = apr
+            aprfile.read_particles(self.apr, &#39;segmentation cc&#39;, cc, t=0)
+            aprfile.close()
+            self.parts_cc = cc
+        else:
+            print(&#39;Tile cc already loaded.&#39;)
+
+    def load_neighbors_segmentation(self, load_tree=False):
+        &#34;&#34;&#34;
+        Load the current tile neighbors connected component (cc) if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.data_neighbors is None:
+            if self.type == &#39;apr&#39;:
+                aprs = []
+                ccs = []
+                for i, path_neighbor in enumerate(self.neighbors_path):
+                    if not load_tree:
+                        apr = self.apr_neighbors[i]
+                    cc = pyapr.LongParticles()
+                    aprfile = pyapr.io.APRFile()
+                    aprfile.set_read_write_tree(True)
+                    aprfile.open(path_neighbor, &#39;READ&#39;)
+                    if load_tree:
+                        apr = pyapr.APR()
+                        aprfile.read_apr(apr, t=0, channel_name=&#39;t&#39;)
+                    aprfile.read_particles(apr, &#39;segmentation cc&#39;, cc, t=0)
+                    aprfile.close()
+                    aprs.append(apr)
+                    ccs.append(cc)
+                self.apr_neighbors = aprs
+                self.parts_neighbors = ccs
+
+            else:
+                u = []
+                for path_neighbor in self.neighbors_path:
+                    u.append(self._load_data(path_neighbor))
+                self.data_neighbors = u
+        else:
+            print(&#39;Tile neighbors already loaded.&#39;)
+
+    def _load_data(self, path):
+        &#34;&#34;&#34;
+        Load data at given path.
+
+        Parameters
+        ----------
+        path: (str) path to the data to be loaded.
+
+        Returns
+        -------
+        u: (array) numpy array containing the data.
+        &#34;&#34;&#34;
+        if self.type == &#39;tiff2D&#39;:
+            u = self._load_sequence(path)
+        elif self.type == &#39;tiff3D&#39;:
+            u = imread(path)
+        elif self.type == &#39;apr&#39;:
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(path, apr, parts)
+            u = (apr, parts)
+        elif self.type == &#39;raw&#39;:
+            u = self._load_raw(path)
+        else:
+            raise TypeError(&#39;Error: image type {} not supported.&#39;.format(self.type))
+
+        return u
+
+    def _load_raw(self, path):
+        &#34;&#34;&#34;
+        Load raw data at given path.
+
+        Parameters
+        ----------
+        path: (str) path to the data to be loaded.
+
+        Returns
+        -------
+        u: (array) numpy array containing the data.
+        &#34;&#34;&#34;
+        u = np.fromfile(path, dtype=&#39;uint16&#39;, count=-1)
+        return u.reshape((-1, self.frame_size, self.frame_size))
+
+    def view_tile(self, **kwargs):
+        &#34;&#34;&#34;
+        Display tile using napari.
+
+        &#34;&#34;&#34;
+        if self.apr is None:
+            self.load_tile()
+        pipapr.viewer.display_apr(self.apr, self.parts)
+
+    def _load_sequence(self, path):
+        &#34;&#34;&#34;
+        Load a sequence of images in a folder and return it as a 3D array.
+
+        Parameters
+        ----------
+        path: (str) path to folder where the data should be loaded.
+
+        Returns
+        -------
+        v: (array) numpy array containing the data.
+        &#34;&#34;&#34;
+        files_sorted = sorted(glob(os.path.join(path, &#39;*CHN0&#39; + str(self.channel) + &#39;_*tif&#39;)))
+        n_files = len(files_sorted)
+        #
+        # files_sorted = list(range(n_files))
+        # n_max = 0
+        # for i, pathname in enumerate(files):
+        #     number_search = re.search(&#39;CHN0&#39; + str(self.channel) + &#39;_PLN(\d+).tif&#39;, pathname)
+        #     if number_search:
+        #         n = int(number_search.group(1))
+        #         files_sorted[n] = pathname
+        #         if n &gt; n_max:
+        #             n_max = n
+        #
+        # files_sorted = files_sorted[:n_max]
+        # n_files = len(files_sorted)
+
+        u = imread(files_sorted[0])
+        v = np.empty((n_files, *u.shape), dtype=&#39;uint16&#39;)
+        v[0] = u
+        files_sorted.pop(0)
+        for i, f in enumerate(tqdm(files_sorted, desc=&#39;Loading sequence&#39;, leave=False)):
+            v[i + 1] = imread(f)
+
+        return v</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="pipapr.loader.tile_from_apr"><code class="name flex">
+<span>def <span class="ident">tile_from_apr</span></span>(<span>apr, parts)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tile_from_apr(apr, parts):
+
+    tile = tileLoader(path=None,
+                      row=None,
+                      col=None,
+                      ftype=&#39;apr&#39;,
+                      neighbors=None,
+                      neighbors_tot=None,
+                      neighbors_path=None,
+                      frame_size=2048,
+                      folder_root=None,
+                      channel=None)
+
+    tile.apr = apr
+    tile.parts = parts
+
+    return tile</code></pre>
+</details>
+</dd>
+<dt id="pipapr.loader.tile_from_path"><code class="name flex">
+<span>def <span class="ident">tile_from_path</span></span>(<span>path)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tile_from_path(path):
+
+    return tileLoader(path=path,
+                      row=1,
+                      col=1,
+                      ftype=&#39;apr&#39;,
+                      neighbors=None,
+                      neighbors_tot=None,
+                      neighbors_path=None,
+                      frame_size=2048,
+                      folder_root=os.path.basename(path),
+                      channel=None)</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="pipapr.loader.tileLoader"><code class="flex name class">
+<span>class <span class="ident">tileLoader</span></span>
+<span>(</span><span>path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root, channel)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.</p>
+<p>Tile post processing is done on APR data, so if the input data is tiff it is first converted.</p>
+<p>Constructor of tileLoader object.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>path</code></strong> :&ensp;<code>(str) path to the tile (APR and tiff3D)</code> or <code>the folder containing the frames (tiff2D)</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>row</code></strong> :&ensp;<code>(int) vertical position</code> of <code>the tile (for multi-tile acquisition)</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>col</code></strong> :&ensp;<code>(int) horizontal position</code> of <code>the tile (for multi-tile acquisition)</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>ftype</code></strong> :&ensp;<code>(str) tile file type ('apr', 'tiff3D', 'tiff2D')</code></dt>
+<dd>&nbsp;</dd>
+<dt><strong><code>neighbors</code></strong> :&ensp;<code>(list) neighbors list containing the neighbors position [row, col]</code> of <code>only the EAST and SOUTH</code></dt>
+<dd>neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
+represented by an 'o' while other tile are represented by an 'x':<pre><code>            x --- o --- x --- x
+            |     |     |     |
+            x --- x --- x --- x
+            |     |     |     |
+            x --- x --- x --- x
+            |     |     |     |
+            x --- x --- x --- x
+
+    in this case neighbors = [[0, 2], [1, 1]]
+</code></pre>
+</dd>
+<dt><strong><code>neighbors_tot</code></strong> :&ensp;<code>(list) neighbors list containing all the neighbors position [row, col]. For example, below the</code></dt>
+<dd>tile [0, 1] is represented by an 'o' while other tile are represented by an 'x':<pre><code>            x --- o --- x --- x
+            |     |     |     |
+            x --- x --- x --- x
+            |     |     |     |
+            x --- x --- x --- x
+            |     |     |     |
+            x --- x --- x --- x
+
+    in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
+</code></pre>
+</dd>
+<dt><strong><code>neighbors_path</code></strong> :&ensp;<code>(list) path</code> of <code>the neighbors whose coordinates are stored in neighbors</code></dt>
+<dd>&nbsp;</dd>
+<dt>frame_size: (int) camera frame size (only square sensors are supported for now).</dt>
+<dt>folder_root: (str) root folder where everything should be saved.</dt>
+<dt><strong><code>channel</code></strong> :&ensp;<code>(int) fluorescence channel for multi-channel acquisition. This is used to load the right data in the</code></dt>
+<dd>case of COLM acquisition where all the channel are saved in the same folder as tiff2D.</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class tileLoader():
+    &#34;&#34;&#34;
+    Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.
+
+    Tile post processing is done on APR data, so if the input data is tiff it is first converted.
+    &#34;&#34;&#34;
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root, channel):
+        &#34;&#34;&#34;
+        Constructor of tileLoader object.
+
+        Parameters
+        ----------
+        path: (str) path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)
+        row: (int) vertical position of the tile (for multi-tile acquisition)
+        col: (int) horizontal position of the tile (for multi-tile acquisition)
+        ftype: (str) tile file type (&#39;apr&#39;, &#39;tiff3D&#39;, &#39;tiff2D&#39;)
+        neighbors: (list) neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
+                    neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
+                    represented by an &#39;o&#39; while other tile are represented by an &#39;x&#39;:
+
+                            x --- o --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+
+                    in this case neighbors = [[0, 2], [1, 1]]
+
+        neighbors_tot: (list) neighbors list containing all the neighbors position [row, col]. For example, below the
+                        tile [0, 1] is represented by an &#39;o&#39; while other tile are represented by an &#39;x&#39;:
+
+                            x --- o --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+                            |     |     |     |
+                            x --- x --- x --- x
+
+                    in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
+        neighbors_path: (list) path of the neighbors whose coordinates are stored in neighbors
+        frame_size: (int) camera frame size (only square sensors are supported for now).
+        folder_root: (str) root folder where everything should be saved.
+        channel: (int) fluorescence channel for multi-channel acquisition. This is used to load the right data in the
+                        case of COLM acquisition where all the channel are saved in the same folder as tiff2D.
+        &#34;&#34;&#34;
+
+        self.path = path
+        self.row = row
+        self.col = col
+        self.type = ftype
+        self.neighbors = neighbors
+        self.neighbors_tot = neighbors_tot
+        self.neighbors_path = neighbors_path
+        self.frame_size = frame_size
+        self.folder_root = folder_root
+        self.channel = channel
+
+        # Initialize attributes to load tile data
+        self.data = None                    # Pixel data
+        self.apr = None                     # APR tree
+        self.parts = None                   # Particles
+        self.parts_cc = None                # Connected component
+        self.lazy_data = None               # Lazy reconstructed data
+
+        # Initialize attributes to load neighbors data
+        self.data_neighbors = None
+        self.apr_neighbors = None
+        self.parts_neighbors = None
+        self.parts_cc_neighbors = None
+
+    def load_tile(self):
+        &#34;&#34;&#34;
+        Load the current tile if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.type == &#39;apr&#39;:
+            if self.apr is None:
+                self.apr, self.parts = self._load_data(self.path)
+        else:
+            if self.data is None:
+                self.data = self._load_data(self.path)
+
+    def lazy_load_tile(self, level_delta=0):
+
+        if self.type != &#39;apr&#39;:
+            raise TypeError(&#39;Error: lazy loading is only supported for APR data.&#39;)
+
+        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
+
+    def load_neighbors(self):
+        &#34;&#34;&#34;
+        Load the current tile neighbors if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.data_neighbors is None:
+            if self.type == &#39;apr&#39;:
+                aprs = []
+                partss = []
+                for path_neighbor in self.neighbors_path:
+                    apr, parts = self._load_data(path_neighbor)
+                    aprs.append(apr)
+                    partss.append(parts)
+                self.apr_neighbors = aprs
+                self.parts_neighbors = partss
+            else:
+                u = []
+                for path_neighbor in self.neighbors_path:
+                    u.append(self._load_data(path_neighbor))
+                self.data_neighbors = u
+        else:
+            print(&#39;Tile neighbors already loaded.&#39;)
+
+    def load_segmentation(self, load_tree=False):
+        &#34;&#34;&#34;
+        Load the current tile connected component (cc) if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.parts_cc is None:
+            cc = pyapr.LongParticles()
+            aprfile = pyapr.io.APRFile()
+            aprfile.set_read_write_tree(True)
+            aprfile.open(self.path, &#39;READ&#39;)
+            if load_tree:
+                apr = pyapr.APR()
+                aprfile.read_apr(apr, t=0, channel_name=&#39;t&#39;)
+                self.apr = apr
+            aprfile.read_particles(self.apr, &#39;segmentation cc&#39;, cc, t=0)
+            aprfile.close()
+            self.parts_cc = cc
+        else:
+            print(&#39;Tile cc already loaded.&#39;)
+
+    def load_neighbors_segmentation(self, load_tree=False):
+        &#34;&#34;&#34;
+        Load the current tile neighbors connected component (cc) if not already loaded.
+
+        &#34;&#34;&#34;
+        if self.data_neighbors is None:
+            if self.type == &#39;apr&#39;:
+                aprs = []
+                ccs = []
+                for i, path_neighbor in enumerate(self.neighbors_path):
+                    if not load_tree:
+                        apr = self.apr_neighbors[i]
+                    cc = pyapr.LongParticles()
+                    aprfile = pyapr.io.APRFile()
+                    aprfile.set_read_write_tree(True)
+                    aprfile.open(path_neighbor, &#39;READ&#39;)
+                    if load_tree:
+                        apr = pyapr.APR()
+                        aprfile.read_apr(apr, t=0, channel_name=&#39;t&#39;)
+                    aprfile.read_particles(apr, &#39;segmentation cc&#39;, cc, t=0)
+                    aprfile.close()
+                    aprs.append(apr)
+                    ccs.append(cc)
+                self.apr_neighbors = aprs
+                self.parts_neighbors = ccs
+
+            else:
+                u = []
+                for path_neighbor in self.neighbors_path:
+                    u.append(self._load_data(path_neighbor))
+                self.data_neighbors = u
+        else:
+            print(&#39;Tile neighbors already loaded.&#39;)
+
+    def _load_data(self, path):
+        &#34;&#34;&#34;
+        Load data at given path.
+
+        Parameters
+        ----------
+        path: (str) path to the data to be loaded.
+
+        Returns
+        -------
+        u: (array) numpy array containing the data.
+        &#34;&#34;&#34;
+        if self.type == &#39;tiff2D&#39;:
+            u = self._load_sequence(path)
+        elif self.type == &#39;tiff3D&#39;:
+            u = imread(path)
+        elif self.type == &#39;apr&#39;:
+            apr = pyapr.APR()
+            parts = pyapr.ShortParticles()
+            pyapr.io.read(path, apr, parts)
+            u = (apr, parts)
+        elif self.type == &#39;raw&#39;:
+            u = self._load_raw(path)
+        else:
+            raise TypeError(&#39;Error: image type {} not supported.&#39;.format(self.type))
+
+        return u
+
+    def _load_raw(self, path):
+        &#34;&#34;&#34;
+        Load raw data at given path.
+
+        Parameters
+        ----------
+        path: (str) path to the data to be loaded.
+
+        Returns
+        -------
+        u: (array) numpy array containing the data.
+        &#34;&#34;&#34;
+        u = np.fromfile(path, dtype=&#39;uint16&#39;, count=-1)
+        return u.reshape((-1, self.frame_size, self.frame_size))
+
+    def view_tile(self, **kwargs):
+        &#34;&#34;&#34;
+        Display tile using napari.
+
+        &#34;&#34;&#34;
+        if self.apr is None:
+            self.load_tile()
+        pipapr.viewer.display_apr(self.apr, self.parts)
+
+    def _load_sequence(self, path):
+        &#34;&#34;&#34;
+        Load a sequence of images in a folder and return it as a 3D array.
+
+        Parameters
+        ----------
+        path: (str) path to folder where the data should be loaded.
+
+        Returns
+        -------
+        v: (array) numpy array containing the data.
+        &#34;&#34;&#34;
+        files_sorted = sorted(glob(os.path.join(path, &#39;*CHN0&#39; + str(self.channel) + &#39;_*tif&#39;)))
+        n_files = len(files_sorted)
+        #
+        # files_sorted = list(range(n_files))
+        # n_max = 0
+        # for i, pathname in enumerate(files):
+        #     number_search = re.search(&#39;CHN0&#39; + str(self.channel) + &#39;_PLN(\d+).tif&#39;, pathname)
+        #     if number_search:
+        #         n = int(number_search.group(1))
+        #         files_sorted[n] = pathname
+        #         if n &gt; n_max:
+        #             n_max = n
+        #
+        # files_sorted = files_sorted[:n_max]
+        # n_files = len(files_sorted)
+
+        u = imread(files_sorted[0])
+        v = np.empty((n_files, *u.shape), dtype=&#39;uint16&#39;)
+        v[0] = u
+        files_sorted.pop(0)
+        for i, f in enumerate(tqdm(files_sorted, desc=&#39;Loading sequence&#39;, leave=False)):
+            v[i + 1] = imread(f)
+
+        return v</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="pipapr.loader.tileLoader.lazy_load_tile"><code class="name flex">
+<span>def <span class="ident">lazy_load_tile</span></span>(<span>self, level_delta=0)</span>
+</code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def lazy_load_tile(self, level_delta=0):
+
+    if self.type != &#39;apr&#39;:
+        raise TypeError(&#39;Error: lazy loading is only supported for APR data.&#39;)
+
+    self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)</code></pre>
+</details>
+</dd>
+<dt id="pipapr.loader.tileLoader.load_neighbors"><code class="name flex">
+<span>def <span class="ident">load_neighbors</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Load the current tile neighbors if not already loaded.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_neighbors(self):
+    &#34;&#34;&#34;
+    Load the current tile neighbors if not already loaded.
+
+    &#34;&#34;&#34;
+    if self.data_neighbors is None:
+        if self.type == &#39;apr&#39;:
+            aprs = []
+            partss = []
+            for path_neighbor in self.neighbors_path:
+                apr, parts = self._load_data(path_neighbor)
+                aprs.append(apr)
+                partss.append(parts)
+            self.apr_neighbors = aprs
+            self.parts_neighbors = partss
+        else:
+            u = []
+            for path_neighbor in self.neighbors_path:
+                u.append(self._load_data(path_neighbor))
+            self.data_neighbors = u
+    else:
+        print(&#39;Tile neighbors already loaded.&#39;)</code></pre>
+</details>
+</dd>
+<dt id="pipapr.loader.tileLoader.load_neighbors_segmentation"><code class="name flex">
+<span>def <span class="ident">load_neighbors_segmentation</span></span>(<span>self, load_tree=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Load the current tile neighbors connected component (cc) if not already loaded.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_neighbors_segmentation(self, load_tree=False):
+    &#34;&#34;&#34;
+    Load the current tile neighbors connected component (cc) if not already loaded.
+
+    &#34;&#34;&#34;
+    if self.data_neighbors is None:
+        if self.type == &#39;apr&#39;:
+            aprs = []
+            ccs = []
+            for i, path_neighbor in enumerate(self.neighbors_path):
+                if not load_tree:
+                    apr = self.apr_neighbors[i]
+                cc = pyapr.LongParticles()
+                aprfile = pyapr.io.APRFile()
+                aprfile.set_read_write_tree(True)
+                aprfile.open(path_neighbor, &#39;READ&#39;)
+                if load_tree:
+                    apr = pyapr.APR()
+                    aprfile.read_apr(apr, t=0, channel_name=&#39;t&#39;)
+                aprfile.read_particles(apr, &#39;segmentation cc&#39;, cc, t=0)
+                aprfile.close()
+                aprs.append(apr)
+                ccs.append(cc)
+            self.apr_neighbors = aprs
+            self.parts_neighbors = ccs
+
+        else:
+            u = []
+            for path_neighbor in self.neighbors_path:
+                u.append(self._load_data(path_neighbor))
+            self.data_neighbors = u
+    else:
+        print(&#39;Tile neighbors already loaded.&#39;)</code></pre>
+</details>
+</dd>
+<dt id="pipapr.loader.tileLoader.load_segmentation"><code class="name flex">
+<span>def <span class="ident">load_segmentation</span></span>(<span>self, load_tree=False)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Load the current tile connected component (cc) if not already loaded.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_segmentation(self, load_tree=False):
+    &#34;&#34;&#34;
+    Load the current tile connected component (cc) if not already loaded.
+
+    &#34;&#34;&#34;
+    if self.parts_cc is None:
+        cc = pyapr.LongParticles()
+        aprfile = pyapr.io.APRFile()
+        aprfile.set_read_write_tree(True)
+        aprfile.open(self.path, &#39;READ&#39;)
+        if load_tree:
+            apr = pyapr.APR()
+            aprfile.read_apr(apr, t=0, channel_name=&#39;t&#39;)
+            self.apr = apr
+        aprfile.read_particles(self.apr, &#39;segmentation cc&#39;, cc, t=0)
+        aprfile.close()
+        self.parts_cc = cc
+    else:
+        print(&#39;Tile cc already loaded.&#39;)</code></pre>
+</details>
+</dd>
+<dt id="pipapr.loader.tileLoader.load_tile"><code class="name flex">
+<span>def <span class="ident">load_tile</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Load the current tile if not already loaded.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_tile(self):
+    &#34;&#34;&#34;
+    Load the current tile if not already loaded.
+
+    &#34;&#34;&#34;
+    if self.type == &#39;apr&#39;:
+        if self.apr is None:
+            self.apr, self.parts = self._load_data(self.path)
+    else:
+        if self.data is None:
+            self.data = self._load_data(self.path)</code></pre>
+</details>
+</dd>
+<dt id="pipapr.loader.tileLoader.view_tile"><code class="name flex">
+<span>def <span class="ident">view_tile</span></span>(<span>self, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Display tile using napari.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def view_tile(self, **kwargs):
+    &#34;&#34;&#34;
+    Display tile using napari.
+
+    &#34;&#34;&#34;
+    if self.apr is None:
+        self.load_tile()
+    pipapr.viewer.display_apr(self.apr, self.parts)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="pipapr" href="index.html">pipapr</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="pipapr.loader.tile_from_apr" href="#pipapr.loader.tile_from_apr">tile_from_apr</a></code></li>
+<li><code><a title="pipapr.loader.tile_from_path" href="#pipapr.loader.tile_from_path">tile_from_path</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="pipapr.loader.tileLoader" href="#pipapr.loader.tileLoader">tileLoader</a></code></h4>
+<ul class="">
+<li><code><a title="pipapr.loader.tileLoader.lazy_load_tile" href="#pipapr.loader.tileLoader.lazy_load_tile">lazy_load_tile</a></code></li>
+<li><code><a title="pipapr.loader.tileLoader.load_neighbors" href="#pipapr.loader.tileLoader.load_neighbors">load_neighbors</a></code></li>
+<li><code><a title="pipapr.loader.tileLoader.load_neighbors_segmentation" href="#pipapr.loader.tileLoader.load_neighbors_segmentation">load_neighbors_segmentation</a></code></li>
+<li><code><a title="pipapr.loader.tileLoader.load_segmentation" href="#pipapr.loader.tileLoader.load_segmentation">load_segmentation</a></code></li>
+<li><code><a title="pipapr.loader.tileLoader.load_tile" href="#pipapr.loader.tileLoader.load_tile">load_tile</a></code></li>
+<li><code><a title="pipapr.loader.tileLoader.view_tile" href="#pipapr.loader.tileLoader.view_tile">view_tile</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>

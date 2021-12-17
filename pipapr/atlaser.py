@@ -1,5 +1,9 @@
 """
-Module containing classes and functions relative to Atlasing.
+Submodule containing classes and functions relative to **atlasing**.
+
+This submodule is essentially a wrapper to Brainreg (https://github.com/brainglobe/brainreg) for atlasing and
+Allen Brain Atlas for ontology analysis. It contains many convenience method for manipulating data
+(per region, per superpixel, etc.).
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -8,6 +12,7 @@ By using this code you agree to the terms of the software license agreement.
 
 import pandas as pd
 from skimage.io import imread, imsave
+from skimage.filters import gaussian
 import pipapr
 import numpy as np
 import os
@@ -27,7 +32,7 @@ class tileAtlaser():
                  original_pixel_size: (np.array, list),
                  downsample: int,
                  atlas=None,
-                 merger=None):
+                 merged_data=None):
         """
         Parameters
         ----------
@@ -41,7 +46,7 @@ class tileAtlaser():
         self.downsample = downsample
         self.pixel_size_registered_atlas = np.array([25, 25, 25])
         self.pixel_size_data = np.array(original_pixel_size) # Z Y X
-        self.merger = merger
+        self.merged_data = merged_data
         self.z_downsample = self.pixel_size_registered_atlas[0] / self.pixel_size_data[0]
         self.y_downsample = self.pixel_size_registered_atlas[1] / self.pixel_size_data[1]
         self.x_downsample = self.pixel_size_registered_atlas[2] / self.pixel_size_data[2]
@@ -75,7 +80,7 @@ class tileAtlaser():
         return cls(original_pixel_size=original_pixel_size,
                    downsample=merger.downsample,
                    atlas=None,
-                   merger=merger)
+                   merged_data=merger.merged_data)
 
     @classmethod
     def from_atlas(cls,
@@ -101,7 +106,7 @@ class tileAtlaser():
         return cls(original_pixel_size=original_pixel_size,
                    downsample=downsample,
                    atlas=atlas,
-                   merger=None)
+                   merged_data=None)
 
 
     def load_atlas(self, path):
@@ -118,14 +123,13 @@ class tileAtlaser():
         """
 
         self.atlas = imread(path)
-        self.atlas = np.swapaxes(self.atlas, 0, 1)
-        self.atlas = np.flip(self.atlas, 1)
 
     def register_to_atlas(self,
                           output_dir='./',
                           orientation='spr',
                           merged_data_filename='merged_data.tif',
-                          **kwargs):
+                          debug=False,
+                          params=None):
         """
         Function to compute the registration to the Atlas. It is just a wrapper to call brainreg.
 
@@ -138,7 +142,7 @@ class tileAtlaser():
                          from origin to x = xlim we go from right to left part)
         merged_data_filename: (str) named of the merged array (Brainreg reads data from files so we need to save
                                 the merged volume beforehand.
-        kwargs: (dict) dictionnary with keys as brainreg options and values as parameters (see here:
+        params: (dict) dictionary with keys as brainreg options and values as parameters (see here:
                 https://docs.brainglobe.info/brainreg/user-guide/parameters)
 
         Returns
@@ -150,24 +154,45 @@ class tileAtlaser():
         atlas_dir = os.path.join(output_dir, 'atlas')
         Path(atlas_dir).mkdir(parents=True, exist_ok=True)
 
-        path_merged_data = os.path.join(output_dir, merged_data_filename)
-        imsave(path_merged_data, self.merged_data)
-        command = 'brainreg {} {} -v {} {} {} --orientation {}'.format('"' + path_merged_data + '"',
+        # If merged_data is a path we ask brainreg to work on this file
+        if isinstance(self.merged_data, str):
+            path_merged_data = self.merged_data
+        # Else it means it's an array so we have to save it first
+        else:
+            path_merged_data = os.path.join(output_dir, merged_data_filename)
+            imsave(path_merged_data, self.merged_data)
+
+        command = 'brainreg {} {} -v {} {} {} --orientation {} --save-original-orientation'.format('"' + path_merged_data + '"',
                                                             '"' + atlas_dir + '"',
-                                                            self.pixel_size[0],
-                                                            self.pixel_size[1],
-                                                            self.pixel_size[2],
+                                                            self.pixel_size_data[0]*self.downsample,
+                                                            self.pixel_size_data[1]*self.downsample,
+                                                            self.pixel_size_data[2]*self.downsample,
                                                             orientation)
-        for key, value in kwargs.items():
-            command += ' --{} {}'.format(key, value)
+
+        if params is not None:
+            for key, value in params.items():
+                command += ' --{} {}'.format(key, value)
+
+        if debug:
+            command += ' --debug'
 
         # Execute brainreg
         os.system(command)
 
-        self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tif'))
+        self.load_atlas(os.path.join(atlas_dir, 'registered_atlas.tiff'))
 
     def get_cells_id(self, cells):
+        """
+        Returns the Allen Brain Atlas region ID for each cell.
 
+        Parameters
+        ----------
+        cells: (array) cell positions.
+
+        Returns
+        -------
+        labels: (array) containing the cell region ID.
+        """
         labels = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 1]/self.y_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 2]/self.x_downsample).astype('uint64')]
@@ -188,7 +213,6 @@ class tileAtlaser():
         -------
         ID at the queried position.
         """
-
         return self.atlas[int(z / self.z_downsample), int(y / self.y_downsample), int(x / self.x_downsample)]
 
     def get_ontology_mapping(self, labels, n=0):
@@ -254,6 +278,17 @@ class tileAtlaser():
         return pd.DataFrame.from_dict(area_count, orient='index')
 
     def get_cells_number_per_region(self, cells_id):
+        """
+        Retuns the number of cell per region.
+
+        Parameters
+        ----------
+        cells_id: (array) cells ID (typically computed by self.get_cells_id())
+
+        Returns
+        -------
+        heatmap: (array) 3D array where each brain region value is the number of cells contained in this region.
+        """
 
         # Remove 0s
         cells_id = np.delete(cells_id, cells_id==0)
@@ -271,6 +306,17 @@ class tileAtlaser():
         return heatmap
 
     def get_cells_density_per_region(self, cells_id):
+        """
+        Retuns the cell density (number of cell per voxel) per region.
+
+        Parameters
+        ----------
+        cells_id: (array) cells ID (typically computed by self.get_cells_id())
+
+        Returns
+        -------
+        heatmap: (array) 3D array where each brain region value is the cell density in this region.
+        """
 
         # Remove 0s
         cells_id = np.delete(cells_id, cells_id == 0)
@@ -289,13 +335,25 @@ class tileAtlaser():
         return heatmap
 
     def get_cells_density(self, cells, kernel_size):
+        """
+        Retuns the cell density (local average number of cell per voxel). The local average is computed using a gaussian
+        kernel.
+
+        Parameters
+        ----------
+        cells: (array) cell positions
+        kernel_size: (int) radius of the gaussian for local cell density estimation
+
+        Returns
+        -------
+
+        """
 
         heatmap = np.zeros((self.atlas.shape)).astype(int)
-        for i in range(cells.shape[0]):
+        for i in tqdm(range(cells.shape[0]), desc='Building density map..'):
             z = int(cells[i, 0]/self.z_downsample)
             y = int(cells[i, 1]/self.y_downsample)
             x = int(cells[i, 2]/self.x_downsample)
             heatmap[z, y, x] = 1
 
-        from skimage.filters import gaussian
         return gaussian(heatmap, sigma=kernel_size)

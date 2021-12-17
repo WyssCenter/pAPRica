@@ -157,8 +157,27 @@ def compute_features(apr, parts):
     return f
 
 
+def get_cc_from_features(apr, parts_pred):
+
+    # Create a mask from particle classified as cells (cell=1, background=2, membrane=3)
+    parts_cells = (parts_pred == 1)
+
+    # Use opening to separate touching cells
+    pyapr.numerics.transform.opening(apr, parts_cells, binary=True, inplace=True)
+
+    # Apply connected component
+    cc = pyapr.LongParticles()
+    pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
+
+    # # Remove small and large objects
+    # pyapr.numerics.transform.remove_small_objects(apr, cc, min_volume=1000)
+    # pyapr.numerics.transform.remove_large_objects(apr, cc, max_volume=50000)
+
+    return cc
+
+
 # Parameters
-path = '../data/apr'
+path = 'data/apr'
 
 # We load a tile
 tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
@@ -173,6 +192,7 @@ trainer.manually_annotate(use_sparse_labels=True)
 
 # We then train the classifier and apply it to the whole training tile
 trainer.train_classifier()
-trainer.display_training_annotations(contrast_limits=[0, 5000])
-trainer.segment_training_tile(bg=3)
-# trainer.save_classifier()
+trainer.display_training_annotations(contrast_limits=[0, 10000])
+trainer.segment_training_tile(bg_label=2)
+# trainer.apply_on_tile(tiles[7], bg_label=2, func_to_get_cc=get_cc_from_features)
+# trainer.apply_on_tile(tiles[7], bg_label=2)

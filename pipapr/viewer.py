@@ -10,6 +10,9 @@ from glob import glob
 import os
 import pandas as pd
 from skimage.io import imread
+from skimage.transform import resize
+from skimage.exposure import rescale_intensity
+from skimage.color import hsv2rgb
 import numpy as np
 import pyapr
 import napari
@@ -19,7 +22,7 @@ from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 
 
-def display_apr_from_path(path):
+def display_apr_from_path(path, **kwargs):
     """
     Display an APR using Napari from a filepath.
     Parameters
@@ -34,7 +37,7 @@ def display_apr_from_path(path):
     parts = pyapr.ShortParticles()
     pyapr.io.read(path, apr, parts)
     layer = apr_to_napari_Image(apr, parts)
-    display_layers_pyramidal([layer], level_delta=0)
+    display_layers_pyramidal([layer], level_delta=0, **kwargs)
 
 def display_apr(apr, parts, **kwargs):
     """
@@ -93,8 +96,13 @@ def apr_to_napari_Image(apr: pyapr.APR,
         cmin = apr.level_min() if mode == 'level' else parts.min()
         cmax = apr.level_max() if mode == 'level' else parts.max()
         contrast_limits = [cmin, cmax]
+    if 'tree_mode' in kwargs:
+        tree_mode = kwargs.get('tree_mode')
+        del kwargs['tree_mode']
+    else:
+        tree_mode = 'mean'
     par = apr.get_parameters()
-    return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta),
+    return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode=tree_mode),
                  rgb=False, multiscale=False, contrast_limits=contrast_limits,
                  scale=[par.dz, par.dx, par.dy], **kwargs)
 
@@ -213,7 +221,7 @@ def display_layers_pyramidal(layers, level_delta):
     return viewer
 
 
-def display_segmentation(apr, parts, mask, pyramidal=True):
+def display_segmentation(apr, parts, mask, pyramidal=True, **kwargs):
     """
     This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel
     data from APR on the fly.
@@ -229,8 +237,8 @@ def display_segmentation(apr, parts, mask, pyramidal=True):
     None
     """
     layers = []
-    layers.append(apr_to_napari_Image(apr, parts, name='APR'))
-    layers.append(apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3))
+    layers.append(apr_to_napari_Image(apr, parts, name='APR', **kwargs))
+    layers.append(apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3, **kwargs))
     if pyramidal:
         display_layers_pyramidal(layers, level_delta=0)
     else:
@@ -274,6 +282,109 @@ def display_heatmap(heatmap, atlas=None, data=None, log=False):
                 viewer.add_image(data, name='Intensity data', blending='additive',
                                  scale=np.array(heatmap.shape)/np.array(data.shape), opacity=0.7)
 
+
+def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsample=2, color=False, rel_map=False):
+    """
+    Compare two stitching at a given depth z.
+
+    Parameters
+    ----------
+    stitcher1: (tileStitcher) stitcher object 1
+    stitcher2: (tileStitcher) stitcher object 2
+    loc: (int) position in the given dimension
+    n_proj: (int) number of plane to perform the max-projection
+    downsample: (int) downsampling factor for the reconstruction
+    color: (bool) option to display in color
+    rel_map: (bool) overlay reliability map on the reconstructed data
+
+    Returns
+    -------
+    None
+    """
+
+
+    u1 = stitcher1.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=downsample, color=color, plot=False)
+    u2 = stitcher2.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=downsample, color=color, plot=False)
+
+    if color:
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        data_to_display = np.ones_like(u1, dtype='uint8')
+        for i in range(2):
+            tmp = np.log(u1[:, :, i] + 200)
+            vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
+            data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+        ax[0].imshow(data_to_display)
+        data_to_display = np.ones_like(u2, dtype='uint8')
+        for i in range(2):
+            tmp = np.log(u2[:, :, i] + 200)
+            vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
+            data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+        ax[1].imshow(data_to_display)
+    else:
+        fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+        ax[0].imshow(np.log(u1), cmap='gray')
+        if rel_map:
+            try:
+                rel_map = resize(np.mean(stitcher1.plot_stitching_info(), axis=0), u1.shape, order=1)
+                ax[0].imshow(rel_map, cmap='turbo', alpha=0.5)
+            except:
+                pass
+        ax[1].imshow(np.log(u2), cmap='gray')
+        if rel_map:
+            try:
+                rel_map = resize(np.mean(stitcher2.plot_stitching_info(), axis=0), u1.shape, order=1)
+                ax[1].imshow(rel_map, cmap='turbo', alpha=0.5)
+            except:
+                pass
+
+
+def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsample=1, threshold=None, plot=True):
+    """
+    Reconstruct colored depth projection.
+
+    """
+
+    level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+    if loc is None:
+        apr_shape = apr.shape()
+        loc = int(apr_shape[dim] / 2)
+
+    if loc > apr_shape[dim]:
+        raise ValueError('Error: loc is too large ({}), maximum loc at this downsample is {}.'.format(loc, apr_shape[dim]))
+
+    locf = min(loc+n_proj, apr_shape[dim])
+    patch = pyapr.ReconPatch()
+    if dim==0:
+        patch.z_begin = loc
+        patch.z_end = locf
+    if dim==1:
+        patch.y_begin = loc
+        patch.y_end = locf
+    if dim==2:
+        patch.x_begin = loc
+        patch.x_end = locf
+
+    data = pyapr.numerics.reconstruction.reconstruct_constant(apr, parts, patch=patch)
+
+    V = data.max(axis=dim)
+    S = np.ones_like(V) * 0.7
+    if threshold is not None:
+        S[V<threshold] = 0
+    H = np.argmax(data, axis=dim)
+    H = rescale_intensity(gaussian(H, sigma=5), out_range=np.float64)*0.66
+    V = np.log(V + 200)
+    vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
+    V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
+    S = S * V
+    rgb = hsv2rgb(np.dstack((H,S,V)))
+    rescale_intensity(rgb, out_range='uint8')
+
+    if plot:
+        plt.figure()
+        plt.imshow(rgb)
+
+    return rgb
 
 class tileViewer():
     """
@@ -385,7 +496,7 @@ class tileViewer():
 
         return layers
 
-    def display_all_tiles(self, pyramidal=True, downsample=1, **kwargs):
+    def display_all_tiles(self, pyramidal=True, downsample=1, color=False, **kwargs):
         """
         Display all parsed tiles.
 
@@ -424,6 +535,23 @@ class tileViewer():
                     self.loaded_segmentation[ind] = cc
 
             position = self._get_tile_position(tile.row, tile.col)
+
+            if color:
+                blending = 'additive'
+                if tile.col % 2:
+                    if tile.row % 2:
+                        cmap = 'red'
+                    else:
+                        cmap = 'green'
+                else:
+                    if tile.row % 2:
+                        cmap = 'green'
+                    else:
+                        cmap = 'red'
+            else:
+                cmap = 'gray'
+                blending = 'translucent'
+
             if level_delta != 0:
                 position = [x/downsample for x in position]
             layers.append(apr_to_napari_Image(apr, parts,
@@ -439,6 +567,8 @@ class tileViewer():
                                                    name='Segmentation [{}, {}]'.format(tile.row, tile.col),
                                                    translate=position,
                                                    level_delta=level_delta,
+                                                   colormap=cmap,
+                                                   blending=blending,
                                                    opacity=0.7))
         if self.cells is not None:
             par = apr.get_parameters()
@@ -457,97 +587,141 @@ class tileViewer():
         else:
             display_layers(layers)
 
-    # This function is currently not working
-    # def display_tiles(self, coords, downsample=1, **kwargs):
-    #     """
-    #     Display tiles only for coordinates specified in coords.
-    #
-    #     Parameters
-    #     ----------
-    #     coords: (np.array) array containing the coords of tiles to be displayed.
-    #     downsample: (int) downsampling parameter for APRSlicer
-    #                         (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
-    #     kwargs: (dict) dictionary passed to Napari for custom option
-    #
-    #     Returns
-    #     -------
-    #     None
-    #     """
-    #     # Check that coords is (n, 2) or (2, n)
-    #     if coords.size == 2:
-    #         coords = np.array(coords).reshape(1, 2)
-    #     elif coords.shape[1] != 2:
-    #         coords = coords.T
-    #         if coords.shape[1] != 2:
-    #             raise ValueError('Error, at least one dimension of coords should be of size 2.')
-    #
-    #     # Convert downsample to level delta
-    #     level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
-    #
-    #     # Compute layers to be displayed by Napari
-    #     layers = []
-    #     for i in range(coords.shape[0]):
-    #         row = coords[i, 0]
-    #         col = coords[i, 1]
-    #
-    #         # Load tile if not loaded, else use cached tile
-    #         ind = np.ravel_multi_index((row, col), dims=(self.nrow, self.ncol))
-    #         if self._is_tile_loaded(row, col):
-    #             apr, parts = self.loaded_tiles[ind]
-    #             if self.segmentation:
-    #                 cc = self.loaded_segmentation[ind]
-    #         else:
-    #             apr, parts = self._load_tile(row, col)
-    #             self.loaded_ind.append(ind)
-    #             self.loaded_tiles[ind] = apr, parts
-    #             if self.segmentation:
-    #                 apr, cc = self._load_segmentation(row, col)
-    #                 self.loaded_segmentation[ind] = mask
-    #
-    #         position = self._get_tile_position(row, col)
-    #         if level_delta != 0:
-    #             position = [x/level_delta**2 for x in position]
-    #         layers.append(apr_to_napari_Image(apr, parts,
-    #                                            mode='constant',
-    #                                            name='Tile [{}, {}]'.format(row, col),
-    #                                            translate=position,
-    #                                            opacity=0.7,
-    #                                            level_delta=level_delta,
-    #                                            **kwargs))
-    #         if self.segmentation:
-    #             layers.append(apr_to_napari_Labels(apr, mask,
-    #                                               mode='constant',
-    #                                               name='Segmentation [{}, {}]'.format(row, col),
-    #                                               translate=position,
-    #                                               level_delta=level_delta,
-    #                                               opacity=0.7))
-    #     if self.cells is not None:
-    #         par = apr.get_parameters()
-    #         layers.append(Points(self.cells, opacity=0.7, name='Cells center',
-    #                              scale=[par.dz/downsample, par.dx/downsample, par.dy/downsample]))
-    #
-    #     if self.atlaser is not None:
-    #         layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
-    #                              scale=[self.atlaser.z_downsample/downsample,
-    #                                     self.atlaser.y_downsample/downsample,
-    #                                     self.atlaser.x_downsample/downsample]))
-    #
-    #     # Display layers
-    #     display_layers(layers)
-    #
-    # def _load_segmentation(self, row, col):
-    #     """
-    #     Load the segmentation for tile at position [row, col].
-    #     """
-    #     df = self.database
-    #     path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
-    #     apr = pyapr.APR()
-    #     parts = pyapr.LongParticles()
-    #     folder, filename = os.path.split(path)
-    #     folder_seg = os.path.join(folder, 'segmentation')
-    #     pyapr.io.read(os.path.join(folder_seg, filename[:-4] + '_segmentation.apr'), apr, parts)
-    #     u = (apr, parts)
-    #     return u
+    def display_tiles(self, coords, pyramidal=True, downsample=1, color=False, **kwargs):
+        """
+        Display tiles at position coords.
+
+        Parameters
+        ----------
+        coords: (list) list of tuples (row, col) containing the tile coordinate to display.
+        downsample: (int) downsampling parameter for APRSlicer
+                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: (dict) dictionary passed to Napari for custom option
+        color: (bool) option to display in color
+
+        Returns
+        -------
+        None
+        """
+
+        # Compute layers to be displayed by Napari
+        layers = []
+
+        # Convert downsample to level delta
+        level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+        for tile in self.tiles:
+            if (tile.row, tile.col) in coords:
+                # Load tile if not loaded, else use cached tile
+                ind = np.ravel_multi_index((tile.row, tile.col), dims=(self.nrow, self.ncol))
+                if self._is_tile_loaded(tile.row, tile.col):
+                    apr, parts = self.loaded_tiles[ind]
+                    if self.segmentation:
+                        cc = self.loaded_segmentation[ind]
+                else:
+                    tile.load_tile()
+                    apr, parts = tile.apr, tile.parts
+                    self.loaded_ind.append(ind)
+                    self.loaded_tiles[ind] = apr, parts
+                    if self.segmentation:
+                        tile.load_segmentation()
+                        cc = tile.parts_cc
+                        self.loaded_segmentation[ind] = cc
+
+                position = self._get_tile_position(tile.row, tile.col)
+                if level_delta != 0:
+                    position = [x / downsample for x in position]
+
+                if color:
+                    blending = 'additive'
+                    if tile.col % 2:
+                        if tile.row % 2:
+                            cmap = 'red'
+                        else:
+                            cmap = 'green'
+                    else:
+                        if tile.row % 2:
+                            cmap = 'green'
+                        else:
+                            cmap = 'red'
+                else:
+                    cmap = 'gray'
+                    blending = 'translucent'
+
+                layers.append(apr_to_napari_Image(apr, parts,
+                                                  mode='constant',
+                                                  name='Tile [{}, {}]'.format(tile.row, tile.col),
+                                                  translate=position,
+                                                  opacity=0.7,
+                                                  level_delta=level_delta,
+                                                  colormap=cmap,
+                                                  blending=blending,
+                                                  **kwargs))
+                if self.segmentation:
+                    layers.append(apr_to_napari_Labels(apr, cc,
+                                                       mode='constant',
+                                                       name='Segmentation [{}, {}]'.format(tile.row, tile.col),
+                                                       translate=position,
+                                                       level_delta=level_delta,
+                                                       opacity=0.7))
+        if self.cells is not None:
+            par = apr.get_parameters()
+            layers.append(Points(self.cells, opacity=0.7, name='Cells center',
+                                 scale=[par.dz / downsample, par.dx / downsample, par.dy / downsample]))
+
+        if self.atlaser is not None:
+            layers.append(Labels(self.atlaser.atlas, opacity=0.7, name='Atlas',
+                                 scale=[self.atlaser.z_downsample / downsample,
+                                        self.atlaser.y_downsample / downsample,
+                                        self.atlaser.x_downsample / downsample]))
+
+        # Display layers
+        if pyramidal:
+            display_layers_pyramidal(layers, level_delta)
+        else:
+            display_layers(layers)
+
+    def check_stitching(self, downsample=8, color=False, **kwargs):
+
+        # Compute layers to be displayed by Napari
+        layers = []
+
+        # Convert downsample to level delta
+        level_delta = int(-np.sign(downsample)*np.log2(np.abs(downsample)))
+
+        for tile in self.tiles:
+            tile.lazy_load_tile(level_delta=level_delta)
+            position = self._get_tile_position(tile.row, tile.col)
+
+            if level_delta != 0:
+                position = [x/downsample for x in position]
+
+            if color:
+                blending = 'additive'
+                if tile.col % 2:
+                    if tile.row % 2:
+                        cmap = 'red'
+                    else:
+                        cmap = 'green'
+                else:
+                    if tile.row % 2:
+                        cmap = 'green'
+                    else:
+                        cmap = 'red'
+            else:
+                cmap = 'gray'
+                blending = 'translucent'
+
+            layers.append(Image(tile.lazy_data,
+                              name='Tile [{}, {}]'.format(tile.row, tile.col),
+                              translate=position,
+                              opacity=0.7,
+                              colormap=cmap,
+                              blending=blending,
+                              **kwargs))
+
+        display_layers(layers)
+
 
     def _is_tile_loaded(self, row, col):
         """

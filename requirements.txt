@@ -13,3 +13,4 @@ sparse
 allensdk
 scikit-learn
 brainreg
+pyapr

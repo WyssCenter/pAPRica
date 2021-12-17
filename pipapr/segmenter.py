@@ -15,11 +15,11 @@ from time import time
 import cv2 as cv
 import sparse
 import napari
-from alive_progress import alive_bar
+from tqdm import tqdm
 import os
+from time import sleep
 
-
-def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
+def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
     """
     Predict particle class with the trained classifier clf on the precomputed features f using a
     blocked strategy to avoid memory segfault.
@@ -28,6 +28,8 @@ def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
     ----------
     x: (np.array) features (n_particle, n_features) for particle prediction
     n_parts: (int) number of particles in the batch to predict
+    output: (str) output type, can be 'class' where each particle get assigned a class or 'proba' where each
+                particle get assigned a probability of belonging to each class.
     verbose: (bool) control function verbosity
 
     Returns
@@ -39,24 +41,67 @@ def _predict_on_APR_block(x, clf, n_parts=1e7, verbose=False):
     if verbose:
         t = time()
 
-    y_pred = np.empty((x.shape[0]))
     n_block = int(np.ceil(x.shape[0] / n_parts))
     if int(n_parts) != n_parts:
         raise ValueError('Error: n_parts must be an int.')
     n_parts = int(n_parts)
-
     clf[1].set_params(n_jobs=-1)
-    for i in range(n_block):
-        y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = clf.predict(
-            x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+
+    if output == 'class':
+        y_pred = np.empty((x.shape[0]))
+        for i in tqdm(range(n_block), desc='Predicting particle type'):
+            y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0])] = clf.predict(
+                x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+        # Transform numpy array to ParticleData
+        parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
+
+    elif output == 'proba':
+        y_pred = np.empty((x.shape[0], len(clf.classes_)))
+        for i in tqdm(range(n_block), desc='Predicting particle type'):
+            y_pred[i * n_parts:min((i + 1) * n_parts, x.shape[0]), :] = clf.predict_proba(
+                x[i * n_parts:min((i + 1) * n_parts, x.shape[0])])
+        # Transform numpy array to ParticleData
+        parts_pred = []
+        for i in range(len(clf.classes_)):
+            parts_pred.append(pyapr.ShortParticles(
+                                                   (y_pred[:, i]*(2**16-1))
+                                                    .astype('uint16')))
+    else:
+        raise ValueError('Unknown output \'{}\' for APR block prediction.'.format(output))
 
     if verbose:
         print('Blocked prediction took {:0.3f} s.\n'.format(time() - t))
 
-    # Transform numpy array to ParticleData
-    parts_pred = pyapr.ShortParticles(y_pred.astype('uint16'))
 
     return parts_pred
+
+
+def map_feature(data, hash_idx, features):
+    """
+    Map feature values to segmented particle data.
+
+    Parameters
+    ----------
+    data: (ParticleData) connected component particle array
+    hash_idx: (array) array containing the number of each connected component in ascendant order
+    features: (array) array containing the values to map
+
+    Returns
+    -------
+    Array of mapped values
+    """
+
+    if len(hash_idx) != len(features):
+        raise ValueError('Error: hash_idx and features must have the same length.')
+
+    # Create hash dict
+    hash_dict = {x: y for x, y in zip(hash_idx, features)}
+    # Replace 0 by 0
+    hash_dict[0] = 0
+
+    mp = np.arange(0, data.max() + 1)
+    mp[list(hash_dict.keys())] = list(hash_dict.values())
+    return mp[np.array(data, copy=False)]
 
 
 class tileSegmenter():
@@ -115,7 +160,7 @@ class tileSegmenter():
     def from_classifier(cls,
                         classifier,
                         func_to_compute_features,
-                        func_to_get_cc,
+                        func_to_get_cc=None,
                         verbose=True):
         """
         Instantiate tileSegmenter object with a classifier, function to compute the features and to get the
@@ -161,15 +206,17 @@ class tileSegmenter():
         if tile.apr is None:
             tile.load_tile()
 
+        # Compute features on APR
         if self.verbose:
             t = time()
-            print('Computing features on AP')
+            print('Computing features on APR')
         f = self.func_to_compute_features(tile.apr, tile.parts)
+        self.filtered_APR = f
         if self.verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
+        # Predict particle class
         parts_pred = _predict_on_APR_block(f, self.clf, verbose=self.verbose)
-
         if self.verbose:
             # Display inference info
             print('\n****** INFERENCE RESULTS ******')
@@ -178,7 +225,10 @@ class tileSegmenter():
                                                       np.sum(parts_pred == l) / len(parts_pred) * 100))
             print('*******************************')
 
-        cc = self.func_to_get_cc(tile.apr, parts_pred)
+        # Compute connected component from classification
+        if self.func_to_get_cc is not None:
+            cc = self.func_to_get_cc(tile.apr, parts_pred)
+            tile.parts_cc = cc
 
         # Save results
         if save_mask:
@@ -186,7 +236,6 @@ class tileSegmenter():
         if save_cc:
             self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
 
-        tile.parts_cc = cc
         tile.parts_mask = parts_pred
 
     def _save_segmentation(self, path, name, parts):
@@ -218,7 +267,8 @@ class tileCells():
 
     def __init__(self,
                  tiles: pipapr.parser.tileParser,
-                 database: (str, pd.DataFrame)):
+                 database: (str, pd.DataFrame),
+                 verbose=True):
         """
 
         Parameters
@@ -247,8 +297,8 @@ class tileCells():
         self.neighbors = tiles.neighbors
         self.n_edges = tiles.n_edges
         self.path_list = tiles.path_list
-        self.overlap = tiles.overlap
         self.frame_size = tiles.frame_size
+        self.verbose = verbose
 
         self.cells = None
         self.atlas = None
@@ -270,9 +320,12 @@ class tileCells():
         None
         """
         
-        for tile in self.tiles:
+        for tile in tqdm(self.tiles, desc='Extracting and merging cells..'):
             tile.load_tile()
             tile.load_segmentation()
+            
+            # Remove objects on the edge
+            tile = self._remove_edge_cells(tile)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -296,6 +349,38 @@ class tileCells():
         """
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
+        
+    def _remove_edge_cells(self, tile):
+        """
+        Remove cells/objects that are touching the tile edge and if this edge is overlapping another tile.
+
+        Parameters
+        ----------
+        tile: (tileLoader) tile to remove the object on
+        verbose: option to display information
+
+        Returns
+        -------
+        tileLoader with removed objects.
+        """
+
+        shape = tile.apr.shape()
+        s_min = np.array([np.nan, 0, 0])
+        s_max = np.array([np.nan, shape[1], shape[2]])
+        
+        minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
+
+        for i in range(1, minc.shape[0]):
+            if (minc[i, :] == s_min).any():
+                ind = np.where(tile.parts_cc == i)
+                for ii in ind[0]:
+                    tile.parts_cc[ii] = 0
+            if (maxc[i, :] == s_max).any():
+                ind = np.where(tile.parts_cc == i)
+                for ii in ind[0]:
+                    tile.parts_cc[ii] = 0
+
+        return tile
 
     def _merge_cells(self, tile, lowe_ratio, distance_max):
         """
@@ -317,7 +402,7 @@ class tileCells():
         r1 = np.max(self.cells, axis=0)
         r2 = self._get_tile_position(tile.row, tile.col)
 
-        v_size = np.array([tile.apr.org_dims(2), tile.apr.org_dims(1), tile.apr.org_dims(0)])
+        v_size = np.array(tile.apr.shape())
 
         # Define the overlapping area
         overlap_i = r2
@@ -379,7 +464,7 @@ class tileCells():
 
         return np.array([pz, py, px])
 
-    def _filter_cells_flann(self, c1, c2, lowe_ratio=0.7, distance_max=5, verbose=False):
+    def _filter_cells_flann(self, c1, c2, lowe_ratio=0.7, distance_max=5):
         """
         Remove cells duplicate using Flann criteria and distance threshold.
 
@@ -417,11 +502,11 @@ class tileCells():
         ind_c1 = [m.queryIdx for m in good]
         ind_c2 = [m.trainIdx for m in good]
 
-        # For now I just remove thee cells in c but merging strategies can be better
+        # For now I just remove the cells in c2 but merging strategies can be better
         c2 = np.delete(c2, ind_c2, axis=0)
 
         # Display info
-        if verbose:
+        if self.verbose:
             print('{:0.2f}% of cells were removed.'.format(len(ind_c2)/(c1.shape[0]+c2.shape[0]-len(ind_c2))*100))
 
         return np.vstack((c1, c2))
@@ -429,7 +514,7 @@ class tileCells():
 
 class tileTrainer():
     """
-    Class used to train a classifier that works directly on PAR data. It uses Napari to manually add labels.
+    Class used to train a classifier that works directly on APR data. It uses Napari to manually add labels.
 
     """
 
@@ -443,7 +528,7 @@ class tileTrainer():
         self.apr = tile.apr
         self.parts = tile.parts
         self.apr_it = self.apr.iterator()
-        self.shape = [tile.apr.org_dims(i) for i in [2, 1, 0]]
+        self.shape = tile.apr.shape()
         self.func_to_compute_features = func_to_compute_features
         self.func_to_get_cc = func_to_get_cc
 
@@ -455,6 +540,7 @@ class tileTrainer():
         self.clf = None
         self.parts_mask = None
         self.parts_cc = None
+        self.f = None
 
     def manually_annotate(self, use_sparse_labels=True, **kwargs):
         """
@@ -481,7 +567,7 @@ class tileTrainer():
         image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
         viewer.add_layer(image_layer)
         viewer.add_labels(self.labels_manual)
-        napari.run()
+        viewer.show(block=True)
 
         # We extract labels and pixel coordinate from the sparse array
         if self.sparse:
@@ -518,7 +604,7 @@ class tileTrainer():
         image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
         viewer.add_layer(image_layer)
         viewer.add_labels(self.labels_manual)
-        napari.run()
+        viewer.show(block=True)
 
         # We extract labels and pixel coordinate from the sparse array
         if self.sparse:
@@ -594,7 +680,8 @@ class tileTrainer():
         self._remove_ambiguities(verbose=verbose)
 
         # We compute features and train the classifier
-        f = self.func_to_compute_features(self.apr, self.parts)
+        if self.f is None:
+            f = self.func_to_compute_features(self.apr, self.parts)
 
         # Fetch data that was manually labelled
         x = f[self.parts_train_idx]
@@ -602,7 +689,7 @@ class tileTrainer():
 
         # Train random forest
         clf = make_pipeline(preprocessing.StandardScaler(with_mean=True, with_std=True),
-                            RandomForestClassifier(n_estimators=100, class_weight='balanced'))
+                            RandomForestClassifier(n_estimators=10, class_weight='balanced'))
         t = time()
         clf.fit(x, y.ravel())
         print('Training took {} s.\n'.format(time() - t))
@@ -732,7 +819,7 @@ class tileTrainer():
 
         Returns
         -------
-
+        None
         """
         from joblib import dump
 
@@ -740,6 +827,38 @@ class tileTrainer():
             path = os.path.join(self.tile.folder_root, 'random_forest_n100.joblib')
 
         dump(self.clf, path)
+
+    def load_classifier(self, path=None):
+        """
+        Load a trained classifier.
+
+        Parameters
+        ----------
+        path: (str) path for loading the classifier. By default, it is loaded from root folder.
+
+        Returns
+        -------
+        None
+        """
+        from joblib import load
+
+        if path is None:
+            path = os.path.join(self.tile.folder_root, 'random_forest_n100.joblib')
+
+        self.clf = load(path)
+
+    def display_features(self):
+        """
+        Display the computed features.
+
+        """
+        if self.f is None:
+            raise TypeError('Error: filters can''t be displayed because they were not computed')
+
+        viewer = napari.Viewer()
+        for i in range(f.shape[1]):
+            viewer.add_layer(pipapr.viewer.apr_to_napari_Image(self.apr, pyapr.FloatParticles(f[:, i])))
+        napari.run()
 
     def _remove_ambiguities(self, verbose):
         """
@@ -796,12 +915,10 @@ class tileTrainer():
         """
         self.parts_train_idx = np.empty(self.pixel_list.shape[0], dtype='uint64')
 
-        with alive_bar(total=self.pixel_list.shape[0], title='Sampling labels on APR.', force_tty=True) as bar:
-            for i in range(self.pixel_list.shape[0]):
-                idx = self._find_particle(self.pixel_list[i, :])
+        for i in tqdm(range(self.pixel_list.shape[0]), desc='Sampling labels on APR.'):
+            idx = self._find_particle(self.pixel_list[i, :])
 
-                self.parts_train_idx[i] = idx
-                bar()
+            self.parts_train_idx[i] = idx
 
     def _find_particle(self, coords):
         """
@@ -821,8 +938,8 @@ class tileTrainer():
             z_l, x_l, y_l = coords // particle_size
             for idx in range(self.apr_it.begin(level, z_l, x_l), self.apr_it.end()):
                 if self.apr_it.y(idx) == y_l:
-                    if np.sqrt(np.sum((coords-np.array([z_l, x_l, y_l])*particle_size)**2))/particle_size > np.sqrt(3):
-                        print('ich')
+                    # if np.sqrt(np.sum((coords-np.array([z_l, x_l, y_l])*particle_size)**2))/particle_size > np.sqrt(3):
+                    #     print('ich')
                     return idx
 
     def _order_labels(self):

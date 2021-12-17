@@ -1,5 +1,12 @@
 """
-Module containing classes and functions relative to Parsing.
+Submodule containing classes and functions relative to Parsing.
+
+The general idea of this submodule is to parse the data to be processed later on. This submodule was developed for
+our particular folder layout and was particularly adapted for COLM, mesoSPIM and ClearScope.
+
+There are two general way of parsing the data:
+- **multitile** parsing (tileParser class), where each tile has a given position on a 2D grid and can therefore be stitched
+- **independant** parsing (baseParser class), where each tile is independent
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -12,11 +19,161 @@ import re
 import numpy as np
 import pipapr
 
-class tileParser():
+
+class baseParser():
     """
-    Class used to parse multitile data.
+    Class used to parse several independent tiles (not multitile).
+
     """
-    def __init__(self, path, frame_size, overlap, ftype=None, nrow=None, ncol=None):
+    def __init__(self, path, frame_size, ftype, channel=0):
+        """
+        Constructor of the baseParser object.
+
+        Parameters
+        ----------
+        path: (str) path where to look for the data.
+        frame_size: (int) size of each frame (camera resolution).
+        ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
+
+        """
+        self.path = path
+        self.type = ftype
+        self.tiles_list = self._get_tile_list()
+        self.n_tiles = len(self.tiles_list)
+        self.ncol = None
+        self.nrow = None
+        self.tiles_pattern, self.tile_pattern_path = None, None
+        self.neighbors, self.n_edges = None, None
+        self.neighbors_tot = None
+        self.path_list = self._get_path_list()
+        self.overlap = None
+        self.frame_size = frame_size
+        self._print_info()
+        self.channel = channel
+
+        # Define some folders
+        base, _ = os.path.split(self.path)
+        self.folder_root = base
+        self.folder_max_projs = None
+
+    def _print_info(self):
+        """
+        Display parsing summary in the terminal.
+
+        """
+        print('\n**********  PARSING DATA **********')
+        print('Tiles are of type {}.'.format(self.type))
+        print('{} tiles were detected.'.format(self.n_tiles))
+        print('***********************************\n')
+
+    def _get_tile_list(self):
+        """
+        Returns a list of tiles as a dictionary
+
+        """
+
+        files = self._get_tile_path()
+        return self._get_tiles_from_path(files)
+
+    def _get_tile_path(self):
+        """
+        Returns a list containing file paths (for tiff3D and APR) or folder paths (for tiff2).
+
+        """
+
+        if self.type == 'apr':
+            # If files are apr then their names are 'row_col.apr'
+            files = glob(os.path.join(self.path, '*.apr'))
+        elif self.type == 'tiff3D':
+            # If files are 3D tiff then their names are 'row_col.tif'
+            files = glob(os.path.join(self.path, '*.tif'))
+        elif self.type == 'tiff2D':
+            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
+            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
+            files = glob(os.path.join(self.path, '*/'))
+        elif self.type == 'raw':
+            files = glob(os.path.join(self.path, '*.raw'))
+        else:
+            raise TypeError('Error: file type {} not supported.'.format(self.type))
+
+        return files
+
+    def _get_tiles_from_path(self, files):
+        """
+        Create a list of dictionnary for each tile containing it's path and coordinate on the grid.
+        Coordinates are set to None for the baseParser which only parse independant tiles.
+
+        """
+
+        tiles = []
+        for f in files:
+            tile = {'path': f,
+                    'row': None,
+                    'col': None,
+                    }
+            tiles.append(tile)
+
+        return tiles
+
+    def _get_path_list(self):
+        """
+        Returns a list containing the path to each tile.
+
+        """
+        path_list = []
+        for tile in self.tiles_list:
+            path_list.append(tile['path'])
+        return path_list
+
+    def __getitem__(self, item):
+        """
+        Return tiles, add neighbors information before returning.
+
+        """
+        t = self.tiles_list[item]
+        path = t['path']
+        col = t['col']
+        row = t['row']
+
+        return pipapr.loader.tileLoader(path=path,
+                                          row=row,
+                                          col=col,
+                                          ftype=self.type,
+                                          neighbors=self.neighbors,
+                                          neighbors_tot=self.neighbors_tot,
+                                          neighbors_path=None,
+                                          frame_size=self.frame_size,
+                                          folder_root=self.folder_root,
+                                          channel=self.channel)
+
+    def __len__(self):
+        """
+        Returns the number of tiles.
+
+        """
+        return self.n_tiles
+
+
+class tileParser(baseParser):
+    """
+    Class used to parse multi-tile data where each tile position in space matters. Tile parsed this way are usually
+    stitched later on.
+
+    """
+    def __init__(self, path, frame_size=2048, ftype=None, nrow=None, ncol=None, channel=0):
+        """
+        Constructor of the tileParser object.
+
+        Parameters
+        ----------
+        path: (str) path where to look for the data.
+        frame_size: (int) size of each frame (camera resolution).
+        ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
+        nrow: (int) number of row for parsing COLM LOCXXX data
+        ncol: (int) number of col for parsing COLM LOCXXX data
+        channel: (int) fluorescence channel for parsing COLM LOCXXX data
+
+        """
         self.path = path
         if ftype is None:
             self.type = self._get_type()
@@ -24,18 +181,22 @@ class tileParser():
             self.type = ftype
 
         if (nrow is not None) and (ncol is not None):
-            self.tiles_list = self._get_tile_list_LOC(nrow, ncol)
+            self.tiles_list = self._get_tile_list_LOC(ncol)
         else:
             self.tiles_list = self._get_tile_list()
+        self._correct_offset()
         self.n_tiles = len(self.tiles_list)
+        if self.n_tiles == 0:
+            raise FileNotFoundError('Error: no tile were found.')
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
         self._sort_tiles()
         self.tiles_pattern, self.tile_pattern_path = self._get_tiles_pattern()
         self.neighbors, self.n_edges = self._get_neighbors_map()
+        self.neighbors_tot = self._get_total_neighbors_map()
         self.path_list = self._get_path_list()
-        self.overlap = overlap
         self.frame_size = frame_size
+        self.channel = channel
         self._print_info()
 
         # Define some folders
@@ -43,9 +204,30 @@ class tileParser():
         self.folder_root = base
         self.folder_max_projs = os.path.join(base, 'max_projs')
 
-    def _print_info(self):
+    def _correct_offset(self):
+        """
+        If the row or column do not start at 0, then we subtract the min_row and min_col so that it starts at 0.
 
+        """
+
+        col_min = 1000
+        row_min = 1000
+        for tile in self.tiles_list:
+            row_min = min(row_min, tile['row'])
+            col_min = min(col_min, tile['col'])
+
+        if (row_min > 0) or (col_min > 0):
+            for tile in self.tiles_list:
+                tile['row'] -= row_min
+                tile['col'] -= col_min
+
+    def _print_info(self):
+        """
+        Display parsing summary in the terminal.
+
+        """
         print('\n**********  PARSING DATA **********')
+        print('{}'.format(self.path))
         print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected.'.format(self.n_tiles))
         print('{} rows and {} columns.'.format(self.nrow, self.ncol))
@@ -71,30 +253,15 @@ class tileParser():
         elif len(files_apr) != 0:
             return 'apr'
 
-    def _get_tile_list(self):
+    def _get_tiles_from_path(self, files):
         """
-        Returns a list of tiles as a dictionary
+        Create a list of dictionnary for each tile containing it's path and coordinate on the grid.
+
         """
-
-        if self.type == 'apr':
-            # If files are apr then their names are 'row_col.apr'
-            files = glob(os.path.join(self.path, '*.apr'))
-        elif self.type == 'tiff3D':
-            # If files are 3D tiff then their names are 'row_col.tif'
-            files = glob(os.path.join(self.path, '*.tif'))
-        elif self.type == 'tiff2D':
-            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
-            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
-            files = glob(os.path.join(self.path, '*/'))
-        elif self.type == 'raw':
-            files = glob(os.path.join(self.path, '*.raw'))
-        else:
-            raise TypeError('Error: file type {} not supported.'.format(self.type))
-
         tiles = []
         for f in files:
 
-            pattern_search = re.search('/(\d+)_(\d+)', f)
+            pattern_search = re.search(os.path.sep + '(\d+)_(\d+)', f)
             if pattern_search:
                 row = int(pattern_search.group(1))
                 col = int(pattern_search.group(2))
@@ -106,36 +273,25 @@ class tileParser():
                     'col': col,
                     }
             tiles.append(tile)
+
         return tiles
 
-    def _get_tile_list_LOC(self, nrow, ncol):
+    def _get_tile_list_LOC(self, ncol):
         """
         Returns a list of tiles as a dictionary for data saved as LOC00X.
+
         """
 
-        if self.type == 'apr':
-            # If files are apr then their names are 'row_col.apr'
-            files = glob(os.path.join(self.path, '*.apr'))
-        elif self.type == 'tiff3D':
-            # If files are 3D tiff then their names are 'row_col.tif'
-            files = glob(os.path.join(self.path, '*.tif'))
-        elif self.type == 'tiff2D':
-            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
-            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
-            files = glob(os.path.join(self.path, '*/'))
-        elif self.type == 'raw':
-            files = glob(os.path.join(self.path, '*.raw'))
-        else:
-            raise TypeError('Error: file type {} not supported.'.format(self.type))
+        files = glob(os.path.join(self.path, '*/'))
 
         tiles = []
         for f in files:
 
-            pattern_search = re.search('/LOC(\d+)', f)
-            if pattern_search:
-                n = int(pattern_search.group(1))
-                row = n % ncol
-                col = n // ncol
+            pattern_search = re.findall('/LOC(\d+)', f)
+            if pattern_search != []:
+                n = int(pattern_search[-1])
+                row = n // ncol
+                col = n % ncol
             else:
                 raise TypeError('Couldn''t get the column/row.')
 
@@ -165,6 +321,7 @@ class tileParser():
     def _get_ncol(self):
         """
         Returns the number of columns (H) to be stitched.
+
         """
         ncol = 0
         for tile in self.tiles_list:
@@ -175,6 +332,7 @@ class tileParser():
     def _get_nrow(self):
         """
         Returns the number of rows (V) to be stitched.
+
         """
         nrow = 0
         for tile in self.tiles_list:
@@ -198,37 +356,41 @@ class tileParser():
         """
         Return the total neighbors maps (with redundancy in the case of undirected graph).
 
-        Note: this function is not used anymore.
         """
         # Initialize neighbors
-        neighbors = [None] * self.ncol
+        neighbors_tot = np.empty((self.nrow, self.ncol), dtype=object)
+        cnt = 0
         for x in range(self.ncol):
-            # Create new dimension
-            neighbors[x] = [None] * self.nrow
             for y in range(self.nrow):
+                if self.tiles_pattern[y, x] == 0:
+                    pass
                 # Fill up 2D list
                 tmp = []
-                if x > 0:
-                    # NORTH
-                    tmp.append([x-1, y])
-                if x < self.ncol-1:
-                    # SOUTH
-                    tmp.append([x+1, y])
-                if y > 0:
-                    # WEST
-                    tmp.append([x, y-1])
-                if y < self.nrow-1:
+                if x < self.ncol-1 and self.tiles_pattern[y, x+1] == 1:
                     # EAST
-                    tmp.append([x, y+1])
-                neighbors[x][y] = tmp
-        return neighbors
+                    tmp.append([y, x+1])
+                    cnt += 1
+                if y < self.nrow-1 and self.tiles_pattern[y+1, x] == 1:
+                    # SOUTH
+                    tmp.append([y+1, x])
+                    cnt += 1
+                if x > 0 and self.tiles_pattern[y, x-1] == 1:
+                    # WEST
+                    tmp.append([y, x-1])
+                    cnt += 1
+                if y > 0 and self.tiles_pattern[y-1, x] == 1:
+                    # NORTH
+                    tmp.append([y-1, x])
+                    cnt += 1
+                neighbors_tot[y, x] = tmp
+        return neighbors_tot
 
     def _get_neighbors_map(self):
         """
         Returns the non-redundant neighbors map: neighbors[row, col] gives a list of neighbors and the total
         number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.
-        """
 
+        """
         # Initialize neighbors
         neighbors = np.empty((self.nrow, self.ncol), dtype=object)
         cnt = 0
@@ -239,36 +401,36 @@ class tileParser():
                 # Fill up 2D list
                 tmp = []
                 if x < self.ncol-1 and self.tiles_pattern[y, x+1] == 1:
-                    # SOUTH
+                    # EAST
                     tmp.append([y, x+1])
                     cnt += 1
                 if y < self.nrow-1 and self.tiles_pattern[y+1, x] == 1:
-                    # EAST
+                    # SOUTH
                     tmp.append([y+1, x])
                     cnt += 1
                 neighbors[y, x] = tmp
 
         return neighbors, cnt
 
-    def _get_path_list(self):
-        """
-        Returns a list containing the path to each tile.
-        """
-        path_list = []
-        for tile in self.tiles_list:
-            path_list.append(tile['path'])
-        return path_list
-
     def __getitem__(self, item):
         """
         Return tiles, add neighbors information before returning.
-        """
 
-        t = self.tiles_list[item]
+        """
+        if isinstance(item, tuple):
+            if (item[0] > self.nrow) or (item[0] < 0):
+                raise ValueError('Error: tile at requested coordinates does not exists.')
+            if (item[1] > self.ncol) or (item[1] < 0):
+                raise ValueError('Error: tile at requested coordinates does not exists.')
+            t = self.tiles_list[item[0]*self.ncol + item[1]]
+        else:
+            t = self.tiles_list[item]
+
         path = t['path']
         col = t['col']
         row = t['row']
         neighbors = self.neighbors[row, col]
+        neighbors_tot = self.neighbors_tot[row, col]
 
         neighbors_path = []
         for r, c in neighbors:
@@ -280,112 +442,10 @@ class tileParser():
                                           col=col,
                                           ftype=self.type,
                                           neighbors=neighbors,
+                                          neighbors_tot=neighbors_tot,
                                           neighbors_path=neighbors_path,
-                                          overlap=self.overlap,
                                           frame_size=self.frame_size,
-                                          folder_root=self.folder_root)
-
-    def __len__(self):
-        """
-        Returns the number of tiles.
-        """
-        return self.n_tiles
+                                          folder_root=self.folder_root,
+                                          channel=self.channel)
 
 
-class randomParser():
-    """
-    Class used to parse random data (not multitile).
-    """
-
-    def __init__(self, path, frame_size, ftype):
-        self.path = path
-        self.type = ftype
-        self.tiles_list = self._get_tile_list()
-        self.n_tiles = len(self.tiles_list)
-        self.ncol = None
-        self.nrow = None
-        self.tiles_pattern, self.tile_pattern_path = None, None
-        self.neighbors, self.n_edges = None, None
-        self.path_list = self._get_path_list()
-        self.overlap = None
-        self.frame_size = frame_size
-        self._print_info()
-
-        # Define some folders
-        base, _ = os.path.split(self.path)
-        self.folder_root = base
-        self.folder_max_projs = None
-
-    def _print_info(self):
-
-        print('\n**********  PARSING DATA **********')
-        print('Tiles are of type {}.'.format(self.type))
-        print('{} tiles were detected.'.format(self.n_tiles))
-        print('***********************************\n')
-
-    def _get_tile_list(self):
-        """
-        Returns a list of tiles as a dictionary
-        """
-
-        if self.type == 'apr':
-            # If files are apr then their names are 'row_col.apr'
-            files = glob(os.path.join(self.path, '*.apr'))
-        elif self.type == 'tiff3D':
-            # If files are 3D tiff then their names are 'row_col.tif'
-            files = glob(os.path.join(self.path, '*.tif'))
-        elif self.type == 'tiff2D':
-            # If files are 2D tiff then tiff sequence are in folders with name "row_col"
-            # files = [f.path for f in os.scandir(self.path) if f.is_dir()]
-            files = glob(os.path.join(self.path, '*/'))
-        elif self.type == 'raw':
-            files = glob(os.path.join(self.path, '*.raw'))
-        else:
-            raise TypeError('Error: file type {} not supported.'.format(self.type))
-
-        tiles = []
-        for f in files:
-            tile = {'path': f,
-                    'row': None,
-                    'col': None,
-                    }
-            tiles.append(tile)
-        return tiles
-
-    def _get_path_list(self):
-        """
-        Returns a list containing the path to each tile.
-        """
-        path_list = []
-        for tile in self.tiles_list:
-            path_list.append(tile['path'])
-        return path_list
-
-    def __getitem__(self, item):
-        """
-        Return tiles, add neighbors information before returning.
-        """
-
-        t = self.tiles_list[item]
-        path = t['path']
-        col = t['col']
-        row = t['row']
-        neighbors = None
-
-        neighbors_path = None
-
-        return pipapr.loader.tileLoader(path=path,
-                                          row=row,
-                                          col=col,
-                                          ftype=self.type,
-                                          neighbors=neighbors,
-                                          neighbors_path=neighbors_path,
-                                          overlap=self.overlap,
-                                          frame_size=self.frame_size,
-                                          folder_root=self.folder_root)
-
-    def __len__(self):
-        """
-        Returns the number of tiles.
-        """
-        return self.n_tiles

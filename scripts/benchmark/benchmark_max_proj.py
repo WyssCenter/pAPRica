@@ -22,7 +22,7 @@ time_mp_0 = []
 time_mp_1 = []
 time_mp_2 = []
 for folder in folders:
-    tiles = pipapr.parser.randomParser(folder, frame_size=512, ftype='apr')
+    tiles = pipapr.parser.baseParser(folder, frame_size=512, ftype='apr')
     tmp_cr = []
     tmp_0 = 0
     tmp_1 = 0

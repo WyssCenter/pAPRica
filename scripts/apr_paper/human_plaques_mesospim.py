@@ -245,7 +245,7 @@ def map_feature(data, hash_idx, features):
 path = '/media/hbm/SSD1/for_segmentation/plaques'
 
 # Convert data
-# tiles = pipapr.parser.randomParser(path=path, frame_size=2048, ftype='raw')
+# tiles = pipapr.parser.baseParser(path=path, frame_size=2048, ftype='raw')
 # converter = pipapr.converter.tileConverter(tiles)
 # converter.batch_convert_to_apr(Ip_th=140, gradient_smoothing=2, rel_error=0.2)
 

@@ -35,6 +35,18 @@ def tile_from_apr(apr, parts):
 
     return tile
 
+def tile_from_path(path):
+
+    return tileLoader(path=path,
+                      row=1,
+                      col=1,
+                      ftype='apr',
+                      neighbors=None,
+                      neighbors_tot=None,
+                      neighbors_path=None,
+                      frame_size=2048,
+                      folder_root=os.path.basename(path),
+                      channel=None)
 
 class tileLoader():
     """

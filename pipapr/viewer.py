@@ -12,6 +12,7 @@ import pandas as pd
 from skimage.io import imread
 from skimage.transform import resize
 from skimage.exposure import rescale_intensity
+from skimage.color import hsv2rgb
 import numpy as np
 import pyapr
 import napari
@@ -220,7 +221,7 @@ def display_layers_pyramidal(layers, level_delta):
     return viewer
 
 
-def display_segmentation(apr, parts, mask, pyramidal=True):
+def display_segmentation(apr, parts, mask, pyramidal=True, **kwargs):
     """
     This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel
     data from APR on the fly.
@@ -236,8 +237,8 @@ def display_segmentation(apr, parts, mask, pyramidal=True):
     None
     """
     layers = []
-    layers.append(apr_to_napari_Image(apr, parts, name='APR'))
-    layers.append(apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3))
+    layers.append(apr_to_napari_Image(apr, parts, name='APR', **kwargs))
+    layers.append(apr_to_napari_Labels(apr, mask, name='Segmentation', opacity=0.3, **kwargs))
     if pyramidal:
         display_layers_pyramidal(layers, level_delta=0)
     else:
@@ -280,6 +281,7 @@ def display_heatmap(heatmap, atlas=None, data=None, log=False):
             if data is not None:
                 viewer.add_image(data, name='Intensity data', blending='additive',
                                  scale=np.array(heatmap.shape)/np.array(data.shape), opacity=0.7)
+
 
 def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsample=2, color=False, rel_map=False):
     """
@@ -335,6 +337,54 @@ def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsampl
             except:
                 pass
 
+
+def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsample=1, threshold=None, plot=True):
+    """
+    Reconstruct colored depth projection.
+
+    """
+
+    level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+    if loc is None:
+        apr_shape = apr.shape()
+        loc = int(apr_shape[dim] / 2)
+
+    if loc > apr_shape[dim]:
+        raise ValueError('Error: loc is too large ({}), maximum loc at this downsample is {}.'.format(loc, apr_shape[dim]))
+
+    locf = min(loc+n_proj, apr_shape[dim])
+    patch = pyapr.ReconPatch()
+    if dim==0:
+        patch.z_begin = loc
+        patch.z_end = locf
+    if dim==1:
+        patch.y_begin = loc
+        patch.y_end = locf
+    if dim==2:
+        patch.x_begin = loc
+        patch.x_end = locf
+
+    data = pyapr.numerics.reconstruction.reconstruct_constant(apr, parts, patch=patch)
+
+    V = data.max(axis=dim)
+    S = np.ones_like(V) * 0.7
+    if threshold is not None:
+        S[V<threshold] = 0
+    H = np.argmax(data, axis=dim)
+    H = rescale_intensity(gaussian(H, sigma=5), out_range=np.float64)*0.66
+    V = np.log(V + 200)
+    vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
+    V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
+    S = S * V
+    rgb = hsv2rgb(np.dstack((H,S,V)))
+    rescale_intensity(rgb, out_range='uint8')
+
+    if plot:
+        plt.figure()
+        plt.imshow(rgb)
+
+    return rgb
 
 class tileViewer():
     """

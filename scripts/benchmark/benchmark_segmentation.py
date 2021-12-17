@@ -185,7 +185,7 @@ path = '/home/apr-benchmark/Desktop/data/synthetic_single_tile/'
 path_classifier = '/home/apr-benchmark/Desktop/data/synthetic/random_forest_n100.joblib'
 
 # Load data and create segmenter
-tiles = pipapr.parser.randomParser(path, frame_size=512, ftype='apr')
+tiles = pipapr.parser.baseParser(path, frame_size=512, ftype='apr')
 segmenter = pipapr.segmenter.tileSegmenter.from_classifier(classifier=path_classifier,
                                                            # func_to_get_cc=get_cc_from_features,
                                                            func_to_compute_features=compute_features)

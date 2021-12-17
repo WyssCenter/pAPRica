@@ -22,18 +22,18 @@ class tileConverter():
     """
 
     def __init__(self,
-                 tiles: (pipapr.parser.tileParser, pipapr.parser.randomParser)):
+                 tiles: (pipapr.parser.tileParser, pipapr.parser.baseParser)):
         """
 
         Parameters
         ----------
-        tiles: (tileParser or randomParser) parser object referencing tiles to be converted.
+        tiles: (tileParser or baseParser) parser object referencing tiles to be converted.
         """
 
-        if isinstance(tiles, pipapr.parser.randomParser):
-            self.random = True # Not multitile
+        if isinstance(tiles, pipapr.parser.tileParser):
+            self.is_multitile = True # Not multitile
         else:
-            self.random = False # Multitile
+            self.is_multitile = False # Multitile
 
         self.tiles = tiles
         self.path = tiles.path
@@ -150,7 +150,7 @@ class tileConverter():
                 tree_parts = None
 
             # Save converted data
-            if self.random:
+            if not self.is_multitile:
                 if tile.type == 'tiff2D':
                     basename, filename = os.path.split(tile.path[:-1])
                     pyapr.io.write(os.path.join(folder_apr, filename + '.apr'), apr, parts, tree_parts=tree_parts)
@@ -161,7 +161,7 @@ class tileConverter():
                 filename = '{}_{}.apr'.format(tile.row, tile.col)
                 pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
 
-        if not self.random:
+        if self.is_multitile:
             # Modify tileParser object to use APR instead
             self.tiles = pipapr.parser.tileParser(folder_apr,
                                                   frame_size=self.tiles.frame_size,
@@ -201,7 +201,7 @@ class tileConverter():
                 raise ValueError('Error: unknown mode for APR reconstruction.')
 
             # Save converted data
-            if self.random:
+            if not self.is_multitile:
                 basename, filename = os.path.split(tile.path)
                 imsave(os.path.join(folder_tiff, filename[:-4] + '.tif'), data, check_contrast=False)
             else:

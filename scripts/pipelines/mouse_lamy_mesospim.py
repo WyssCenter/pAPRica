@@ -12,11 +12,11 @@ import os
 # Convert data to APR
 path = '/media/hbm/SSD1/mesoSPIM/Lamy_028245'
 # # PV
-# tiles = pipapr.parser.randomParser(os.path.join(path, 'ch0'), frame_size=2048, ftype='raw')
+# tiles = pipapr.parser.baseParser(os.path.join(path, 'ch0'), frame_size=2048, ftype='raw')
 # converter = pipapr.converter.tileConverter(tiles)
 # converter.batch_convert_to_apr(Ip_th=140, rel_error=0.2, gradient_smoothing=2)
 # # Autofluo
-# tiles = pipapr.parser.randomParser(os.path.join(path, 'ch1'), frame_size=2048, ftype='raw')
+# tiles = pipapr.parser.baseParser(os.path.join(path, 'ch1'), frame_size=2048, ftype='raw')
 # converter = pipapr.converter.tileConverter(tiles)
 # converter.batch_convert_to_apr(Ip_th=300, rel_error=0.2, gradient_smoothing=2)
 

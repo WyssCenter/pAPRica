@@ -199,7 +199,7 @@ path = '/home/apr-benchmark/Desktop/data/sarah/APR'
 
 
 # Parse data
-tiles = pipapr.parser.randomParser(path, frame_size=2048, ftype='apr')
+tiles = pipapr.parser.baseParser(path, frame_size=2048, ftype='apr')
 tile = tiles[0]
 
 # Segment tile

@@ -37,6 +37,8 @@ import cv2 as cv
 from skimage.exposure import equalize_adapthist, rescale_intensity
 from skimage.transform import warp, AffineTransform, downscale_local_mean
 from skimage.metrics import normalized_root_mse, structural_similarity, peak_signal_noise_ratio
+from skimage.filters import gaussian
+from matplotlib.colors import hsv_to_rgb
 import dill
 import pipapr
 import matplotlib.pyplot as plt
@@ -392,6 +394,81 @@ class baseStitcher():
         self.reg_y = reg_y
         self.reg_z = reg_z
 
+    def reconstruct_z_color(self, z=None, n_proj=0, downsample=1, debug=False, plot=True):
+        """
+        Reconstruct and merge the sample at a given depth z.
+
+        Parameters
+        ----------
+        z: (int) reconstruction depth
+        downsample: (int) downsample for reconstruction (must be a power of 2)
+        debug: (bool) if true the border of each tile will be highlighted
+
+        Returns
+        -------
+        Merged frame at depth z.
+        """
+
+        level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
+
+        tile = self.tiles[0]
+        tile.lazy_load_tile(level_delta=level_delta)
+
+        if z is None:
+            z = int(tile.lazy_data.shape[0] / 2)
+
+        if z > tile.lazy_data.shape[0]:
+            raise ValueError('Error: z is too large ({}), maximum depth at this downsample is {}.'.format(z, tile.lazy_data.shape[0]))
+
+        frame_size = tile.lazy_data.shape[1:]
+        x_pos = self.database['ABS_H'].to_numpy()
+        nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + frame_size[1]))
+        y_pos = self.database['ABS_V'].to_numpy()
+        ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + frame_size[0]))
+
+        H = np.zeros((ny, nx), dtype='uint16')
+        S = np.ones((ny, nx), dtype='uint16') * 0.7
+        V = np.zeros((ny, nx), dtype='uint16')
+
+        H_pos = (x_pos - x_pos.min()) / downsample
+        V_pos = (y_pos - y_pos.min()) / downsample
+
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+            tile.lazy_load_tile(level_delta=level_delta)
+            zf = min(z+n_proj, tile.lazy_data.shape[0])
+            data = tile.lazy_data[z:zf]
+            v = data.max(axis=0)
+            h = np.argmax(data, axis=0)
+
+            # In debug mode we highlight each tile edge to see where it was
+            if debug:
+                v[0, :] = 2**16-1
+                v[-1, :] = 2**16-1
+                v[:, 0] = 2**16-1
+                v[:, -1] = 2**16-1
+
+            x1 = int(H_pos[i])
+            x2 = int(H_pos[i] + v.shape[1])
+            y1 = int(V_pos[i])
+            y2 = int(V_pos[i] + v.shape[0])
+
+            V[y1:y2, x1:x2] = np.maximum(V[y1:y2, x1:x2], v)
+            H[y1:y2, x1:x2] = np.maximum(H[y1:y2, x1:x2], h)
+
+        H = rescale_intensity(gaussian(H, sigma=5), out_range=np.float64)*0.66
+        V = np.log(V + 200)
+        vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
+        V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
+        S = S * V
+        rgb = hsv_to_rgb(np.dstack((H,S,V)))
+        rescale_intensity(rgb, out_range='uint8')
+
+        if plot:
+            plt.figure()
+            plt.imshow(rgb)
+
+        return rgb
+
     def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
         Reconstruct and merge the sample at a given depth z.
@@ -470,12 +547,7 @@ class baseStitcher():
         if plot:
             plt.figure()
             if color:
-                data_to_display = np.zeros_like(merged_data, dtype='uint8')
-                for i in range(2):
-                    tmp = np.log(merged_data[:, :, i]+200)
-                    vmin, vmax = np.percentile(tmp[tmp>np.log(1+200)], (1, 99.9))
-                    data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
-                plt.imshow(data_to_display)
+                plt.imshow(self._process_RGB_for_display(merged_data))
             else:
                 plt.imshow(np.log(merged_data), cmap='gray')
 
@@ -569,12 +641,7 @@ class baseStitcher():
         if plot:
             plt.figure()
             if color:
-                data_to_display = np.zeros_like(merged_data, dtype='uint8')
-                for i in range(2):
-                    tmp = np.log(merged_data[:, :, i]+200)
-                    vmin, vmax = np.percentile(tmp[tmp>np.log(1+200)], (1, 99.9))
-                    data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
-                plt.imshow(data_to_display)
+                plt.imshow(self._process_RGB_for_display(merged_data))
             else:
                 plt.imshow(np.log(merged_data), cmap='gray')
 
@@ -668,16 +735,31 @@ class baseStitcher():
         if plot:
             plt.figure()
             if color:
-                data_to_display = np.zeros_like(merged_data, dtype='uint8')
-                for i in range(2):
-                    tmp = np.log(merged_data[:, :, i]+200)
-                    vmin, vmax = np.percentile(tmp[tmp>np.log(1+200)], (1, 99.9))
-                    data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
-                plt.imshow(data_to_display)
+                plt.imshow(self._process_RGB_for_display(merged_data))
             else:
                 plt.imshow(np.log(merged_data), cmap='gray')
 
         return merged_data
+
+    def _process_RGB_for_display(self, u):
+        """
+        Process RGB data for correctly displaying it.
+
+        Parameters
+        ----------
+        u: (array) RGB data
+
+        Returns
+        -------
+        data_to_display: (array) RGB data displayable with correct contrast and colors.
+        """
+        data_to_display = np.zeros_like(u, dtype='uint8')
+        for i in range(2):
+            tmp = np.log(u[:, :, i] + 200)
+            vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
+            data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+
+        return data_to_display
 
     def check_files_integrity(self):
         cnt = 0

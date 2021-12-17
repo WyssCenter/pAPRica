@@ -11,7 +11,7 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        #'PyLibAPR',
+        'pyapr',
         'tqdm',
         'pandas',
         'scikit-image',
@@ -35,5 +35,5 @@ setup(
         'Intended Audience :: Developers',
         'Programming Language :: Python :: 3'
     ],
-    keywords='APR, adaptive, image, representation, processing, pipeline, registration, segmentation',
+    keywords='APR, adaptive, image, representation, processing, pipeline, registration, segmentation, stitching',
 )

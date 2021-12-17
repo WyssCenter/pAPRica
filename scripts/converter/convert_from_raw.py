@@ -14,7 +14,7 @@ import pipapr
 # Parameters
 data_path = '/run/user/1000/gvfs/smb-share:server=fcbgnasc.campusbiotech.ch,share=fcbgdata/0063_CBT_UNIGE_LAMY/Tomas Jorda/mesoSpim/20210609/'
 
-tiles = pipapr.parser.randomParser(data_path, frame_size=2048, ftype='raw')
+tiles = pipapr.parser.baseParser(data_path, frame_size=2048, ftype='raw')
 
 converter = pipapr.converter.tileConverter(tiles)
 converter.set_compression(quantization_factor=1, bg=190)

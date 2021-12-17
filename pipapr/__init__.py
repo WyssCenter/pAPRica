@@ -13,4 +13,10 @@ By using this code you agree to the terms of the software license agreement.
 
 from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter
 
+from .parser import tileParser, baseParser
+from .converter import tileConverter
+from .atlaser import tileAtlaser
+from .segmenter import tileSegmenter, tileCells, tileTrainer
+from .viewer import tileViewer
+
 __all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter']

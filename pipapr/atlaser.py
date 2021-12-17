@@ -106,7 +106,7 @@ class tileAtlaser():
         return cls(original_pixel_size=original_pixel_size,
                    downsample=downsample,
                    atlas=atlas,
-                   merger=None)
+                   merged_data=None)
 
 
     def load_atlas(self, path):
@@ -350,7 +350,7 @@ class tileAtlaser():
         """
 
         heatmap = np.zeros((self.atlas.shape)).astype(int)
-        for i in range(cells.shape[0]):
+        for i in tqdm(range(cells.shape[0]), desc='Building density map..'):
             z = int(cells[i, 0]/self.z_downsample)
             y = int(cells[i, 1]/self.y_downsample)
             x = int(cells[i, 2]/self.x_downsample)

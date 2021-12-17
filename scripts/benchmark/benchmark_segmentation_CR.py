@@ -198,7 +198,7 @@ folders = glob(os.path.join(path, '*/'))
 cr = []
 time_segmentation = []
 for folder in folders:
-    tiles = pipapr.parser.randomParser(folder, frame_size=512, ftype='apr')
+    tiles = pipapr.parser.baseParser(folder, frame_size=512, ftype='apr')
     tmp = []
     t = time()
     for tile in tiles:

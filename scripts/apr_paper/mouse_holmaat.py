@@ -228,48 +228,83 @@ def get_cc_from_features(apr, parts_pred):
 # # Stitch data
 tiles1 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/ch1', frame_size=2048, ftype='apr')
 stitcher1 = pipapr.stitcher.tileStitcher(tiles1, overlap_h=29.402, overlap_v=22.175)
-stitcher1.set_overlap_margin(5)
-# stitcher1.compute_registration_fast()
-# stitcher1.compute_registration_from_max_projs()
-# stitcher1.save_database(os.path.join(path, 'registration_results.csv'))
+# stitcher1.set_overlap_margin(5)
+# # stitcher1.compute_registration_fast()
+# # stitcher1.compute_registration_from_max_projs()
+# # stitcher1.save_database(os.path.join(path, 'registration_results.csv'))
 stitcher1.database = pd.read_csv(os.path.join('/media/hbm/SSD1/COLM/Holmaat/ch1/registration_results.csv'))
+stitcher1.reconstruct_z_color(n_proj=100, downsample=2)
+stitcher1.reconstruct_slice(n_proj=20, downsample=8)
 
+#
 # Compare segmentation with theoretical one from motor position
 stitcher_th = pipapr.stitcher.tileStitcher(tiles1, overlap_h=29.402, overlap_v=22.175)
 stitcher_th.compute_expected_registration()
 pipapr.viewer.compare_stitching(loc=None, dim=0, n_proj=10, stitcher1=stitcher1, stitcher2=stitcher_th, color=True)
-
-# Apply stitching to other tiles
-tiles0 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/ch0', frame_size=2048, ftype='apr')
-stitcher01 = pipapr.stitcher.tileStitcher(tiles0, overlap_h=29.402, overlap_v=22.175)
-stitcher01.database = stitcher1.database
-stitcher0 = pipapr.stitcher.channelStitcher(stitcher1, ref=tiles1, moving=tiles0)
-stitcher0.set_regularization(reg_y=20, reg_x=20, reg_z=20)
-# stitcher0.compute_rigid_registration()
-# pipapr.viewer.compare_stitching(stitcher1=stitcher0, stitcher2=stitcher01, loc=None, dim=0, n_proj=0)
-
+#
+# # Apply stitching to other tiles
+# tiles0 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/ch0', frame_size=2048, ftype='apr')
+# stitcher01 = pipapr.stitcher.tileStitcher(tiles0, overlap_h=29.402, overlap_v=22.175)
+# stitcher01.database = stitcher1.database
+# stitcher0 = pipapr.stitcher.channelStitcher(stitcher1, ref=tiles1, moving=tiles0)
+# stitcher0.set_regularization(reg_y=20, reg_x=20, reg_z=20)
+# # stitcher0.compute_rigid_registration()
+# # pipapr.viewer.compare_stitching(stitcher1=stitcher0, stitcher2=stitcher01, loc=None, dim=0, n_proj=0)
+#
 # Atlas data
 # tiles2 = pipapr.parser.tileParser(path='/media/hbm/SSD1/COLM/Holmaat/chlll2', frame_size=2048, ftype='apr')
-tiles2 = pipapr.parser.tileParser('/media/hbm/HDD_data/HOLT_011398_LOC000_20210721_170347/VW0', frame_size=2048, ncol=7, nrow=7, ftype='tiff2D', channel=2)
+tiles2 = pipapr.parser.tileParser('/media/hbm/SSD1/COLM/Holmaat/ch2', frame_size=2048, ftype='apr')
 merger = pipapr.stitcher.tileMerger(tiles2, stitcher1.database)
 merger.set_downsample(8)
-merger.merge_max()
-merger.merged_data[merger.merged_data>500] = 500
-merger.merged_data[merger.merged_data<110] = 110
+from skimage.io import imread
+merger.merged_data = imread('/media/hbm/SSD1/COLM/Holmaat/autofluo_preprocessed.tif')
+merger.merged_data[merger.merged_data<4300] = 0
 atlaser = pipapr.atlaser.tileAtlaser.from_merger(merger=merger, original_pixel_size=[5, 1.42, 1.42])
-par = {'affine-n-steps': 7,
-       'affine-use-n-steps': 9}
+par = {'bending-energy-weight': 0.9}
 atlaser.register_to_atlas(output_dir='/media/hbm/SSD1/COLM/Holmaat/atlas3', orientation='sal', debug=True, params=par)
 
 
 # Segment dataset
-trainer = pipapr.segmenter.tileTrainer(tiles1[6+2],
-                                       func_to_compute_features=compute_features,
-                                       func_to_get_cc=get_cc_from_features)
-trainer.manually_annotate()
-trainer.train_classifier()
-trainer.segment_training_tile(bg_label=2)
+# trainer = pipapr.segmenter.tileTrainer(tiles1[6+2],
+#                                        func_to_compute_features=compute_features,
+#                                        func_to_get_cc=get_cc_from_features)
+# trainer.manually_annotate()
+# trainer.save_labels()
+# trainer.train_classifier()
+# trainer.segment_training_tile(bg_label=2)
+#
+# segmenter = pipapr.segmenter.tileSegmenter.from_trainer(trainer)
+# for tile in tiles1[-5:]:
+#     segmenter.compute_segmentation(tile)
 
-segmenter = pipapr.segmenter.tileSegmenter.from_trainer(trainer)
-for tile in tiles1:
-    segmenter.compute_segmentation(tile)
+# Get cell positions
+cells = pipapr.segmenter.tileCells(tiles1, stitcher1.database)
+cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=20)
+
+# Plot cell density
+cells = pd.read_csv('/media/hbm/SSD1/COLM/Holmaat/cells.csv')
+cells = cells[['z','y','x']].to_numpy()
+importlib.reload(pipapr.atlaser)
+atlaser = pipapr.atlaser.tileAtlaser.from_atlas(atlas='/media/hbm/SSD1/COLM/Holmaat/atlas_good/atlas/registered_atlas_original_orientation.tiff', downsample=8, original_pixel_size=[5, 1.42, 1.42])
+cells_good = pipapr.segmenter.tileCells(tiles1, stitcher1.database)
+cells_good.cells = cells
+cells_id = atlaser.get_cells_id(cells_good)
+heatmap = atlaser.get_cells_density_per_region(cells_id)
+cell_density = atlaser.get_cells_density(cells, kernel_size=5)
+merger = pipapr.stitcher.tileMerger(tiles1, stitcher1.database)
+merger.set_downsample(8)
+merger.merge_max()
+viewer = napari.Viewer()
+viewer.add_image(cell_density)
+viewer.add_image(merger.merged_data, scale=[40/25, 11.36/25, 11.36/25])
+napari.run()
+
+plt.style.use('dark_background')
+ontology = atlaser.get_ontology_mapping(cells_id, n=4)
+ontology = ontology.drop('unknown')
+ontology.plot.bar()
+plt.ylabel('Cell counts [#]')
+plt.yscale('log')
+ax = plt.gca()
+ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+ax.get_legend().remove()

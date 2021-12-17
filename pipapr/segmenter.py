@@ -211,6 +211,7 @@ class tileSegmenter():
             t = time()
             print('Computing features on APR')
         f = self.func_to_compute_features(tile.apr, tile.parts)
+        self.filtered_APR = f
         if self.verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
@@ -302,7 +303,7 @@ class tileCells():
         self.cells = None
         self.atlas = None
 
-    def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5, verbose=True):
+    def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5):
         """
         Function to extract cell positions in each tile and merging across all tiles.
         Identical cells on overlapping area are automatically detected using Flann method.
@@ -319,12 +320,12 @@ class tileCells():
         None
         """
         
-        for tile in self.tiles:
+        for tile in tqdm(self.tiles, desc='Extracting and merging cells..'):
             tile.load_tile()
             tile.load_segmentation()
             
             # Remove objects on the edge
-            tile = self._remove_edge_cells(tile, verbose=verbose)
+            tile = self._remove_edge_cells(tile)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -845,6 +846,19 @@ class tileTrainer():
             path = os.path.join(self.tile.folder_root, 'random_forest_n100.joblib')
 
         self.clf = load(path)
+
+    def display_features(self):
+        """
+        Display the computed features.
+
+        """
+        if self.f is None:
+            raise TypeError('Error: filters can''t be displayed because they were not computed')
+
+        viewer = napari.Viewer()
+        for i in range(f.shape[1]):
+            viewer.add_layer(pipapr.viewer.apr_to_napari_Image(self.apr, pyapr.FloatParticles(f[:, i])))
+        napari.run()
 
     def _remove_ambiguities(self, verbose):
         """

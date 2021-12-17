@@ -276,10 +276,11 @@ class tileParser(baseParser):
             self.type = ftype
 
         self.tiles_list = self._get_tile_list()
-        self._correct_offset()
         self.n_tiles = len(self.tiles_list)
         if self.n_tiles == 0:
             raise FileNotFoundError('Error: no tile were found.')
+
+        self._correct_offset()
         self.ncol = self._get_ncol()
         self.nrow = self._get_nrow()
         self._sort_tiles()
@@ -432,7 +433,7 @@ class colmParser(tileParser):
     stitched later on.
 
     """
-    def __init__(self, path, nrow, ncol, channel=0):
+    def __init__(self, path, channel=0):
         """
         Constructor of the tileParser object for COLM acquisition.
 
@@ -445,7 +446,12 @@ class colmParser(tileParser):
 
         """
 
+        u = np.loadtxt(os.path.join(path, 'Scanned Cells.txt'), delimiter=',')
+        self.ncol = u.shape[1]
+        self.nrow = u.shape[0]
+        path = os.path.join(path, 'VW0')
         super().__init__(path, frame_size=2048, ftype='tiff2D')
+
         self.channel = channel
 
     def _get_tiles_from_path(self, files):

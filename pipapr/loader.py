@@ -107,11 +107,11 @@ class tileLoader():
                             |     |     |     |
                             x --- x --- x --- x
 
-                    in this case neighbors = [[0, 2], [1, 1]]
+            in this case neighbors = [[0, 2], [1, 1]]
 
         neighbors_tot: list
             neighbors list containing all the neighbors position [row, col]. For example, below the
-            tile [0, 1] is represented by an 'o' while other tile are represented by an 'x':
+            tile [0, 1] is represented by an 'o' while other tile are represented by an 'x'::
 
                             x --- o --- x --- x
                             |     |     |     |
@@ -121,7 +121,7 @@ class tileLoader():
                             |     |     |     |
                             x --- x --- x --- x
 
-                    in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
+            in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
         neighbors_path: list
             path of the neighbors whose coordinates are stored in neighbors
         frame_size: int

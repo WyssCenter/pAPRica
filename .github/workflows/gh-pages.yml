@@ -35,10 +35,12 @@ jobs:
         run: |
           pip3 install setuptools
           pip3 install sphinx sphinx-rtd-theme
+          pip3 install numpydoc
 
       - name: "Build Sphinx Doc"
         run: |
-          doc/make html
+          cd doc
+          make html
 
       # 3. Déploiement sur les Github Pages
 

@@ -18,6 +18,21 @@ import pyapr
 from tqdm import tqdm
 
 def tile_from_apr(apr, parts):
+    """
+    Function to generate a *tile* object from an APR object.
+
+    Parameters
+    ----------
+    apr: pyapr.APR
+        APR to generate a tile from
+    parts: pyapr.ParticleData
+        ParticleData to generate a tile from
+
+    Returns
+    -------
+    tile: tileLoader
+        *tile* containing the given APR
+    """
 
     tile = tileLoader(path=None,
                       row=None,
@@ -32,11 +47,22 @@ def tile_from_apr(apr, parts):
 
     tile.apr = apr
     tile.parts = parts
-
     return tile
 
 def tile_from_path(path):
+    """
+    Function to generate a *tile* object from the path of an APR object.
 
+    Parameters
+    ----------
+    path: string
+        path to the stored APR object
+
+    Returns
+    -------
+    tile: tileLoader
+        *tile* containing the given APR
+    """
     return tileLoader(path=path,
                       row=1,
                       col=1,
@@ -60,13 +86,18 @@ class tileLoader():
 
         Parameters
         ----------
-        path: (str) path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)
-        row: (int) vertical position of the tile (for multi-tile acquisition)
-        col: (int) horizontal position of the tile (for multi-tile acquisition)
-        ftype: (str) tile file type ('apr', 'tiff3D', 'tiff2D')
-        neighbors: (list) neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
-                    neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
-                    represented by an 'o' while other tile are represented by an 'x':
+        path: string
+            path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)
+        row: int
+            vertical position of the tile (for multi-tile acquisition)
+        col: int
+            horizontal position of the tile (for multi-tile acquisition)
+        ftype: str
+            tile file type ('apr', 'tiff3D', 'tiff2D')
+        neighbors: list
+            neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
+            neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
+            represented by an 'o' while other tile are represented by an 'x'::
 
                             x --- o --- x --- x
                             |     |     |     |
@@ -78,8 +109,9 @@ class tileLoader():
 
                     in this case neighbors = [[0, 2], [1, 1]]
 
-        neighbors_tot: (list) neighbors list containing all the neighbors position [row, col]. For example, below the
-                        tile [0, 1] is represented by an 'o' while other tile are represented by an 'x':
+        neighbors_tot: list
+            neighbors list containing all the neighbors position [row, col]. For example, below the
+            tile [0, 1] is represented by an 'o' while other tile are represented by an 'x':
 
                             x --- o --- x --- x
                             |     |     |     |
@@ -90,11 +122,15 @@ class tileLoader():
                             x --- x --- x --- x
 
                     in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
-        neighbors_path: (list) path of the neighbors whose coordinates are stored in neighbors
-        frame_size: (int) camera frame size (only square sensors are supported for now).
-        folder_root: (str) root folder where everything should be saved.
-        channel: (int) fluorescence channel for multi-channel acquisition. This is used to load the right data in the
-                        case of COLM acquisition where all the channel are saved in the same folder as tiff2D.
+        neighbors_path: list
+            path of the neighbors whose coordinates are stored in neighbors
+        frame_size: int
+            camera frame size (only square sensors are supported for now).
+        folder_root: str
+            root folder where everything should be saved.
+        channel: int
+            fluorescence channel for multi-channel acquisition. This is used to load the right data in the
+            case of COLM acquisition where all the channel are saved in the same folder as tiff2D.
         """
 
         self.path = path
@@ -125,6 +161,9 @@ class tileLoader():
         """
         Load the current tile if not already loaded.
 
+        Returns
+        -------
+        None
         """
         if self.type == 'apr':
             if self.apr is None:
@@ -134,6 +173,18 @@ class tileLoader():
                 self.data = self._load_data(self.path)
 
     def lazy_load_tile(self, level_delta=0):
+        """
+        Load the tile lazily at the given resolution.
+
+        Parameters
+        ----------
+        level_delta: int
+            parameter controlling the resolution at which the APR will be read lazily
+
+        Returns
+        -------
+        None
+        """
 
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
@@ -144,6 +195,9 @@ class tileLoader():
         """
         Load the current tile neighbors if not already loaded.
 
+        Returns
+        -------
+        None
         """
         if self.data_neighbors is None:
             if self.type == 'apr':
@@ -167,6 +221,9 @@ class tileLoader():
         """
         Load the current tile connected component (cc) if not already loaded.
 
+        Returns
+        -------
+        None
         """
         if self.parts_cc is None:
             cc = pyapr.LongParticles()
@@ -187,6 +244,9 @@ class tileLoader():
         """
         Load the current tile neighbors connected component (cc) if not already loaded.
 
+        Returns
+        -------
+        None
         """
         if self.data_neighbors is None:
             if self.type == 'apr':
@@ -223,11 +283,13 @@ class tileLoader():
 
         Parameters
         ----------
-        path: (str) path to the data to be loaded.
+        path: string
+            path to the data to be loaded.
 
         Returns
         -------
-        u: (array) numpy array containing the data.
+        u: array_like
+            numpy array containing the data.
         """
         if self.type == 'tiff2D':
             u = self._load_sequence(path)
@@ -251,11 +313,13 @@ class tileLoader():
 
         Parameters
         ----------
-        path: (str) path to the data to be loaded.
+        path: string
+            path to the data to be loaded.
 
         Returns
         -------
-        u: (array) numpy array containing the data.
+        u: array_like
+            numpy array containing the data.
         """
         u = np.fromfile(path, dtype='uint16', count=-1)
         return u.reshape((-1, self.frame_size, self.frame_size))
@@ -264,6 +328,9 @@ class tileLoader():
         """
         Display tile using napari.
 
+        Returns
+        -------
+        None
         """
         if self.apr is None:
             self.load_tile()
@@ -275,11 +342,13 @@ class tileLoader():
 
         Parameters
         ----------
-        path: (str) path to folder where the data should be loaded.
+        path: string
+            path to folder where the data should be loaded.
 
         Returns
         -------
-        v: (array) numpy array containing the data.
+        v: array_like
+            numpy array containing the data.
         """
         files_sorted = sorted(glob(os.path.join(path, '*CHN0' + str(self.channel) + '_*tif')))
         n_files = len(files_sorted)

@@ -122,7 +122,6 @@ class tileAtlaser():
                    atlas=atlas,
                    merged_data=None)
 
-
     def load_atlas(self, path):
         """
         Function to load a previously computed atlas.
@@ -160,6 +159,8 @@ class tileAtlaser():
         merged_data_filename: string
             named of the merged array (Brainreg reads data from files so we need to save
             the merged volume beforehand.
+        debug: bool
+            add debug option for brainreg which will save intermediate steps.
         params: dict
             dictionary with keys as brainreg options and values as parameters (see here:
             https://docs.brainglobe.info/brainreg/user-guide/parameters)
@@ -263,7 +264,6 @@ class tileAtlaser():
         area_count = {}
         n_not_found = 0
         area_unknown = {}
-        id_count = {}
         for l in labels:
             try:
                 ids = ancestor_map[int(l)]
@@ -380,7 +380,8 @@ class tileAtlaser():
 
         Returns
         -------
-
+        _: ndarray
+            estimated cell density
         """
 
         heatmap = np.zeros((self.atlas.shape)).astype(int)

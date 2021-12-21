@@ -25,3 +25,8 @@ converter.batch_convert_to_apr(Ip_th=120,               # Intensity thresholding
                                rel_error=0.2,           # Relative error parameter
                                gradient_smoothing=5,    # Gradient smoothing parameters
                                )
+
+# It is also possible to batch reconstruct data
+tiles_tiff = pipapr.tileParser(path='path_to_tiff_data', frame_size=2048)
+converter = pipapr.tileConverter(tiles_tiff)
+converter.batch_reconstruct_pixel()

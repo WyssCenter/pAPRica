@@ -18,5 +18,6 @@ from .converter import tileConverter
 from .atlaser import tileAtlaser
 from .segmenter import tileSegmenter, tileCells, tileTrainer
 from .viewer import tileViewer
+from .stitcher import tileStitcher, channelStitcher
 
 __all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter']

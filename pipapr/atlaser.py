@@ -18,6 +18,7 @@ import numpy as np
 import os
 from pathlib import Path
 from allensdk.core.reference_space_cache import ReferenceSpaceCache
+from tqdm import tqdm
 
 class tileAtlaser():
     """
@@ -36,11 +37,19 @@ class tileAtlaser():
         """
         Parameters
         ----------
-        original_pixel_size: (np.array, list) pixel size in µm on the original data
-        downsample: (int) downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
-                            for registration to the Atlas.
-        atlas: (np.array, str) atlas data or path for loading the atlas data
-        merger: (tileMerger) tileMerger object
+        original_pixel_size: array_like
+            pixel size in µm on the original data
+        downsample: int
+            downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
+            for registration to the Atlas.
+        atlas: ndarray, string
+            atlas data or path for loading the atlas data
+        merger: tileMerger
+            tileMerger object
+
+        Returns
+        -------
+        None
         """
 
         self.downsample = downsample
@@ -69,8 +78,10 @@ class tileAtlaser():
 
         Parameters
         ----------
-        merger: (tileMerger) tileMerger object
-        original_pixel_size: (np.array, list) pixel size in µm on the original data
+        merger: tileMerger
+            tileMerger object
+        original_pixel_size: array_like
+            pixel size in µm on the original data
 
         Returns
         -------
@@ -93,14 +104,17 @@ class tileAtlaser():
 
         Parameters
         ----------
-        atlas: (np.array, str) atlas data or path for loading the atlas data
-        downsample: (int) downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
-                            for registration to the Atlas.
-        original_pixel_size: (np.array, list) pixel size in µm on the original data
+        atlas: ndarray, string
+            atlas data or path for loading the atlas data
+        downsample: int
+            downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
+            for registration to the Atlas.
+        original_pixel_size: array_like
+            pixel size in µm on the original data
 
         Returns
         -------
-
+        tileAtlaser object
         """
 
         return cls(original_pixel_size=original_pixel_size,
@@ -115,7 +129,8 @@ class tileAtlaser():
 
         Parameters
         ----------
-        path: (str) path to the registered atlas file.
+        path: string
+            path to the registered atlas file.
 
         Returns
         -------
@@ -135,15 +150,19 @@ class tileAtlaser():
 
         Parameters
         ----------
-        output_dir: (str) output directory to save atlas
-        orientation: (str) orientation of the input data with respect to the origin in Z,Y,X order. E.g. 'spr' means
-                        superior (so going from origin to z = zlim we go from superior to inferior), posterior
-                        (so going from origin to y = ylim we go from posterior to anterior part) and right (so going
-                         from origin to x = xlim we go from right to left part)
-        merged_data_filename: (str) named of the merged array (Brainreg reads data from files so we need to save
-                                the merged volume beforehand.
-        params: (dict) dictionary with keys as brainreg options and values as parameters (see here:
-                https://docs.brainglobe.info/brainreg/user-guide/parameters)
+        output_dir: string
+            output directory to save atlas
+        orientation: string
+            orientation of the input data with respect to the origin in Z,Y,X order. E.g. 'spr' means
+            superior (so going from origin to z = zlim we go from superior to inferior), posterior
+            (so going from origin to y = ylim we go from posterior to anterior part) and right (so going
+            from origin to x = xlim we go from right to left part)
+        merged_data_filename: string
+            named of the merged array (Brainreg reads data from files so we need to save
+            the merged volume beforehand.
+        params: dict
+            dictionary with keys as brainreg options and values as parameters (see here:
+            https://docs.brainglobe.info/brainreg/user-guide/parameters)
 
         Returns
         -------
@@ -187,11 +206,13 @@ class tileAtlaser():
 
         Parameters
         ----------
-        cells: (array) cell positions.
+        cells: ndarray
+            cell positions
 
         Returns
         -------
-        labels: (array) containing the cell region ID.
+        labels: ndarray
+            containing the cell region ID.
         """
         labels = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 1]/self.y_downsample).astype('uint64'),
@@ -205,13 +226,17 @@ class tileAtlaser():
 
         Parameters
         ----------
-        x: (int) x position
-        y: (int) y position
-        z: (int) z position
+        x: int
+            x position
+        y: int
+            y position
+        z: int
+            z position
 
         Returns
         -------
-        ID at the queried position.
+        _: list
+            ID at the queried position.
         """
         return self.atlas[int(z / self.z_downsample), int(y / self.y_downsample), int(x / self.x_downsample)]
 
@@ -221,12 +246,15 @@ class tileAtlaser():
 
         Parameters
         ----------
-        labels: (array) array of labels to group by ID and fetch area name.
-        n: (int) number of parent area to group for.
+        labels: ndarray
+            array of labels to group by ID and fetch area name.
+        n: int
+            number of parent area to group for.
 
         Returns
         -------
-        area_count: (dict) area names with the counts.
+        area_count: dict
+            area names with the counts.
         """
         rspc = ReferenceSpaceCache(25, 'annotation/ccf_2017', manifest='manifest.json')
         tree = rspc.get_structure_tree(structure_graph_id=1)
@@ -283,11 +311,13 @@ class tileAtlaser():
 
         Parameters
         ----------
-        cells_id: (array) cells ID (typically computed by self.get_cells_id())
+        cells_id: ndarray
+            cells ID (typically computed by self.get_cells_id())
 
         Returns
         -------
-        heatmap: (array) 3D array where each brain region value is the number of cells contained in this region.
+        heatmap: ndarray
+            3D array where each brain region value is the number of cells contained in this region.
         """
 
         # Remove 0s
@@ -311,11 +341,13 @@ class tileAtlaser():
 
         Parameters
         ----------
-        cells_id: (array) cells ID (typically computed by self.get_cells_id())
+        cells_id: ndarray
+            cells ID (typically computed by self.get_cells_id())
 
         Returns
         -------
-        heatmap: (array) 3D array where each brain region value is the cell density in this region.
+        heatmap: ndarray
+            3D array where each brain region value is the cell density in this region.
         """
 
         # Remove 0s
@@ -341,8 +373,10 @@ class tileAtlaser():
 
         Parameters
         ----------
-        cells: (array) cell positions
-        kernel_size: (int) radius of the gaussian for local cell density estimation
+        cells: ndarray
+            cell positions
+        kernel_size: int
+            radius of the gaussian for local cell density estimation
 
         Returns
         -------

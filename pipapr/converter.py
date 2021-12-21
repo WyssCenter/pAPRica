@@ -16,18 +16,21 @@ from pathlib import Path
 from tqdm import tqdm
 from skimage.io import imsave
 
+
 class tileConverter():
     """
     Class to convert tiles to APR or to tiff.
     """
 
     def __init__(self,
-                 tiles: (pipapr.parser.tileParser, pipapr.parser.baseParser)):
+                 tiles: pipapr.parser.baseParser):
         """
+        Constructor for the tileConverter class.
 
         Parameters
         ----------
-        tiles: (tileParser or baseParser) parser object referencing tiles to be converted.
+        tiles: baseParser
+            parser object referencing tiles to be converted.
         """
 
         if isinstance(tiles, pipapr.parser.tileParser):
@@ -49,10 +52,11 @@ class tileConverter():
 
         Parameters
         ----------
-        quantization_factor: (int) quantization factor: the higher, the more compressed
-                                (refer to B3D paper for more detail).
-        bg: (int) background value: any value below this threshold will be set to the background value. This helps
-                save up space by having the same value for the background (refer to B3D paper for more details).
+        quantization_factor: int
+            quantization factor: the higher, the more compressed (refer to B3D paper for more detail).
+        bg: int
+            background value: any value below this threshold will be set to the background value. This helps
+            save up space by having the same value for the background (refer to B3D paper for more details).
 
         Returns
         -------
@@ -90,15 +94,21 @@ class tileConverter():
 
         Parameters
         ----------
-        Ip_th: (int) Intensity threshold
-        rel_error: (float in [0, 1[) relative error bound
-        gradient_smoothing: (float) B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of
-                            smoothing)
-        dx: (float) PSF size in x, used to compute the gradient
-        dy: (float) PSF size in y, used to compute the gradient
-        dz: (float) PSF size in z, used to compute the gradient
-        lazy_loading: (bool) if lazy_loading is true then the converter save mean tree particle which are necessary
-                            for lazy loading of the APR. It will require about 1/7 more storage.
+        Ip_th: int
+            Intensity threshold
+        rel_error: float in [0, 1[
+            relative error bound
+        gradient_smoothing: (float)
+            B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of smoothing)
+        dx: float
+            PSF size in x, used to compute the gradient
+        dy: float
+            PSF size in y, used to compute the gradient
+        dz: float
+            PSF size in z, used to compute the gradient
+        lazy_loading: bool
+            if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
+            the APR. It will require about 1/7 more storage.
 
         Returns
         -------
@@ -173,7 +183,8 @@ class tileConverter():
 
         Parameters
         ----------
-        mode: (str) reconstruction mode, can be 'constant', 'smooth' or 'level'
+        mode: string
+            reconstruction mode, can be 'constant', 'smooth' or 'level'
 
         Returns
         -------
@@ -193,9 +204,9 @@ class tileConverter():
 
             if mode == 'constant':
                 data = pyapr.numerics.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
-            elif mode=='smoth':
+            elif mode == 'smoth':
                 data = pyapr.numerics.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
-            elif mode=='level':
+            elif mode == 'level':
                 data = pyapr.numerics.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
             else:
                 raise ValueError('Error: unknown mode for APR reconstruction.')
@@ -207,6 +218,3 @@ class tileConverter():
             else:
                 filename = '{}_{}.tif'.format(tile.row, tile.col)
                 imsave(os.path.join(folder_tiff, filename), data, check_contrast=False)
-
-
-

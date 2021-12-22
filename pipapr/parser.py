@@ -38,9 +38,12 @@ class baseParser():
 
         Parameters
         ----------
-        path: (str) path where to look for the data.
-        frame_size: (int) size of each frame (camera resolution).
-        ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
+        path: string
+            path where to look for the data.
+        frame_size: int
+            size of each frame (camera resolution).
+        ftype: string
+            input data type in 'apr', 'tiff2D' or 'tiff3D'
 
         """
         self.path = path
@@ -261,9 +264,12 @@ class tileParser(baseParser):
 
         Parameters
         ----------
-        path: (str) path where to look for the data.
-        frame_size: (int) size of each frame (camera resolution).
-        ftype: (str) input data type in 'apr', 'tiff2D' or 'tiff3D'
+        path: string
+            path where to look for the data.
+        frame_size: int
+            size of each frame (camera resolution).
+        ftype: string
+            input data type in 'apr', 'tiff2D' or 'tiff3D'
 
         """
 
@@ -439,10 +445,14 @@ class colmParser(tileParser):
 
         Parameters
         ----------
-        path: (str) path where to look for the data.
-        nrow: (int) number of row for parsing COLM LOCXXX data
-        ncol: (int) number of col for parsing COLM LOCXXX data
-        channel: (int) fluorescence channel for parsing COLM LOCXXX data
+        path: string
+            path where to look for the data.
+        nrow: int
+            number of row for parsing COLM LOCXXX data
+        ncol: int
+            number of col for parsing COLM LOCXXX data
+        channel: int
+            fluorescence channel for parsing COLM LOCXXX data
 
         """
 

@@ -1,6 +1,7 @@
 """
 Module containing classes and functions relative to Viewing.
 
+
 By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
@@ -13,6 +14,7 @@ from skimage.io import imread
 from skimage.transform import resize
 from skimage.exposure import rescale_intensity
 from skimage.color import hsv2rgb
+from skimage.filters import gaussian
 import numpy as np
 import pyapr
 import napari
@@ -25,13 +27,17 @@ import matplotlib.pyplot as plt
 def display_apr_from_path(path, **kwargs):
     """
     Display an APR using Napari from a filepath.
+
     Parameters
     ----------
-    path
+    path: string
+        path to APR to be displayed
+    kwargs: dict
+        optional parameters for Napari
 
     Returns
     -------
-
+    None
     """
     apr = pyapr.APR()
     parts = pyapr.ShortParticles()
@@ -47,14 +53,15 @@ def display_apr(apr, parts, **kwargs):
     ----------
     apr : pyapr.APR
         Input APR data structure
-    parts : pyapr.FloatParticles or pyapr.ShortParticles
+    parts : pyapr.FloatParticles, pyapr.ShortParticles
         Input particle intensities
+    kwargs: dict
+        optional parameters for Napari
 
     Returns
     -------
     None
     """
-
     l = apr_to_napari_Image(apr, parts, **kwargs)
     display_layers_pyramidal([l], level_delta=0)
 
@@ -162,11 +169,13 @@ def display_layers(layers):
 
     Parameters
     ----------
-    layers: (list) list of layers to display
+    layers: list[napari.Layer]
+        list of layers to display
 
     Returns
     -------
-    napari viewer.
+    viewer: napari.Viewer
+        napari viewer.
     """
 
     viewer = napari.Viewer()
@@ -185,11 +194,13 @@ def display_layers_pyramidal(layers, level_delta):
 
     Parameters
     ----------
-    layers: (list) list of layers to display
+    layers: list[napari.Layer]
+        list of layers to display
 
     Returns
     -------
-    napari viewer.
+    viewer: napari.Viewer
+        napari viewer.
     """
 
     viewer = napari.Viewer()
@@ -228,9 +239,12 @@ def display_segmentation(apr, parts, mask, pyramidal=True, **kwargs):
 
     Parameters
     ----------
-    apr: (APR) apr object
-    parts: (ParticleData) particle object representing the image
-    mask: (ParticleData) particle object representing the segmentation mask/connected component
+    apr: pyapr.APR
+        apr object
+    parts: pyapr.ParticleData
+        particle object representing the image
+    mask: pyapr.ParticleData
+        particle object representing the segmentation mask/connected component
 
     Returns
     -------
@@ -248,18 +262,22 @@ def display_segmentation(apr, parts, mask, pyramidal=True, **kwargs):
 def display_heatmap(heatmap, atlas=None, data=None, log=False):
     """
     Display a heatmap (e.g. cell density) that can be overlaid on intensity data and atlas.
+
     Parameters
     ----------
-    heatmap: (np.array) array containing the heatmap to be displayed
-    atlas: (np.array) array containing the atlas which will be automatically scaled to the heatmap
-    data: (np.array) array containing the data.
-    log: (bool) plot in logscale (only used for 2D).
+    heatmap: ndarray
+        array containing the heatmap to be displayed
+    atlas: ndarray
+        array containing the atlas which will be automatically scaled to the heatmap
+    data: ndarray
+        array containing the data.
+    log: bool
+        plot in logscale (only used for 2D).
 
     Returns
     -------
     None
     """
-
     # If u is 2D then use matplotlib so we have a scale bar
     if heatmap.ndim == 2:
         fig, ax = plt.subplots()
@@ -285,24 +303,31 @@ def display_heatmap(heatmap, atlas=None, data=None, log=False):
 
 def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsample=2, color=False, rel_map=False):
     """
-    Compare two stitching at a given depth z.
+    Compare two stitching at a given position `loc` for a given dimension `dim`.
 
     Parameters
     ----------
-    stitcher1: (tileStitcher) stitcher object 1
-    stitcher2: (tileStitcher) stitcher object 2
-    loc: (int) position in the given dimension
-    n_proj: (int) number of plane to perform the max-projection
-    downsample: (int) downsampling factor for the reconstruction
-    color: (bool) option to display in color
-    rel_map: (bool) overlay reliability map on the reconstructed data
+    stitcher1: tileStitcher
+        stitcher object 1
+    stitcher2: tileStitcher
+        stitcher object 2
+    loc: int
+        position in the given dimension
+    dim: int
+        dimension to use for comparison
+    n_proj: int
+        number of plane to perform the max-projection
+    downsample: int
+        downsampling factor for the reconstruction
+    color: bool
+        option to display in color
+    rel_map: bool
+        overlay reliability map on the reconstructed data
 
     Returns
     -------
     None
     """
-
-
     u1 = stitcher1.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=downsample, color=color, plot=False)
     u2 = stitcher2.reconstruct_slice(loc=loc, n_proj=n_proj, dim=dim, downsample=downsample, color=color, plot=False)
 
@@ -340,8 +365,30 @@ def compare_stitching(stitcher1, stitcher2, loc=None, n_proj=0, dim=0, downsampl
 
 def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsample=1, threshold=None, plot=True):
     """
-    Reconstruct colored depth projection.
+    Compare two stitching at a given position `loc` for a given dimension `dim`.
 
+    Parameters
+    ----------
+    apr: pyapr.APR
+        apr tree object
+    parts: pyapr.ParticleData
+        apr particles
+    loc: int
+        position in the given dimension
+    dim: int
+        dimension to use for comparison
+    n_proj: int
+        number of plane to perform the max-projection
+    downsample: int
+        downsampling factor for the reconstruction
+    color: bool
+        option to display in color
+    rel_map: bool
+        overlay reliability map on the reconstructed data
+
+    Returns
+    -------
+    None
     """
 
     level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
@@ -355,13 +402,13 @@ def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsa
 
     locf = min(loc+n_proj, apr_shape[dim])
     patch = pyapr.ReconPatch()
-    if dim==0:
+    if dim == 0:
         patch.z_begin = loc
         patch.z_end = locf
-    if dim==1:
+    if dim == 1:
         patch.y_begin = loc
         patch.y_end = locf
-    if dim==2:
+    if dim == 2:
         patch.x_begin = loc
         patch.x_end = locf
 
@@ -389,6 +436,7 @@ def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsa
 class tileViewer():
     """
     Class to display the registration and segmentation using Napari.
+
     """
     def __init__(self,
                  tiles,
@@ -400,13 +448,17 @@ class tileViewer():
 
         Parameters
         ----------
-        tiles: (tileParser) tileParser object containing the dataset to be displayed.
-        database: database containing the tile positions.
-        segmentation: (bool) option to also display the segmentation (connected component) data.
-        cells: (np.array) cells center to be displayed.
-        atlaser: (tileAtlaser) tileAtlaser object containing the Atlas to be displayed.
+        tiles: tileParser
+            tileParser object containing the dataset to be displayed.
+        database: (pd.Dataframe, string, tileStitcher)
+            database containing the tile positions.
+        segmentation: bool
+            option to also display the segmentation (connected component) data.
+        cells: ndarray
+            cells center to be displayed.
+        atlaser: tileAtlaser
+            tileAtlaser object containing the Atlas to be displayed.
         """
-
         self.tiles = tiles
 
         if isinstance(database, pipapr.stitcher.tileStitcher):
@@ -433,13 +485,15 @@ class tileViewer():
 
         Parameters
         ----------
-        downsample: (int) downsampling parameter for APRSlicer
-                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
-        kwargs: (dict) dictionary passed to Napari for custom option
+        downsample: int
+            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: dict
+            dictionary passed to Napari for custom option
 
         Returns
         -------
-        None
+        layers: list[napari.Layer]
+            list of layers to be displayed by Napari
         """
 
         # Compute layers to be displayed by Napari
@@ -502,9 +556,12 @@ class tileViewer():
 
         Parameters
         ----------
-        downsample: (int) downsampling parameter for APRSlicer
-                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
-        kwargs: (dict) dictionary passed to Napari for custom option
+        pyramidal: bool
+            option to have a slider that controls the displayed resolution
+        downsample: int
+            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: dict
+            dictionary passed to Napari for custom option
 
         Returns
         -------
@@ -593,11 +650,14 @@ class tileViewer():
 
         Parameters
         ----------
-        coords: (list) list of tuples (row, col) containing the tile coordinate to display.
-        downsample: (int) downsampling parameter for APRSlicer
-                            (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
-        kwargs: (dict) dictionary passed to Napari for custom option
-        color: (bool) option to display in color
+        coords: list
+            list of tuples (row, col) containing the tile coordinate to display.
+        downsample: int
+            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        kwargs: dict
+            dictionary passed to Napari for custom option
+        color: bool
+            option to display in color
 
         Returns
         -------
@@ -682,6 +742,22 @@ class tileViewer():
             display_layers(layers)
 
     def check_stitching(self, downsample=8, color=False, **kwargs):
+        """
+        Function to display the stitched dataset using napari.
+
+        Parameters
+        ----------
+        downsample: int
+            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)
+        color: bool
+            option to display in color
+        kwargs: dict
+            dictionary passed to Napari for custom option
+
+        Returns
+        -------
+        None
+        """
 
         # Compute layers to be displayed by Napari
         layers = []
@@ -722,10 +798,10 @@ class tileViewer():
 
         display_layers(layers)
 
-
     def _is_tile_loaded(self, row, col):
         """
         Returns True is tile is loaded, False otherwise.
+
         """
         ind = np.ravel_multi_index((row, col), dims=(self.nrow, self.ncol))
         return ind in self.loaded_ind
@@ -733,6 +809,7 @@ class tileViewer():
     def _load_tile(self, row, col):
         """
         Load the tile at position [row, col].
+
         """
         df = self.database
         path = df[(df['row'] == row) & (df['col'] == col)]['path'].values[0]
@@ -760,6 +837,7 @@ class tileViewer():
     def _get_tile_position(self, row, col):
         """
         Parse tile position in the database.
+
         """
         df = self.database
         tile_df = df[(df['row'] == row) & (df['col'] == col)]

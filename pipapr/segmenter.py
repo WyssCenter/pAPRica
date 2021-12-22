@@ -127,10 +127,8 @@ class tileSegmenter():
 
         Parameters
         ----------
-        tile: tileLoader
-            tile object for loading the tile (or containing the preloaded tile).
-        path_classifier: string
-            path to pre-trained classifier
+        clf: sklearn.classifier
+            pre-trained classifier
         func_to_compute_features: func
             function to compute the features on ParticleData. Must be the same set of
             as the one used to train the classifier.
@@ -903,8 +901,8 @@ class tileTrainer():
             raise TypeError('Error: filters can''t be displayed because they were not computed')
 
         viewer = napari.Viewer()
-        for i in range(f.shape[1]):
-            viewer.add_layer(pipapr.viewer.apr_to_napari_Image(self.apr, pyapr.FloatParticles(f[:, i])))
+        for i in range(self.f.shape[1]):
+            viewer.add_layer(pipapr.viewer.apr_to_napari_Image(self.apr, pyapr.FloatParticles(self.f[:, i])))
         napari.run()
 
     def _remove_ambiguities(self, verbose):

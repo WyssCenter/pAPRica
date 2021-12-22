@@ -23,10 +23,10 @@ setup(
         'sparse',
         'brainreg'
     ],
-    description='APR-based image processing pipeline for brain data',
+    description='APR-based image processing pipeline for microscopy data',
     long_description=LONG_DESCR,
     long_description_content_type='text/markdown',
-    url='https://bitbucket.org/wysscenter/apr_pipelines',
+    url='https://github.com/WyssCenter/APR-pipelines',
     author='Jules Scholler, Joel Jonsson',
     author_email='jules.scholler@wysscenter.ch, jonsson@mpi-cbg.de',
     license=LICENSE,

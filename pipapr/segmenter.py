@@ -1,6 +1,7 @@
 """
 Module containing classes and functions relative to Segmentation.
 
+
 By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
@@ -17,7 +18,7 @@ import sparse
 import napari
 from tqdm import tqdm
 import os
-from time import sleep
+
 
 def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
     """
@@ -26,15 +27,20 @@ def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
 
     Parameters
     ----------
-    x: (np.array) features (n_particle, n_features) for particle prediction
-    n_parts: (int) number of particles in the batch to predict
-    output: (str) output type, can be 'class' where each particle get assigned a class or 'proba' where each
-                particle get assigned a probability of belonging to each class.
-    verbose: (bool) control function verbosity
+    x: ndarray
+        features (n_particle, n_features) for particle prediction
+    n_parts: int
+        number of particles in the batch to predict
+    output: string
+        output type, can be 'class' where each particle get assigned a class or 'proba' where each
+        particle get assigned a probability of belonging to each class.
+    verbose: bool
+        control function verbosity
 
     Returns
     -------
-    Class prediction for each particle.
+    parts_pred: array_like
+        Class prediction for each particle.
     """
 
     # Predict on numpy array by block to avoid memory issues
@@ -82,13 +88,17 @@ def map_feature(data, hash_idx, features):
 
     Parameters
     ----------
-    data: (ParticleData) connected component particle array
-    hash_idx: (array) array containing the number of each connected component in ascendant order
-    features: (array) array containing the values to map
+    data: pyapr.ParticleData
+        connected component particle array
+    hash_idx: array_like
+        array containing the number of each connected component in ascendant order
+    features: array_like
+        array containing the values to map
 
     Returns
     -------
-    Array of mapped values
+    _: array_like
+        Array of mapped values
     """
 
     if len(hash_idx) != len(features):
@@ -117,11 +127,15 @@ class tileSegmenter():
 
         Parameters
         ----------
-        tile: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
-        path_classifier: (str) path to pre-trained classifier
-        func_to_compute_features: (func) function to compute the features on ParticleData. Must be the same set of
-                                        as the one used to train the classifier.
-        func_to_get_cc: (func) function to post process the segmentation map into a connected component (each cell has
+        tile: tileLoader
+            tile object for loading the tile (or containing the preloaded tile).
+        path_classifier: string
+            path to pre-trained classifier
+        func_to_compute_features: func
+            function to compute the features on ParticleData. Must be the same set of
+            as the one used to train the classifier.
+        func_to_get_cc: func
+            function to post process the segmentation map into a connected component (each cell has
                                         a unique id)
         """
 
@@ -143,8 +157,10 @@ class tileSegmenter():
 
         Parameters
         ----------
-        trainer: (pipapr.segmenter.tileTrainer) trainer object previously trained for segmentation
-        verbose: (bool) control function output
+        trainer: tileTrainer
+            trainer object previously trained for segmentation
+        verbose: bool
+            control function output
 
         Returns
         -------
@@ -169,10 +185,12 @@ class tileSegmenter():
         Parameters
         ----------
         classifier
-        func_to_compute_features: (func) function to compute features used by the classifier to perform
-                                    the segmentation.
-        func_to_get_cc: (func) function to compute the connected component from the classifier prediction.
-        verbose: (bool) control function output.
+        func_to_compute_features: func
+            function to compute features used by the classifier to perform the segmentation.
+        func_to_get_cc: func
+            function to compute the connected component from the classifier prediction.
+        verbose: bool
+            control function output.
 
         Returns
         -------
@@ -196,7 +214,8 @@ class tileSegmenter():
 
         Parameters
         ----------
-        verbose: (bool) control the verbosity of the function to print some info
+        verbose: bool
+            control the verbosity of the function to print some info
 
         Returns
         -------
@@ -244,8 +263,9 @@ class tileSegmenter():
 
         Parameters
         ----------
-        parts: (pyapr.ParticleData) particles to save. Note that the APR tree should be the same otherwise the data
-                                    will be inconsistent and not readable.
+        parts: pyapr.ParticleData
+            particles to save. Note that the APR tree should be the same otherwise the data
+            will be inconsistent and not readable.
 
         Returns
         -------
@@ -273,9 +293,10 @@ class tileCells():
 
         Parameters
         ----------
-        tiles: (tileLoader) tile object for loading the tile (or containing the preloaded tile).
-        database (pd.DataFrame, str) dataframe (or path to the csv file) containing the registration parameters
-                        to correctly place each tile.
+        tiles: tileLoader
+            tile object for loading the tile (or containing the preloaded tile).
+        database: pd.DataFrame, string
+            dataframe (or path to the csv file) containing the registration parameters to correctly place each tile.
 
         """
 
@@ -310,10 +331,11 @@ class tileCells():
 
         Parameters
         ----------
-        lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
-                            above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
-                            a second detection on the neighboring tile.
-        distance_max: (float) maximum distance in pixel for two cells to be considered the same.
+        lowe_ratio: float
+            ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is
+            supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.
+        distance_max: float
+            maximum distance in pixel for two cells to be considered the same.
 
         Returns
         -------
@@ -341,7 +363,8 @@ class tileCells():
 
         Parameters
         ----------
-        output_path: (str) path for saving the CSV file.
+        output_path: string
+            path for saving the CSV file.
 
         Returns
         -------
@@ -356,12 +379,15 @@ class tileCells():
 
         Parameters
         ----------
-        tile: (tileLoader) tile to remove the object on
-        verbose: option to display information
+        tile: tileLoader
+            tile to remove the object on
+        verbose: bool
+            option to display information
 
         Returns
         -------
-        tileLoader with removed objects.
+        tile: tileLoader
+            tile with removed objects.
         """
 
         shape = tile.apr.shape()
@@ -388,11 +414,13 @@ class tileCells():
 
         Parameters
         ----------
-        tile: (tileLoader) tile from which to merge cells
-        lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
-                            above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
-                            a second detection on the neighboring tile.
-        distance_max: (float) maximum distance in pixel for two cells to be considered the same.
+        tile: tileLoader
+            tile from which to merge cells
+        lowe_ratio: float
+            ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is
+            supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.
+        distance_max: float
+            maximum distance in pixel for two cells to be considered the same.
 
         Returns
         -------
@@ -448,12 +476,15 @@ class tileCells():
 
         Parameters
         ----------
-        row: (int) row number
-        col: (int) column number
+        row: int
+            row number
+        col: int
+            column number
 
         Returns
         -------
-        (np.array) tile absolute position
+        _: ndarray
+            tile absolute position
         """
 
         df = self.database
@@ -470,17 +501,22 @@ class tileCells():
 
         Parameters
         ----------
-        c1: (np.array) array containing the first set cells coordinates
-        c2: (np.array) array containing the second set cells coordinates
-        lowe_ratio: (float) ratio of the second nearest neighbor distance / nearest neighbor distance
-                            above lowe_ratio, the cell is supposed to be unique. Below lowe_ratio, it might have
-                            a second detection on the neighboring tile.
-        distance_max: (float) maximum distance in pixel for two cells to be considered the same.
-        verbose: (bool) control function verbosity
+        c1: ndarray
+            array containing the first set cells coordinates
+        c2: ndarray
+            array containing the second set cells coordinates
+        lowe_ratio: float
+            ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is
+            supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.
+        distance_max: float
+            maximum distance in pixel for two cells to be considered the same.
+        verbose: bool
+            control function verbosity
 
         Returns
         -------
-        (np.array) array containing the merged sets without the duplicates.
+        _: ndarray
+            array containing the merged sets without the duplicates.
         """
 
         if lowe_ratio < 0 or lowe_ratio > 1:
@@ -548,7 +584,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        use_sparse_labels: (bool) use sparse array to store the labels (memory efficient but slower graphics)
+        use_sparse_labels: bool
+            use sparse array to store the labels (memory efficient but slower graphics)
 
         Returns
         -------
@@ -584,7 +621,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        use_sparse_labels: (bool) use sparse array to store the labels (memory efficient but slower graphics)
+        use_sparse_labels: bool
+            use sparse array to store the labels (memory efficient but slower graphics)
 
         Returns
         -------
@@ -621,7 +659,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        path: (str) path to save labels. By default it saves them in the data root folder.
+        path: string
+            path to save labels. By default it saves them in the data root folder.
 
         Returns
         -------
@@ -640,7 +679,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        path: (str) path to load the saved labels. By default it loads them in the data root folder.
+        path: string
+            path to load the saved labels. By default it loads them in the data root folder.
 
         Returns
         -------
@@ -660,7 +700,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        verbose: (bool) option to print out information.
+        verbose: bool
+            option to print out information.
 
         Returns
         -------
@@ -714,8 +755,10 @@ class tileTrainer():
 
         Parameters
         ----------
-        display_result: (bool) option to display segmentation results using Napari
-        verbose: (bool) option to print out information.
+        display_result: bool
+            option to display segmentation results using Napari
+        verbose: bool
+            option to print out information.
 
         Returns
         -------
@@ -775,8 +818,10 @@ class tileTrainer():
 
         Parameters
         ----------
-        display_result: (bool) option to display segmentation results using Napari
-        verbose: (bool) option to print out information.
+        display_result: bool
+            option to display segmentation results using Napari
+        verbose: bool
+            option to print out information.
 
         Returns
         -------
@@ -815,7 +860,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        path: (str) path for saving the classifier. By default, it is saved in the data root folder.
+        path: string
+            path for saving the classifier. By default, it is saved in the data root folder.
 
         Returns
         -------
@@ -834,7 +880,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        path: (str) path for loading the classifier. By default, it is loaded from root folder.
+        path: string
+            path for loading the classifier. By default, it is loaded from root folder.
 
         Returns
         -------
@@ -866,7 +913,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        verbose: (bool) option to print out information.
+        verbose: bool
+            option to print out information.
 
         Returns
         -------
@@ -926,7 +974,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        coords: (array) pixel coordinate [z, y, x]
+        coords: array_like
+            pixel coordinate [z, y, x]
 
         Returns
         -------
@@ -944,7 +993,7 @@ class tileTrainer():
 
     def _order_labels(self):
         """
-        Order pixel_list in z incresing order, then y increasing order and finally x increasing order.
+        Order pixel_list in z increasing order, then y increasing order and finally x increasing order.
 
         Returns
         -------
@@ -962,7 +1011,8 @@ class tileTrainer():
 
         Parameters
         ----------
-        local_labels: (array) particle labels
+        local_labels: ndarray
+            particle labels
 
         Returns
         -------

@@ -28,7 +28,7 @@ By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
-import cv2
+
 import numpy as np
 from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
 from scipy.sparse import csr_matrix
@@ -58,13 +58,17 @@ def max_sum_over_single_max(reference_image, moving_image, d):
 
     Parameters
     ----------
-    reference_image: (array) 2D array of the reference image
-    moving_image: (array) 2D array of the moving image image
-    d_correct: (array) registration parameters
+    reference_image: ndarray
+        2D array of the reference image
+    moving_image: ndarray
+        2D array of the moving image image
+    d: array_like
+        registration parameters
 
     Returns
     -------
-
+    e: float
+        error estimation of the registration. The lower e, the more reliable the registration.
     """
 
     shifted_image = warp(moving_image, AffineTransform(translation=[d[1], d[0]]), mode='wrap', preserve_range=True)
@@ -75,67 +79,29 @@ def max_sum_over_single_max(reference_image, moving_image, d):
 
 
 def mse(reference_image, moving_image, d):
+    """
+    Normalized root mean square error.
+
+    Parameters
+    ----------
+    reference_image: ndarray
+        2D array of the reference image
+    moving_image: ndarray
+        2D array of the moving image image
+    d: array_like
+        registration parameters
+
+    Returns
+    -------
+    _: float
+        error estimation of the registration. The lower e, the more reliable the registration.
+
+    """
 
     shifted_image = warp(moving_image, AffineTransform(translation=[d[1], d[0]]), mode='wrap',
                          preserve_range=True)
 
     return normalized_root_mse(reference_image, shifted_image, normalization='mean')
-
-
-def reconstruct_middle_frame(tiles,
-                             database,
-                             downsample,
-                             debug=False,
-                             z=None):
-
-    if isinstance(database, pipapr.stitcher.tileStitcher):
-        database = database.database
-    elif isinstance(database, pd.DataFrame):
-        database = database
-    elif isinstance(database, str):
-        database = pd.read_csv(database)
-    else:
-        raise TypeError('Error: unknown type for database.')
-
-    level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
-
-    tile = tiles[0]
-    tile.lazy_load_tile(level_delta=level_delta)
-    frame_size = tile.lazy_data.shape[1:]
-    x_pos = database['ABS_H'].to_numpy()
-    nx = int(np.ceil((x_pos.max() - x_pos.min())/downsample + frame_size[1]))
-    y_pos = database['ABS_V'].to_numpy()
-    ny = int(np.ceil((y_pos.max() - y_pos.min())/downsample + frame_size[0]))
-
-    if z is None:
-        z = int(tile.lazy_data.shape[0] / 2)
-
-    merged_data = np.zeros((ny, nx), dtype='uint16')
-
-    H_pos = database['ABS_H'].to_numpy()
-    H_pos = (H_pos - H_pos.min()) / downsample
-    V_pos = database['ABS_V'].to_numpy()
-    V_pos = (V_pos - V_pos.min()) / downsample
-
-    for i, tile in enumerate(tqdm(tiles), desc='Merging'):
-        tile.lazy_load_tile(level_delta=level_delta)
-        data = tile.lazy_data[z]
-
-        # In debug mode we highlight each tile edge to see where it was
-        if debug:
-            data[0, :] = 2 ** 16 - 1
-            data[-1, :] = 2 ** 16 - 1
-            data[:, 0] = 2 ** 16 - 1
-            data[:, -1] = 2 ** 16 - 1
-
-        x1 = int(H_pos[i])
-        x2 = int(H_pos[i] + data.shape[1])
-        y1 = int(V_pos[i])
-        y2 = int(V_pos[i] + data.shape[0])
-
-        merged_data[y1:y2, x1:x2] = np.maximum(merged_data[y1:y2, x1:x2], data)
-
-    return merged_data
 
 
 def phase_cross_correlation(reference_image,
@@ -269,10 +235,16 @@ class baseStitcher():
 
         Parameters
         ----------
-        tiles: (tileParser) tileParser object containing the dataset to stitch.
-        overlap_h: (float) expected horizontal overlap in %
-        overlap_v: (float) expected vertical overlap in %
+        tiles: tileParser
+            tileParser object containing the dataset to stitch.
+        overlap_h: float
+            expected horizontal overlap in %
+        overlap_v: float
+            expected vertical overlap in %
 
+        Returns
+        -------
+        None
         """
         self.tiles = tiles
         self.ncol = tiles.ncol
@@ -311,8 +283,9 @@ class baseStitcher():
 
         Parameters
         ----------
-        threshold: (int) threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will
-                    create a mask removing the 5% brightest pixels).
+        threshold: int
+            threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will create a mask
+            removing the 5% brightest pixels).
 
         """
         self.mask = True
@@ -332,7 +305,8 @@ class baseStitcher():
 
         Parameters
         ----------
-        path: (str) path to save the database.
+        path: string
+            path to save the database.
 
         """
 
@@ -342,14 +316,14 @@ class baseStitcher():
 
         self.database.to_csv(path)
 
-    def activate_segmentation(self,
-                              segmenter):
+    def activate_segmentation(self, segmenter):
         """
         Activate the segmentation. When a tile is loaded it is segmented before the stitching is done.
 
         Parameters
         ----------
-        segmenter: (tileSegmenter) segmenter object for segmenting each tile.
+        segmenter: tileSegmenter
+            segmenter object for segmenting each tile.
 
         """
         self.segment = True
@@ -378,16 +352,19 @@ class baseStitcher():
 
         Parameters
         ----------
-        reg_x: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
-                     reg_x (in pixel unit) then the expected displacement (from motor position) is taken.
-        reg_y: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
-                     reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
-        reg_z: (int) if the horizontal displacement computed in the pairwise registration for any tile is greater than
-                     reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
+        reg_x: int
+            if the horizontal displacement computed in the pairwise registration for any tile is greater than
+            reg_x (in pixel unit) then the expected displacement (from motor position) is taken.
+        reg_y: int
+            if the horizontal displacement computed in the pairwise registration for any tile is greater than
+            reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
+        reg_z: int
+            if the horizontal displacement computed in the pairwise registration for any tile is greater than
+            reg_z (in pixel unit) then the expected displacement (from motor position) is taken.
 
         Returns
         -------
-
+        None
         """
 
         self.reg_x = reg_x
@@ -400,13 +377,17 @@ class baseStitcher():
 
         Parameters
         ----------
-        z: (int) reconstruction depth
-        downsample: (int) downsample for reconstruction (must be a power of 2)
-        debug: (bool) if true the border of each tile will be highlighted
+        z: int
+            reconstruction depth
+        downsample: int
+            downsample for reconstruction (must be a power of 2)
+        debug: bool
+            if true the border of each tile will be highlighted
 
         Returns
         -------
-        Merged frame at depth z.
+        merged_data: ndarray
+            Merged frame at depth z.
         """
 
         level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
@@ -475,13 +456,17 @@ class baseStitcher():
 
         Parameters
         ----------
-        z: (int) reconstruction depth
-        downsample: (int) downsample for reconstruction (must be a power of 2)
-        debug: (bool) if true the border of each tile will be highlighted
+        z: int
+            reconstruction depth
+        downsample: int
+            downsample for reconstruction (must be a power of 2)
+        debug: bool
+            if true the border of each tile will be highlighted
 
         Returns
         -------
-        Merged frame at depth z.
+        merged_data: ndarray
+            Merged frame at depth z.
         """
 
         level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
@@ -559,13 +544,17 @@ class baseStitcher():
 
         Parameters
         ----------
-        y: (int) reconstruction location in y
-        downsample: (int) downsample for reconstruction (must be a power of 2)
-        debug: (bool) if true the border of each tile will be highlighted
+        y: int
+            reconstruction location in y
+        downsample: int
+            downsample for reconstruction (must be a power of 2)
+        debug: bool
+            if true the border of each tile will be highlighted
 
         Returns
         -------
-        Merged frame at position y.
+        merged_data: ndarray
+            Merged frame at position y.
         """
 
         level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
@@ -653,13 +642,17 @@ class baseStitcher():
 
         Parameters
         ----------
-        x: (int) reconstruction location in x
-        downsample: (int) downsample for reconstruction (must be a power of 2)
-        debug: (bool) if true the border of each tile will be highlighted
+        x: int
+            reconstruction location in x
+        downsample: int
+            downsample for reconstruction (must be a power of 2)
+        debug: bool
+            if true the border of each tile will be highlighted
 
         Returns
         -------
-        Merged frame at position x.
+        merged_data: ndarray
+            Merged frame at position x.
         """
 
         level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
@@ -747,11 +740,13 @@ class baseStitcher():
 
         Parameters
         ----------
-        u: (array) RGB data
+        u: ndarray
+            RGB data
 
         Returns
         -------
-        data_to_display: (array) RGB data displayable with correct contrast and colors.
+        data_to_display: ndarray
+            RGB data displayable with correct contrast and colors.
         """
         data_to_display = np.zeros_like(u, dtype='uint8')
         for i in range(2):
@@ -762,6 +757,13 @@ class baseStitcher():
         return data_to_display
 
     def check_files_integrity(self):
+        """
+        Check that all tiles are readable and not corrupted.
+
+        Returns
+        -------
+        None
+        """
         cnt = 0
         for tile in self.tiles:
             lazy = 1
@@ -796,8 +798,10 @@ class baseStitcher():
 
         Returns
         -------
-        d: (array) registration parameters found
-        e: (float) error estimation for the registration (the higher the error the higher the uncertainty)
+        d: array_like
+            registration parameters found
+        e: float
+            error estimation for the registration (the higher the error the higher the registration uncertainty)
         """
 
         d = phase_cross_correlation_cv(reference_image, moving_image)
@@ -811,15 +815,19 @@ class baseStitcher():
 
         Parameters
         ----------
-        apr: (pyapr.APR) apr tree
-        parts: (pyapr.ParticlData) apr particle
-        patch: (pyapr.patch) patch for computing the projection only on the overlapping area.
-        plot: (bool) control data plotting
+        apr: pyapr.APR
+            apr tree
+        parts: pyapr.ParticlData
+            apr particle
+        patch: pyapr.ReconPatch
+            patch for computing the projection only on the overlapping area.
+        plot: bool
+            control data plotting
 
         Returns
         -------
-        (list of np.array) maximum intensity projection in each 3 dimension.
-
+        _: list[ndarray]
+            maximum intensity projection in each 3 dimension.
         """
         proj = []
         if patch_yx is None:
@@ -852,16 +860,18 @@ class baseStitcher():
 
         Parameters
         ----------
-        proj1: (list of np.array) max-projections for tile 1
-        proj2: (list of np.array) max-projections for tile 2
-        upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
+        proj1: list[ndarray]
+            max-projections for tile 1
+        proj2: list[ndarray]
+            max-projections for tile 2
+        upsample_factor: float
+            upsampling_factor for estimating the maximum phase cross-correlation position
 
         Returns
         -------
-        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
-
+        _: array_like
+            shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
         """
-
         # Compute phase cross-correlation to extract shifts
         dzy, error_zy = self._compute_shift(proj1[0], proj2[0])
         dzx, error_zx = self._compute_shift(proj1[1], proj2[1])
@@ -922,14 +932,17 @@ class baseStitcher():
 
         Parameters
         ----------
-        proj1: (list of arrays) max-projections for tile 1
-        proj2: (list of arrays) max-projections for tile 2
-        upsample_factor: (float) upsampling_factor for estimating the maximum phase cross-correlation position
+        proj1: list[ndarray]
+            max-projections for tile 1
+        proj2: list[ndarray]
+            max-projections for tile 2
+        upsample_factor: float
+            upsampling_factor for estimating the maximum phase cross-correlation position
 
         Returns
         -------
-        shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
-
+        _: array_like
+            shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)
         """
         # Compute mask to discard very bright area that are likely bubbles or artefacts
         mask_ref = []
@@ -1044,9 +1057,12 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        tiles: (tileParser) tileParser object containing the dataset to stitch.
-        overlap_h: (float) expected horizontal overlap in %
-        overlap_v: (float) expected vertical overlap in %
+        tiles: tileParser
+            tileParser object containing the dataset to stitch.
+        overlap_h: float
+            expected horizontal overlap in %
+        overlap_v: float
+            expected vertical overlap in %
         """
 
         super().__init__(tiles, overlap_h, overlap_v)
@@ -1184,10 +1200,10 @@ class tileStitcher(baseStitcher):
         self._print_info()
 
     def compute_registration_from_max_projs(self):
-        '''
+        """
         Compute the registration directly from the max-projections. Max-projections must have been computed before.
 
-        '''
+        """
 
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
         projs = self._load_max_projs()
@@ -1268,7 +1284,8 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        annotate: (bool) control if annotation are drawn on the graph
+        annotate: bool
+            control if annotation are drawn on the graph
 
         """
 
@@ -1322,7 +1339,8 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        annotate: (bool) control if annotation are drawn on the graph
+        annotate: bool
+            control if annotation are drawn on the graph
 
         """
 
@@ -1401,7 +1419,8 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        path: (str) path to save the database.
+        path: string
+            path to save the database.
 
         """
         if path[-4:] != '.pkl':
@@ -1418,7 +1437,8 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        margin: (float) safety margin in % to take the overlaping area.
+        margin: float
+            safety margin in % to take the overlaping area.
 
         Returns
         -------
@@ -1443,8 +1463,10 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        z_begin: (int) first depth to be included in the max-proj
-        z_end: (int) last depth to be included in the max-proj
+        z_begin: int
+            first depth to be included in the max-proj
+        z_end: int
+            last depth to be included in the max-proj
 
         Returns
         -------
@@ -1474,7 +1496,14 @@ class tileStitcher(baseStitcher):
                           'might be wrong.')
 
     def _save_max_projs(self):
+        """
+        Save the computed maximum intensity projection on persistent memory. This is useful to recompute the
+        registration directly from the max. proj. but only works if the overlaps are kept the same.
 
+        Returns
+        -------
+        None
+        """
         # Safely create folder to save max-projs
         Path(self.tiles.folder_max_projs).mkdir(parents=True, exist_ok=True)
 
@@ -1519,7 +1548,13 @@ class tileStitcher(baseStitcher):
                                              '{}_{}_north_{}.npy'.format(tile.row, tile.col, d)), proj[i])
 
     def _load_max_projs(self):
+        """
+        Load the maximum intensity projection previously stored.
 
+        Returns
+        -------
+        None
+        """
         projs = np.empty((self.nrow, self.ncol), dtype=object)
 
         for tile in self.tiles:
@@ -1565,8 +1600,10 @@ class tileStitcher(baseStitcher):
         """
         Precompute max-projections for loading the data only once during the stitching.
 
+        Returns
+        -------
+        None
         """
-
         projs = np.empty((self.nrow, self.ncol), dtype=object)
         for tile in tqdm(self.tiles, desc='Computing max. proj.'):
             tile.load_tile()
@@ -1640,6 +1677,9 @@ class tileStitcher(baseStitcher):
         Build the sparse graph from the reliability and (row, col). This method needs to be called after the
         pair-wise registration has been performed for all neighbors pair.
 
+        Returns
+        -------
+        None
         """
 
         csr_matrix_size = self.ncol*self.nrow
@@ -1655,6 +1695,9 @@ class tileStitcher(baseStitcher):
         Optimize the sparse graph by computing the minimum spanning tree for each direction (H, D, V). This
         method needs to be called after the sparse graphs have been built.
 
+        Returns
+        -------
+        None
         """
 
         if self.graph_relia_H is None:
@@ -1680,6 +1723,9 @@ class tileStitcher(baseStitcher):
         Produce the registration map where reg_rel_map[d, row, col] (d = H,V,D) is the relative tile
         position in pixel from the expected one. This method needs to be called after the optimization has been done.
 
+        Returns
+        -------
+        None
         """
 
         if self.min_tree_H is None:
@@ -1753,6 +1799,9 @@ class tileStitcher(baseStitcher):
         Build the database for storing the registration parameters. This method needs to be called after
         the registration map has been produced.
 
+        Returns
+        -------
+        None
         """
 
         if self.registration_map_rel is None:
@@ -1785,15 +1834,16 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        ind_from: (int) starting node in the directed graph
-        ind_to: (int) ending node in the directed graph
+        ind_from: int
+            starting node in the directed graph
+        ind_to: int
+            ending node in the directed graph
 
         Returns
         ----------
-        (int) corresponding ind in the original graph
-
+        ind: int
+            corresponding ind in the original graph
         """
-
         ind = None
         for i, f in enumerate(self.cgraph_from):
             if f == ind_from:
@@ -1814,15 +1864,15 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        u: (list) current tile
-        v: (list) neighboring tile
+        u: list
+            current tile
+        v: list
+            neighboring tile
 
         Returns
         -------
         None
-
         """
-
         patch = pyapr.ReconPatch()
         patch.y_begin = self.frame_size - self.overlap_h
         proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
@@ -1853,15 +1903,15 @@ class tileStitcher(baseStitcher):
 
         Parameters
         ----------
-        u: (list) current tile
-        v: (list) neighboring tile
+        u: list
+            current tile
+        v: list
+            neighboring tile
 
         Returns
         -------
         None
-
         """
-
         patch = pyapr.ReconPatch()
         patch.x_begin = self.frame_size - self.overlap_v
         proj_zy1, proj_zx1, proj_yx1 = self._get_max_proj_apr(apr_1, parts_1, patch, plot=False)
@@ -1907,9 +1957,12 @@ class channelStitcher(baseStitcher):
 
         Parameters
         ----------
-        stitcher: (tileStitcher) tileStitcher object with the multitile registration parameters
-        tiles_stitched: (tileParser) tiles corresponding to the stitcher
-        tiles_channel: (tileParser) tiles to be registered to tiles_stitched
+        stitcher: tileStitcher
+            tileStitcher object with the multitile registration parameters
+        tiles_stitched: tileParser
+            tiles corresponding to the stitcher
+        tiles_channel: tileParser
+            tiles to be registered to tiles_stitched
         """
 
         super().__init__(moving,
@@ -1926,6 +1979,13 @@ class channelStitcher(baseStitcher):
         self.segmentation_verbose = None
 
     def compute_rigid_registration(self):
+        """
+        Compute the rigid registration between each pair of tiles across different channels.
+
+        Returns
+        -------
+        None
+        """
 
         for tile1, tile2 in zip(tqdm(self.tiles_ref), self.tiles):
 
@@ -1953,6 +2013,22 @@ class channelStitcher(baseStitcher):
             self._update_database(tile2.row, tile2.col, reg)
 
     def _update_database(self, row, col, d):
+        """
+        Update database after the registration.
+
+        Parameters
+        ----------
+        row: int
+            row number
+        col: int
+            col number
+        d: int
+            computed displacement
+
+        Returns
+        -------
+
+        """
         d = np.concatenate([d, d])
         df = self.database
         for loc, value in zip(['dD', 'dV', 'dH', 'ABS_D', 'ABS_V', 'ABS_H'], d):
@@ -1971,11 +2047,17 @@ class tileMerger():
 
         Parameters
         ----------
-        tiles:  (tileParser) tileParser object containing the dataset to merge.
-        database: (pd.DataFrame, str) database or path to the database containing the registered tile position
-        n_planes: (int) number of planes per files.
-        """
+        tiles:  tileParser
+            tileParser object containing the dataset to merge.
+        database: (pd.DataFrame, string)
+            database or path to the database containing the registered tile position
+        n_planes: int
+            number of planes per files.
 
+        Returns
+        -------
+        None
+        """
         if isinstance(database, str):
             self.database = pd.read_csv(database)
         else:
@@ -2005,14 +2087,13 @@ class tileMerger():
 
         Parameters
         ----------
-        mode: (str) APR reconstruction type among ('constant', 'smooth', 'level')
+        mode: string
+            APR reconstruction type among ('constant', 'smooth', 'level')
 
         Returns
         -------
         None
-
         """
-
         if self.merged_data is None:
             self._initialize_merged_array()
 
@@ -2054,15 +2135,15 @@ class tileMerger():
 
         Parameters
         ----------
-        mode: (str) APR reconstruction type among ('constant', 'smooth', 'level')
-        debug: (bool) add white border on the edge of each tile to see where it was overlapping.
+        mode: string
+            APR reconstruction type among ('constant', 'smooth', 'level')
+        debug: bool
+            add white border on the edge of each tile to see where it was overlapping.
 
         Returns
         -------
         None
-
         """
-
         if self.merged_data is None:
             self._initialize_merged_array()
 
@@ -2113,10 +2194,14 @@ class tileMerger():
 
         Parameters
         ----------
-        background: (int) constant value to replace the cropped area with.
-        xlim: (list) x limits for cropping
-        ylim: (list) y limits for cropping
-        zlim: (list) z limits for cropping
+        background: int
+            constant value to replace the cropped area with.
+        xlim: array_like
+            x limits for cropping
+        ylim: array_like
+            y limits for cropping
+        zlim: array_like
+            z limits for cropping
 
         Returns
         -------
@@ -2149,13 +2234,13 @@ class tileMerger():
 
         Parameters
         ----------
-        method: (str) method for performing histogram equalization among 'skimage' and 'opencv'.
+        method: string
+            method for performing histogram equalization among 'skimage' and 'opencv'.
 
         Returns
         -------
         None
         """
-
         if self.merged_data is None:
             raise TypeError('Error: please merge data before equalizing histogram.')
 
@@ -2175,7 +2260,8 @@ class tileMerger():
 
         Parameters
         ----------
-        downsample: (int) downsample factor
+        downsample: int
+            downsample factor
 
         Returns
         -------
@@ -2198,7 +2284,6 @@ class tileMerger():
         -------
         None
         """
-
         self.nx = int(np.ceil(self._get_nx() / self.downsample))
         self.ny = int(np.ceil(self._get_ny() / self.downsample))
         self.nz = int(np.ceil(self._get_nz() / self.downsample))
@@ -2211,7 +2296,8 @@ class tileMerger():
 
         Returns
         -------
-        (int) x size for merged array
+        _: int
+            x size for merged array
         """
         x_pos = self.database['ABS_H'].to_numpy()
         return x_pos.max() - x_pos.min() + self.frame_size
@@ -2222,7 +2308,8 @@ class tileMerger():
 
         Returns
         -------
-        (int) y size for merged array
+        _: int
+            y size for merged array
         """
         y_pos = self.database['ABS_V'].to_numpy()
         return y_pos.max() - y_pos.min() + self.frame_size
@@ -2233,7 +2320,8 @@ class tileMerger():
 
         Returns
         -------
-        (int) y size for merged array
+        _: int
+            y size for merged array
         """
         z_pos = self.database['ABS_D'].to_numpy()
         return z_pos.max() - z_pos.min() + self.n_planes
@@ -2244,9 +2332,9 @@ class tileMerger():
 
         Returns
         -------
-        (int) Number of planes per tile;
+        _: int
+            Number of planes per tile;
         """
-
         tile = self.tiles[0]
         if self.type == 'apr':
             if self.lazy:
@@ -2265,9 +2353,9 @@ class tileMerger():
 
         Returns
         -------
-        (bool)
+        _: bool
+            True if the tile can be lazy loaded, false if not.
         """
-
         try:
             for tile in self.tiles:
                 tile.lazy_load_tile()

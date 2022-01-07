@@ -19,5 +19,6 @@ from .atlaser import tileAtlaser
 from .segmenter import tileSegmenter, tileCells, tileTrainer
 from .viewer import tileViewer
 from .stitcher import tileStitcher, channelStitcher
+from .runner import runningPipeline
 
-__all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter']
+__all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter', 'runner']

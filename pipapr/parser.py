@@ -58,13 +58,39 @@ class baseParser():
         self.neighbors, self.n_edges = None, None
         self.neighbors_tot = None
         self.path_list = self._get_path_list()
-        self.overlap = None
         self._print_info()
 
         # Define some folders
         base, _ = os.path.split(self.path)
         self.folder_root = base
         self.folder_max_projs = None
+
+    def check_files_integrity(self):
+        """
+        Check that all tiles are readable and not corrupted.
+
+        Returns
+        -------
+        None
+        """
+        cnt = 0
+        for tile in self:
+            lazy = 1
+            try:
+                tile.lazy_load_tile()
+            except:
+                lazy = 0
+                print('Lazy load failed on ({}, {})\n Trying normal loading...'.format(tile.row, tile.col))
+
+            if lazy == 0:
+                try:
+                    tile.load_tile()
+                except:
+                    cnt += 1
+                    print('Problem detected with tile ({}, {})'.format(tile.row, tile.col))
+
+        if cnt == 0:
+            print('All tiles are readable.')
 
     def _print_info(self):
         """
@@ -275,6 +301,7 @@ class tileParser(baseParser):
 
         self.path = path
         self.frame_size = frame_size
+        self.channel = None
 
         if ftype is None:
             self.type = self._get_type()

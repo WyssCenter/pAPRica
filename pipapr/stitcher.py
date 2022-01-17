@@ -756,33 +756,6 @@ class baseStitcher():
 
         return data_to_display
 
-    def check_files_integrity(self):
-        """
-        Check that all tiles are readable and not corrupted.
-
-        Returns
-        -------
-        None
-        """
-        cnt = 0
-        for tile in self.tiles:
-            lazy = 1
-            try:
-                tile.lazy_load_tile()
-            except:
-                lazy = 0
-                print('Lazy load failed on ({}, {})\n Trying normal loading...'.format(tile.row, tile.col))
-
-            if lazy == 0:
-                try:
-                    tile.load_tile()
-                except:
-                    cnt += 1
-                    print('Problem detected with tile ({}, {})'.format(tile.row, tile.col))
-
-        if cnt == 0:
-            print('All tiles are readable.')
-
     def _compute_shift(self, reference_image, moving_image):
         """
         Backbone function to compute the registration and the registration error used for the global optimisation.

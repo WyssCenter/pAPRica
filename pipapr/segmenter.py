@@ -82,36 +82,42 @@ def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
     return parts_pred
 
 
-def map_feature(data, hash_idx, features):
+def map_feature(apr, parts_cc, features):
     """
     Map feature values to segmented particle data.
 
     Parameters
     ----------
-    data: pyapr.ParticleData
-        connected component particle array
-    hash_idx: array_like
-        array containing the number of each connected component in ascendant order
+    apr: pyapr.APR
+        apr object to map features to
+    parts_cc: pyapr.ParticleData
+        connected component particle array corresponding to apr
     features: array_like
         array containing the values to map
 
     Returns
     -------
-    _: array_like
-        Array of mapped values
+    Array of mapped values (each particle in the connected component now has the value present in features)
     """
 
+    objects_volume = pyapr.numerics.transform.find_label_volume(apr, parts_cc)
+    hash_idx = np.arange(0, len(objects_volume))
+    # Object with volume 0 are not in CC so we need to get rid of them
+    hash_idx = hash_idx[plaque_volume > 0]
+    # We also need to get rid of the background
+    hash_idx = hash_idx[1:]
+
     if len(hash_idx) != len(features):
-        raise ValueError('Error: hash_idx and features must have the same length.')
+        raise ValueError('Error: features length should be the same as the number of connected components.')
 
     # Create hash dict
     hash_dict = {x: y for x, y in zip(hash_idx, features)}
     # Replace 0 by 0
     hash_dict[0] = 0
 
-    mp = np.arange(0, data.max() + 1)
+    mp = np.arange(0, parts_cc.max() + 1)
     mp[list(hash_dict.keys())] = list(hash_dict.values())
-    return mp[np.array(data, copy=False)]
+    return mp[np.array(parts_cc, copy=False)]
 
 
 class tileSegmenter():

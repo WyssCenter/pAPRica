@@ -386,7 +386,8 @@ class tileParser(baseParser):
         """
         tiles = []
         for f in files:
-            pattern_search = re.search('(\d+)_(\d+).', f)
+            _, fname = os.path.split(f)
+            pattern_search = re.search('(\d+)_(\d+).', fname)
             if pattern_search:
                 row = int(pattern_search.group(1))
                 col = int(pattern_search.group(2))

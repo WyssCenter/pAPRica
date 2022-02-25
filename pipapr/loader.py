@@ -360,7 +360,7 @@ class tileLoader():
             v[i] = imread(f)
         return v
 
-    def load_clearscope(self, path):
+    def _load_clearscope(self, path):
         """
         Load a sequence of images in a folder and return it as a 3D array.
 
@@ -374,7 +374,7 @@ class tileLoader():
         v: array_like
             numpy array containing the data.
         """
-        files_sorted = sorted(glob(os.path.join(self.path)))
+        files_sorted = sorted(glob(os.path.join(self.path, '*')))
         n_files = len(files_sorted)
         v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):

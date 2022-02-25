@@ -491,6 +491,13 @@ class colmParser(tileParser):
 
         self.channel = channel
 
+    def _get_tiles_path(self):
+        """
+        Returns a list containing COLM folders which contains individual tiff.
+
+        """
+        return glob(os.path.join(self.path, '*/'))
+
     def _get_tiles_from_path(self, files):
         """
         Returns a list of tiles as a dictionary for data saved as LOC00X.
@@ -498,7 +505,6 @@ class colmParser(tileParser):
         """
         tiles = []
         for f in files:
-
             pattern_search = re.findall('[\\\/]LOC(\d+)', f)
             if pattern_search != []:
                 n = int(pattern_search[-1])
@@ -513,3 +519,114 @@ class colmParser(tileParser):
                     }
             tiles.append(tile)
         return tiles
+
+
+class clearscopeParser(tileParser):
+    """
+    Class used to parse multi-tile colm data where each tile position in space matters. Tile parsed this way are usually
+    stitched later on.
+
+    """
+    def __init__(self, path, channel=0):
+        """
+        Constructor of the tileParser object for COLM acquisition.
+
+        Parameters
+        ----------
+        path: string
+            path where to look for the data.
+        nrow: int
+            number of row for parsing COLM LOCXXX data
+        ncol: int
+            number of col for parsing COLM LOCXXX data
+        channel: int
+            fluorescence channel for parsing COLM LOCXXX data
+
+        """
+
+        path = os.path.join(path, '0001')
+        self._parse_settings()
+        super().__init__(path, frame_size=2048, ftype='tiff2D')
+        self.channel = channel
+
+    def _parse_settings(self):
+
+        file = glob(os.path.join(self.path, '0001', '*_AcquireSettings.txt'))
+        path = file[0]
+        print('Settings found: {}'.format(path))
+
+
+        with open(path) as f:
+            lines = f.readlines()
+
+        self.acq_param = {}
+        for l in lines:
+            pattern_matched = re.match('^(\w*) = (.*)$', l)
+            if pattern_matched is not None:
+                if pattern_matched.group(2).isnumeric():
+                    self.acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
+                elif pattern_matched.group(2) == 'True':
+                    self.acq_param[pattern_matched.group(1)] = True
+                elif pattern_matched.group(2) == 'False':
+                    self.acq_param[pattern_matched.group(1)] = False
+                else:
+                    self.acq_param[pattern_matched.group(1)] = pattern_matched.group(2)
+
+        self.n_row = self.acq_param['ScanGridY']
+        self.n_col = self.acq_param['ScanGridY']
+        self.n_tiles = self.n_row*self.n_col
+        self.n_planes = self.acq_param['StackDepths']
+
+    def _get_tiles_path(self):
+        """
+        Returns a list containing ClearScope folders which contains individual tiff.
+
+        """
+        return sorted(glob(os.path.join(self.path, '000000_*_{}c/'.format(self.channel))))
+
+    def _get_tiles_from_path(self, files):
+        """
+        Returns a list of tiles as a dictionary for ClearScope data.
+
+        """
+        tiles = []
+        for f in files:
+
+            pattern_search = re.findall('\d{6}_(\d{6})___\dc', f)
+            if pattern_search != []:
+                n = int(pattern_search[0])
+                row, col = self._get_row_col(n)
+            else:
+                raise TypeError('Couldn''t get the column/row.')
+
+            tile = {'path': f,
+                    'row': row,
+                    'col': col,
+                    }
+            tiles.append(tile)
+        return tiles
+
+    def _get_row_col(self, n):
+        """
+        Get ClearScope tile row and col position given the tile number.
+
+        Parameters
+        ----------
+        n: int
+            ClearScope tile number
+
+        Returns
+        -------
+        row: int
+            row number
+        col: int
+            col number
+        """
+
+        col = np.absolute(np.mod(n - self.ncol - 1, 2 * self.ncol) - self.ncol + 0.5) + 0.5
+        row = np.ceil(n / self.ncol)
+
+        col = col.astype(int)
+        row = row.astype(int)
+
+        return row, col

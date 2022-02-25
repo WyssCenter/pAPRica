@@ -302,7 +302,6 @@ class tileParser(baseParser):
         self.path = path
         self.frame_size = frame_size
         self.channel = None
-
         if ftype is None:
             self.type = self._get_type()
         else:
@@ -545,15 +544,33 @@ class clearscopeParser(tileParser):
 
         """
 
-        path = os.path.join(path, '0001')
-        self._parse_settings()
-        super().__init__(path, frame_size=2048, ftype='tiff2D')
+        self.path = os.path.join(path, '0001')
         self.channel = channel
+        self.folder_settings, self.name_acq = os.path.split(path)
+        self._parse_settings()
+        self.frame_size = 2048
+        self.type = 'tiff2D'
+        self.tiles_list = self._get_tile_list()
+        self.n_tiles = len(self.tiles_list)
+        if self.n_tiles == 0:
+            raise FileNotFoundError('Error: no tile were found.')
+
+        self._sort_tiles()
+        self.tiles_pattern, self.tile_pattern_path = self._get_tiles_pattern()
+        self.neighbors, self.n_edges = self._get_neighbors_map()
+        self.neighbors_tot = self._get_total_neighbors_map()
+        self.path_list = self._get_path_list()
+        self._print_info()
+
+        # Define some folders
+        base, _ = os.path.split(self.path)
+        self.folder_root = base
+        self.folder_max_projs = os.path.join(base, 'max_projs')
 
     def _parse_settings(self):
 
-        file = glob(os.path.join(self.path, '0001', '*_AcquireSettings.txt'))
-        path = file[0]
+        path = os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq))
+        print(path)
         print('Settings found: {}'.format(path))
 
 
@@ -573,17 +590,17 @@ class clearscopeParser(tileParser):
                 else:
                     self.acq_param[pattern_matched.group(1)] = pattern_matched.group(2)
 
-        self.n_row = self.acq_param['ScanGridY']
-        self.n_col = self.acq_param['ScanGridY']
-        self.n_tiles = self.n_row*self.n_col
-        self.n_planes = self.acq_param['StackDepths']
+        self.nrow = int(self.acq_param['ScanGridY'])
+        self.ncol = int(self.acq_param['ScanGridX'])
+        self.n_tiles = self.nrow*self.ncol
+        self.n_planes = int(self.acq_param['StackDepths'])
 
     def _get_tiles_path(self):
         """
         Returns a list containing ClearScope folders which contains individual tiff.
 
         """
-        return sorted(glob(os.path.join(self.path, '000000_*_{}c/'.format(self.channel))))
+        return glob(os.path.join(self.path, '000000_*_{}c/'.format(self.channel)))
 
     def _get_tiles_from_path(self, files):
         """
@@ -627,7 +644,7 @@ class clearscopeParser(tileParser):
         col = np.absolute(np.mod(n - self.ncol - 1, 2 * self.ncol) - self.ncol + 0.5) + 0.5
         row = np.ceil(n / self.ncol)
 
-        col = col.astype(int)
-        row = row.astype(int)
+        col = int(col-1)
+        row = int(row-1)
 
         return row, col

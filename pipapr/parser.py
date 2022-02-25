@@ -487,7 +487,7 @@ class colmParser(tileParser):
         self.ncol = u.shape[1]
         self.nrow = u.shape[0]
         path = os.path.join(path, 'VW0')
-        super().__init__(path, frame_size=2048, ftype='tiff2D')
+        super().__init__(path, frame_size=2048, ftype='colm')
 
         self.channel = channel
 
@@ -549,7 +549,7 @@ class clearscopeParser(tileParser):
         self.folder_settings, self.name_acq = os.path.split(path)
         self._parse_settings()
         self.frame_size = 2048
-        self.type = 'tiff2D'
+        self.type = 'clearscope'
         self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
         if self.n_tiles == 0:
@@ -648,3 +648,4 @@ class clearscopeParser(tileParser):
         row = int(row-1)
 
         return row, col
+

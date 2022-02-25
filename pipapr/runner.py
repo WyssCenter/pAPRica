@@ -18,39 +18,32 @@ from tqdm import tqdm
 from pathlib import Path
 import pandas as pd
 
-class baseRunningPipeline():
-    """
-    Class to process tile on the fly during acquisition.
-    """
-    def __init__(self, path, nrow, ncol, n_channels=1, ftype='tiff3D'):
+class clearscopeRunningPipeline():
+
+    def __init__(self, path, n_channels):
         """
-        Constructor for the runningPipeline object.
+        Constructor for the clearscopeRunningPipeline.
 
         Parameters
         ----------
-        path: string
-            folder where the data will be acquired
-        n_row: int
-            number of row that will be acquired
-        n_col: int
-            number of col that will be acquired
+        path: str
+            Path of the acquisition. It has to be the acquisition folder (root of /0001/ folder).
         n_channels: int
-            number of channels that will be acquired
-        ftype: string
-            type of data for each tile, can be 'tiff2D' or 'tiff3D'
+            Number of channels that will be acquired. This will be parsed/guessed in the future.
         """
 
         # runningPipeline attributes
-        self.path = path
-        self.next_tile = [0, 0]
+        self.path = os.path.join(path, '0001')
+        self.folder_settings, self.name_acq = os.path.split(path)
+        self.acq_param = None
+        self.n_channels = n_channels
+        self.nrow, self.ncol, self.n_planes = self._parse_acquisition_settings()
         self.frame_size = 2048
         self.tile_processed = 0
-        self.nrow = nrow
-        self.ncol = ncol
-        self.n_tiles = nrow * ncol
-        self.current_tile = None
-        self.type = ftype
-        self.n_channels = n_channels
+        self.n_tiles = self.nrow * self.ncol
+        self.type = 'clearscope'
+        self.current_tile = 1
+        self.current_channel = 0
 
         # Converter attributes
         self.converter = None
@@ -82,7 +75,10 @@ class baseRunningPipeline():
 
             if is_available:
 
-                print('New tile available: {}'.format(os.path.basename(tile.path)))
+                print('\nNew tile available: {}\nrow: {}\ncol {}\nchannel {}'.format(tile.path,
+                                                                                      tile.row,
+                                                                                      tile.col,
+                                                                                      tile.channel))
 
                 tile.load_tile()
 
@@ -99,40 +95,6 @@ class baseRunningPipeline():
                 self.tile_processed += 1
             else:
                 sleep(1)
-
-    def set_compression(self, quantization_factor=1, bg=108):
-        """
-        Activate B3D compression for saving tiles.
-
-        Parameters
-        ----------
-        quantization_factor: int
-            quantization factor: the higher, the more compressed (refer to B3D paper for more detail).
-        bg: int
-            background value: any value below this threshold will be set to the background value. This helps
-            save up space by having the same value for the background (refer to B3D paper for more details).
-
-        Returns
-        -------
-        None
-        """
-
-        self.compression = True
-        self.bg = bg
-        self.quantization_factor = quantization_factor
-
-    def deactivate_compression(self):
-        """
-        Deactivate B3D compression when saving particles.
-
-        Returns
-        -------
-        None
-        """
-
-        self.compression = False
-        self.bg = None
-        self.quantization_factor = None
 
     def activate_conversion(self,
                              Ip_th=108,
@@ -172,8 +134,9 @@ class baseRunningPipeline():
         self.lazy_loading = lazy_loading
 
         # Safely create folder to save apr data
-        self.folder_apr = os.path.join(self.path, 'APR')
-        Path(self.folder_apr).mkdir(parents=True, exist_ok=True)
+        for i in range(self.n_channels):
+            self.folder_apr = os.path.join(self.path, 'APR')
+            Path(os.path.join(self.folder_apr, 'ch{}'.format(i))).mkdir(parents=True, exist_ok=True)
 
         # Set parameters
         par = pyapr.APRParameters()
@@ -202,6 +165,158 @@ class baseRunningPipeline():
         # Safely create folder to save max projs
         self.folder_max_projs = os.path.join(self.path, 'max_projs')
         Path(self.folder_max_projs).mkdir(parents=True, exist_ok=True)
+
+    def _parse_acquisition_settings(self):
+
+        print('Waiting for AcquireSettings.txt file in {}'.
+              format(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq))))
+
+        files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
+        while files == []:
+            sleep(1)
+            files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
+
+        path = files[0]
+        print('File found: {}'.format(path))
+
+
+        with open(path) as f:
+            lines = f.readlines()
+
+        self.acq_param = {}
+        for l in lines:
+            pattern_matched = re.match('^(\w*) = (.*)$', l)
+            if pattern_matched is not None:
+                if pattern_matched.group(2).isnumeric():
+                    self.acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
+                elif pattern_matched.group(2) == 'True':
+                    self.acq_param[pattern_matched.group(1)] = True
+                elif pattern_matched.group(2) == 'False':
+                    self.acq_param[pattern_matched.group(1)] = False
+                else:
+                    self.acq_param[pattern_matched.group(1)] = pattern_matched.group(2)
+
+        nrow = int(self.acq_param['ScanGridY'])
+        ncol = int(self.acq_param['ScanGridY'])
+        n_planes =int(self.acq_param['StackDepths'])
+
+        print('\nAcquisition parameters:'
+              '\nnumber of row: {}'
+              '\nnumber of col: {}'
+              '\nnumber of planes: {}'
+              '\nnumber of channels: {}'.format(nrow, ncol, n_planes,
+                                                                                               self.n_channels))
+
+        return nrow, ncol, n_planes
+
+    def _is_new_tile_available(self):
+        """
+        Checks if a new tile is available for processing.
+
+        Returns
+        -------
+        is_available: bool
+            True if a new tile is available, False otherwise
+        tile: runningTile
+            tile object is available, None otherwise
+        """
+
+        expected_tile = os.path.join(self.path, '000000_{:06d}___{}c/'.format(self.current_tile, self.current_channel))
+        path = glob(expected_tile)
+
+        if path == []:
+            return False, None
+        elif len(path) == 1:
+            # Store current tile coordinate
+            files = glob(os.path.join(expected_tile, '*.tif'))
+            if len(files) < self.n_planes:
+                return False, None
+            else:
+                tile = self._get_tile(expected_tile)
+
+            return True, tile
+        else:
+            raise TypeError('Error: multiple tiles were found.')
+
+    def _get_row_col(self, path):
+        """
+        Get ClearScope tile row and col position given the tile number.
+
+        Parameters
+        ----------
+        n: int
+            ClearScope tile number
+
+        Returns
+        -------
+        row: int
+            row number
+        col: int
+            col number
+        """
+
+        pattern_search = re.findall('\d{6}_(\d{6})___\dc', path)
+
+        if pattern_search != []:
+            n = int(pattern_search[0])
+
+        col = np.absolute(np.mod(n - self.ncol - 1, 2 * self.ncol) - self.ncol + 0.5) + 0.5
+        row = np.ceil(n / self.ncol)
+
+        col = int(col-1)
+        row = int(row-1)
+
+        return row, col
+
+    def _get_channel(self, path):
+
+        pattern_search = re.findall('\d{6}_\d{6}___(\d)c', path)
+
+        if pattern_search != []:
+            return int(pattern_search[0])
+
+    def _update_next_tile(self):
+        """
+        Update next tile coordinates given the expected pattern.
+
+        Returns
+        -------
+        None
+        """
+        if self.current_channel == self.n_channels-1:
+            self.current_tile += 1
+            self.current_channel = 0
+        else:
+            self.current_channel += 1
+
+    def _get_tile(self, path):
+        """
+        Returns the tile at the given path.
+
+        Parameters
+        ----------
+        path: string
+            tile path
+
+        Returns
+        -------
+        tile: runningTile
+            tile object
+        """
+
+        row, col = self._get_row_col(path)
+        channel = self._get_channel(path)
+
+        return pipapr.loader.tileLoader(path=path,
+                                        row=row,
+                                        col=col,
+                                        ftype=self.type,
+                                        neighbors=None,
+                                        neighbors_tot=None,
+                                        neighbors_path=None,
+                                        frame_size=2048,
+                                        folder_root=self.path,
+                                        channel=channel)
 
     # def _pre_stitch(self, tile):
     #
@@ -262,236 +377,39 @@ class baseRunningPipeline():
         pyapr.io.write(os.path.join(self.folder_apr, 'ch{}'.format(tile.channel), filename),
                        apr, parts, tree_parts=tree_parts)
 
-    def _is_new_tile_available(self):
+    def set_compression(self, quantization_factor=1, bg=108):
         """
-        Checks if a new tile is available for processing.
+        Activate B3D compression for saving tiles.
 
-        Returns
-        -------
-        is_available: bool
-            True if a new tile is available, False otherwise
-        tile: runningTile
-            tile object is available, None otherwise
-        """
-
-        path = glob(os.path.join(self.path, '{}_{}.tif'.format(self.next_tile[0], self.next_tile[1])))
-
-        if path == []:
-            return False, None
-        if len(path) == 1:
-            # Store current tile coordinate
-            self.current_tile = [self.next_tile[0], self.next_tile[1]]
-
-            path = path[0]
-            tile = self._get_tile(path)
-
-            return True, tile
-        else:
-            raise TypeError('Error: glob returned one than one file.')
-
-    def _update_next_tile(self):
-        """
-        Update next tile coordinates given the expected pattern.
+        Parameters
+        ----------
+        quantization_factor: int
+            quantization factor: the higher, the more compressed (refer to B3D paper for more detail).
+        bg: int
+            background value: any value below this threshold will be set to the background value. This helps
+            save up space by having the same value for the background (refer to B3D paper for more details).
 
         Returns
         -------
         None
         """
-        if self.current_tile[1] == self.n_col-1:
-            self.next_tile = [self.current_tile[0]+1, 0]
-        else:
-            self.next_tile = [self.current_tile[0], self.current_tile[1]+1]
 
-    def _get_tile(self, path):
+        self.compression = True
+        self.bg = bg
+        self.quantization_factor = quantization_factor
+
+    def deactivate_compression(self):
         """
-        Returns the tile at the given path.
-
-        Parameters
-        ----------
-        path: string
-            tile path
+        Deactivate B3D compression when saving particles.
 
         Returns
         -------
-        tile: runningTile
-            tile object
+        None
         """
 
-        row, col = self._get_row_col(path)
-        channel = self._get_channel(path)
-
-        return runningTile(path=path,
-                            row=row,
-                            col=col,
-                            ftype=self.type,
-                            neighbors=None,
-                            neighbors_tot=None,
-                            neighbors_path=None,
-                            frame_size=2048,
-                            folder_root=self.path,
-                            channel=channel,
-                            n_channels=self.n_channels)
-
-
-class clearscopeRunningPipeline(baseRunningPipeline):
-
-    def __init__(self, path, n_channels=1):
-
-        # runningPipeline attributes
-        self.path = os.path.join(path, '0001')
-        self.acq_param = None
-        self.nrow, self.ncol = self._parse_acquisition_settings()
-        self.frame_size = 2048
-        self.tile_processed = 0
-        self.n_tiles = self.nrow * self.ncol
-        self.type = 'clearscope'
-        self.n_channels = n_channels
-        self.buffer_tile_to_be_processed = []
-
-        # Converter attributes
-        self.converter = None
-        self.lazy_loading = None
         self.compression = False
         self.bg = None
         self.quantization_factor = None
-        self.folder_apr = None
-
-        # Stitcher attributes
-        self.stitcher = None
-        self.overlap_h = None
-        self.overlap_v = None
-        self.n_vertex = None
-        self.folder_max_projs = None
-
-    def run(self):
-        """
-        Start the running pipeline. It is basically a loop waiting for each tile to be saved at the specified path.
-
-        Returns
-        -------
-        None
-        """
-
-        while self.tile_processed < self.n_tiles:
-
-            is_available, tile = self._is_new_tile_available()
-
-            if is_available:
-
-                print('New tile available: {}'.format(os.path.basename(tile.path)))
-
-                tile.load_tile()
-
-                # Convert tile
-                if self.converter is not None:
-                    self._convert_to_apr(tile)
-                    self._check_conversion(tile)
-
-                if self.stitcher is True:
-                    self._pre_stitch(tile)
-
-                self._update_next_tile()
-
-                self.tile_processed += 1
-                self.buffer_tile_to_be_processed.pop(0)
-            else:
-                sleep(1)
-
-    def _parse_acquisition_settings(self):
-
-        print('Waiting for AcquireSettings.txt file in {}'.
-              format(os.path.join(self.path, '*_AcquireSettings.txt')))
-
-        files = glob(os.path.join(self.path, '*_AcquireSettings.txt'))
-        while files == []:
-            sleep(1)
-            files = glob(os.path.join(self.path, '0001', '*_AcquireSettings.txt'))
-
-        path = files[0]
-        print('File found: {}'.format(path))
-
-
-        with open(path) as f:
-            lines = f.readlines()
-
-        self.acq_param = {}
-        for l in lines:
-            pattern_matched = re.match('^(\w*) = (.*)$', l)
-            if pattern_matched is not None:
-                if pattern_matched.group(2).isnumeric():
-                    self.acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
-                elif pattern_matched.group(2) == 'True':
-                    self.acq_param[pattern_matched.group(1)] = True
-                elif pattern_matched.group(2) == 'False':
-                    self.acq_param[pattern_matched.group(1)] = False
-                else:
-                    self.acq_param[pattern_matched.group(1)] = pattern_matched.group(2)
-
-        nrow = self.acq_param['ScanGridY']
-        ncol = self.acq_param['ScanGridY']
-        n_planes = self.acq_param['StackDepths']
-        return nrow, ncol
-
-    def _is_new_tile_available(self):
-        """
-        Checks if a new tile is available for processing.
-
-        Returns
-        -------
-        is_available: bool
-            True if a new tile is available, False otherwise
-        tile: runningTile
-            tile object is available, None otherwise
-        """
-
-        paths = glob(os.path.join(self.path, '000000_*_*c/'))
-        self.buffer_tile_to_be_processed.extend(paths)
-
-        if self.buffer_tile_to_be_processed == []:
-            return False, None
-        elif len(paths) >= 1:
-            # Store current tile coordinate
-            path = paths[0]
-            tile = self._get_tile(path)
-
-            return True, tile
-
-    def _get_row_col(self, path):
-        """
-        Get ClearScope tile row and col position given the tile number.
-
-        Parameters
-        ----------
-        n: int
-            ClearScope tile number
-
-        Returns
-        -------
-        row: int
-            row number
-        col: int
-            col number
-        """
-
-        pattern_search = re.findall('\d{6}_(\d{6})___\dc', path)
-
-        if pattern_search != []:
-            n = int(pattern_search[0])
-
-        col = np.absolute(np.mod(n - self.ncol - 1, 2 * self.ncol) - self.ncol + 0.5) + 0.5
-        row = np.ceil(n / self.ncol)
-
-        col = int(col-1)
-        row = int(row-1)
-
-        return row, col
-
-    def _get_channel(self, path):
-
-        pattern_search = re.findall('\d{6}_\d{6}___(\d)c', path)
-
-        if pattern_search != []:
-            return int(pattern_search[0])
 
 
 class runningTile():

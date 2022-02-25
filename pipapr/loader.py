@@ -80,7 +80,8 @@ class tileLoader():
 
     Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
-    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root, channel):
+    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root,
+                 channel):
         """
         Constructor of tileLoader object.
 
@@ -93,7 +94,7 @@ class tileLoader():
         col: int
             horizontal position of the tile (for multi-tile acquisition)
         ftype: str
-            tile file type ('apr', 'tiff3D', 'tiff2D')
+            tile file type ('apr', 'tiff3D', 'colm', 'clearscope')
         neighbors: list
             neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
             neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
@@ -277,6 +278,18 @@ class tileLoader():
         else:
             print('Tile neighbors already loaded.')
 
+    def view_tile(self, **kwargs):
+        """
+        Display tile using napari.
+
+        Returns
+        -------
+        None
+        """
+        if self.apr is None:
+            self.load_tile()
+        pipapr.viewer.display_apr(self.apr, self.parts, **kwargs)
+
     def _load_data(self, path):
         """
         Load data at given path.
@@ -291,8 +304,10 @@ class tileLoader():
         u: array_like
             numpy array containing the data.
         """
-        if self.type == 'tiff2D':
-            u = self._load_sequence(path)
+        if self.type == 'colm':
+            u = self._load_colm(path)
+        elif self.type == 'clearscope':
+            u = self._load_clearscope(path)
         elif self.type == 'tiff3D':
             u = imread(path)
         elif self.type == 'apr':
@@ -324,19 +339,7 @@ class tileLoader():
         u = np.fromfile(path, dtype='uint16', count=-1)
         return u.reshape((-1, self.frame_size, self.frame_size))
 
-    def view_tile(self, **kwargs):
-        """
-        Display tile using napari.
-
-        Returns
-        -------
-        None
-        """
-        if self.apr is None:
-            self.load_tile()
-        pipapr.viewer.display_apr(self.apr, self.parts)
-
-    def _load_sequence(self, path):
+    def _load_colm(self, path):
         """
         Load a sequence of images in a folder and return it as a 3D array.
 
@@ -352,25 +355,30 @@ class tileLoader():
         """
         files_sorted = sorted(glob(os.path.join(path, '*CHN0' + str(self.channel) + '_*tif')))
         n_files = len(files_sorted)
-        #
-        # files_sorted = list(range(n_files))
-        # n_max = 0
-        # for i, pathname in enumerate(files):
-        #     number_search = re.search('CHN0' + str(self.channel) + '_PLN(\d+).tif', pathname)
-        #     if number_search:
-        #         n = int(number_search.group(1))
-        #         files_sorted[n] = pathname
-        #         if n > n_max:
-        #             n_max = n
-        #
-        # files_sorted = files_sorted[:n_max]
-        # n_files = len(files_sorted)
-
-        u = imread(files_sorted[0])
-        v = np.empty((n_files, *u.shape), dtype='uint16')
-        v[0] = u
-        files_sorted.pop(0)
+        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
-            v[i + 1] = imread(f)
+            v[i] = imread(f)
+        return v
+
+    def load_clearscope(self, path):
+        """
+        Load a sequence of images in a folder and return it as a 3D array.
+
+        Parameters
+        ----------
+        path: string
+            path to folder where the data should be loaded.
+
+        Returns
+        -------
+        v: array_like
+            numpy array containing the data.
+        """
+        files_sorted = sorted(glob(os.path.join(self.path)))
+        n_files = len(files_sorted)
+        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
+        for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
+            v[i] = imread(f)
 
         return v
+

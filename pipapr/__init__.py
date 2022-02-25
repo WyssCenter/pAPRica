@@ -11,7 +11,7 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter
+from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter, runner
 
 from .parser import tileParser, baseParser
 from .converter import tileConverter
@@ -19,6 +19,7 @@ from .atlaser import tileAtlaser
 from .segmenter import tileSegmenter, tileCells, tileTrainer
 from .viewer import tileViewer
 from .stitcher import tileStitcher, channelStitcher
-from .runner import runningPipeline
+from .runner import clearscopeRunningPipeline
 
+# from pipapr import *
 __all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter', 'runner']

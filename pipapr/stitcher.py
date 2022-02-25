@@ -40,7 +40,6 @@ from skimage.metrics import normalized_root_mse, structural_similarity, peak_sig
 from skimage.filters import gaussian
 from matplotlib.colors import hsv_to_rgb
 import dill
-import pipapr
 import matplotlib.pyplot as plt
 import pyapr
 # from skimage.registration import phase_cross_correlation
@@ -227,7 +226,7 @@ class baseStitcher():
 
     """
     def __init__(self,
-                 tiles: pipapr.parser.tileParser,
+                 tiles,
                  overlap_h: (int, float),
                  overlap_v: (int, float)):
         """
@@ -1022,7 +1021,7 @@ class tileStitcher(baseStitcher):
 
     """
     def __init__(self,
-                 tiles: pipapr.parser.tileParser,
+                 tiles,
                  overlap_h: (int, float),
                  overlap_v: (int, float)):
         """
@@ -1922,9 +1921,9 @@ class channelStitcher(baseStitcher):
     """
 
     def __init__(self,
-                 stitcher: tileStitcher,
-                 ref: pipapr.parser.tileParser,
-                 moving: pipapr.parser.tileParser):
+                 stitcher,
+                 ref,
+                 moving):
         """
         Constructor for the channelStitcher class.
 

@@ -6,6 +6,7 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
+import re
 from glob import glob
 import os
 import numpy as np
@@ -15,12 +16,13 @@ import pyapr
 from skimage.io import imread
 from tqdm import tqdm
 from pathlib import Path
+import pandas as pd
 
-class runningPipeline():
+class baseRunningPipeline():
     """
     Class to process tile on the fly during acquisition.
     """
-    def __init__(self, path, n_row, n_col, n_channels=1, ftype='tiff3D'):
+    def __init__(self, path, nrow, ncol, n_channels=1, ftype='tiff3D'):
         """
         Constructor for the runningPipeline object.
 
@@ -38,23 +40,32 @@ class runningPipeline():
             type of data for each tile, can be 'tiff2D' or 'tiff3D'
         """
 
+        # runningPipeline attributes
         self.path = path
         self.next_tile = [0, 0]
-
+        self.frame_size = 2048
         self.tile_processed = 0
-        self.n_row = n_row
-        self.n_col = n_col
-        self.n_tiles = n_row * n_col
+        self.nrow = nrow
+        self.ncol = ncol
+        self.n_tiles = nrow * ncol
         self.current_tile = None
-        self.ftype = ftype
+        self.type = ftype
         self.n_channels = n_channels
 
+        # Converter attributes
         self.converter = None
         self.lazy_loading = None
         self.compression = False
         self.bg = None
         self.quantization_factor = None
         self.folder_apr = None
+
+        # Stitcher attributes
+        self.stitcher = None
+        self.overlap_h = None
+        self.overlap_v = None
+        self.n_vertex = None
+        self.folder_max_projs = None
 
     def run(self):
         """
@@ -79,6 +90,9 @@ class runningPipeline():
                 if self.converter is not None:
                     self._convert_to_apr(tile)
                     self._check_conversion(tile)
+
+                if self.stitcher is True:
+                    self._pre_stitch(tile)
 
                 self._update_next_tile()
 
@@ -176,6 +190,23 @@ class runningPipeline():
         self.converter.set_parameters(par)
         self.converter.verbose = True
 
+    def activate_stitching(self,
+                           overlap_h: (int, float),
+                           overlap_v: (int, float),
+                           ):
+
+        self.overlap_h = overlap_h
+        self.overlap_v = overlap_v
+        self.stitcher = True
+
+        # Safely create folder to save max projs
+        self.folder_max_projs = os.path.join(self.path, 'max_projs')
+        Path(self.folder_max_projs).mkdir(parents=True, exist_ok=True)
+
+    # def _pre_stitch(self, tile):
+    #
+    #     # Max project current tile on the overlaping area.
+
     def _check_conversion(self, tile):
         """
         Checks that conversion is ok, if not it should keep the original data.
@@ -228,7 +259,8 @@ class runningPipeline():
 
         # Save converted data
         filename = '{}_{}.apr'.format(tile.row, tile.col)
-        pyapr.io.write(os.path.join(self.folder_apr, filename), apr, parts, tree_parts=tree_parts)
+        pyapr.io.write(os.path.join(self.folder_apr, 'ch{}'.format(tile.channel), filename),
+                       apr, parts, tree_parts=tree_parts)
 
     def _is_new_tile_available(self):
         """
@@ -285,16 +317,181 @@ class runningPipeline():
             tile object
         """
 
+        row, col = self._get_row_col(path)
+        channel = self._get_channel(path)
+
         return runningTile(path=path,
-                            row=self.current_tile[0],
-                            col=self.current_tile[1],
-                            ftype=self.ftype,
+                            row=row,
+                            col=col,
+                            ftype=self.type,
                             neighbors=None,
                             neighbors_tot=None,
                             neighbors_path=None,
                             frame_size=2048,
                             folder_root=self.path,
+                            channel=channel,
                             n_channels=self.n_channels)
+
+
+class clearscopeRunningPipeline(baseRunningPipeline):
+
+    def __init__(self, path, n_channels=1):
+
+        # runningPipeline attributes
+        self.path = os.path.join(path, '0001')
+        self.acq_param = None
+        self.nrow, self.ncol = self._parse_acquisition_settings()
+        self.frame_size = 2048
+        self.tile_processed = 0
+        self.n_tiles = self.nrow * self.ncol
+        self.type = 'clearscope'
+        self.n_channels = n_channels
+        self.buffer_tile_to_be_processed = []
+
+        # Converter attributes
+        self.converter = None
+        self.lazy_loading = None
+        self.compression = False
+        self.bg = None
+        self.quantization_factor = None
+        self.folder_apr = None
+
+        # Stitcher attributes
+        self.stitcher = None
+        self.overlap_h = None
+        self.overlap_v = None
+        self.n_vertex = None
+        self.folder_max_projs = None
+
+    def run(self):
+        """
+        Start the running pipeline. It is basically a loop waiting for each tile to be saved at the specified path.
+
+        Returns
+        -------
+        None
+        """
+
+        while self.tile_processed < self.n_tiles:
+
+            is_available, tile = self._is_new_tile_available()
+
+            if is_available:
+
+                print('New tile available: {}'.format(os.path.basename(tile.path)))
+
+                tile.load_tile()
+
+                # Convert tile
+                if self.converter is not None:
+                    self._convert_to_apr(tile)
+                    self._check_conversion(tile)
+
+                if self.stitcher is True:
+                    self._pre_stitch(tile)
+
+                self._update_next_tile()
+
+                self.tile_processed += 1
+                self.buffer_tile_to_be_processed.pop(0)
+            else:
+                sleep(1)
+
+    def _parse_acquisition_settings(self):
+
+        print('Waiting for AcquireSettings.txt file in {}'.
+              format(os.path.join(self.path, '*_AcquireSettings.txt')))
+
+        files = glob(os.path.join(self.path, '*_AcquireSettings.txt'))
+        while files == []:
+            sleep(1)
+            files = glob(os.path.join(self.path, '0001', '*_AcquireSettings.txt'))
+
+        path = files[0]
+        print('File found: {}'.format(path))
+
+
+        with open(path) as f:
+            lines = f.readlines()
+
+        self.acq_param = {}
+        for l in lines:
+            pattern_matched = re.match('^(\w*) = (.*)$', l)
+            if pattern_matched is not None:
+                if pattern_matched.group(2).isnumeric():
+                    self.acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
+                elif pattern_matched.group(2) == 'True':
+                    self.acq_param[pattern_matched.group(1)] = True
+                elif pattern_matched.group(2) == 'False':
+                    self.acq_param[pattern_matched.group(1)] = False
+                else:
+                    self.acq_param[pattern_matched.group(1)] = pattern_matched.group(2)
+
+        nrow = self.acq_param['ScanGridY']
+        ncol = self.acq_param['ScanGridY']
+        n_planes = self.acq_param['StackDepths']
+        return nrow, ncol
+
+    def _is_new_tile_available(self):
+        """
+        Checks if a new tile is available for processing.
+
+        Returns
+        -------
+        is_available: bool
+            True if a new tile is available, False otherwise
+        tile: runningTile
+            tile object is available, None otherwise
+        """
+
+        paths = glob(os.path.join(self.path, '000000_*_*c/'))
+        self.buffer_tile_to_be_processed.extend(paths)
+
+        if self.buffer_tile_to_be_processed == []:
+            return False, None
+        elif len(paths) >= 1:
+            # Store current tile coordinate
+            path = paths[0]
+            tile = self._get_tile(path)
+
+            return True, tile
+
+    def _get_row_col(self, path):
+        """
+        Get ClearScope tile row and col position given the tile number.
+
+        Parameters
+        ----------
+        n: int
+            ClearScope tile number
+
+        Returns
+        -------
+        row: int
+            row number
+        col: int
+            col number
+        """
+
+        pattern_search = re.findall('\d{6}_(\d{6})___\dc', path)
+
+        if pattern_search != []:
+            n = int(pattern_search[0])
+
+        col = np.absolute(np.mod(n - self.ncol - 1, 2 * self.ncol) - self.ncol + 0.5) + 0.5
+        row = np.ceil(n / self.ncol)
+
+        col = int(col-1)
+        row = int(row-1)
+
+        return row, col
+
+    def _get_channel(self, path):
+
+        pattern_search = re.findall('\d{6}_\d{6}___(\d)c', path)
+
+        if pattern_search != []:
+            return int(pattern_search[0])
 
 
 class runningTile():
@@ -305,7 +502,7 @@ class runningTile():
     """
 
     def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root,
-                 n_channels):
+                 channel, n_channels):
         """
         Constructor for the runningTile class.
 
@@ -365,6 +562,7 @@ class runningTile():
         self.neighbors_path = neighbors_path
         self.frame_size = frame_size
         self.folder_root = folder_root
+        self.channel = channel
         self.n_channels = n_channels
 
         # Initialize attributes to load tile data
@@ -526,8 +724,10 @@ class runningTile():
         u: array_like
             numpy array containing the data.
         """
-        if self.type == 'tiff2D':
-            u = self._load_sequence(path)
+        if self.type == 'colm':
+            u = self._load_colm(path)
+        elif self.type == 'clearscope':
+            u = self._load_clearscope(path)
         elif self.type == 'tiff3D':
             u = imread(path)
         elif self.type == 'apr':
@@ -539,7 +739,6 @@ class runningTile():
             u = self._load_raw(path)
         else:
             raise TypeError('Error: image type {} not supported.'.format(self.type))
-
         return u
 
     def _load_raw(self, path):
@@ -559,7 +758,7 @@ class runningTile():
         u = np.fromfile(path, dtype='uint16', count=-1)
         return u.reshape((-1, self.frame_size, self.frame_size))
 
-    def _load_sequence(self, path):
+    def _load_colm(self, path):
         """
         Load a sequence of images in a folder and return it as a 3D array.
 
@@ -575,25 +774,29 @@ class runningTile():
         """
         files_sorted = sorted(glob(os.path.join(path, '*CHN0' + str(self.channel) + '_*tif')))
         n_files = len(files_sorted)
-        #
-        # files_sorted = list(range(n_files))
-        # n_max = 0
-        # for i, pathname in enumerate(files):
-        #     number_search = re.search('CHN0' + str(self.channel) + '_PLN(\d+).tif', pathname)
-        #     if number_search:
-        #         n = int(number_search.group(1))
-        #         files_sorted[n] = pathname
-        #         if n > n_max:
-        #             n_max = n
-        #
-        # files_sorted = files_sorted[:n_max]
-        # n_files = len(files_sorted)
-
-        u = imread(files_sorted[0])
-        v = np.empty((n_files, *u.shape), dtype='uint16')
-        v[0] = u
-        files_sorted.pop(0)
+        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
-            v[i + 1] = imread(f)
+            v[i] = imread(f)
+        return v
+
+    def _load_clearscope(self, path):
+        """
+        Load a sequence of images in a folder and return it as a 3D array.
+
+        Parameters
+        ----------
+        path: string
+            path to folder where the data should be loaded.
+
+        Returns
+        -------
+        v: array_like
+            numpy array containing the data.
+        """
+        files_sorted = sorted(glob(os.path.join(self.path, '*')))
+        n_files = len(files_sorted)
+        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
+        for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
+            v[i] = imread(f)
 
         return v

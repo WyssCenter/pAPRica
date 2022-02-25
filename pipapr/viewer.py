@@ -624,7 +624,6 @@ class tileViewer():
                                                    name='Segmentation [{}, {}]'.format(tile.row, tile.col),
                                                    translate=position,
                                                    level_delta=level_delta,
-                                                   colormap=cmap,
                                                    blending=blending,
                                                    opacity=0.7))
         if self.cells is not None:

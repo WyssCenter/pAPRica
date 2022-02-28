@@ -166,6 +166,40 @@ class clearscopeRunningPipeline():
         self.folder_max_projs = os.path.join(self.path, 'max_projs')
         Path(self.folder_max_projs).mkdir(parents=True, exist_ok=True)
 
+    def set_compression(self, quantization_factor=1, bg=108):
+        """
+        Activate B3D compression for saving tiles.
+
+        Parameters
+        ----------
+        quantization_factor: int
+            quantization factor: the higher, the more compressed (refer to B3D paper for more detail).
+        bg: int
+            background value: any value below this threshold will be set to the background value. This helps
+            save up space by having the same value for the background (refer to B3D paper for more details).
+
+        Returns
+        -------
+        None
+        """
+
+        self.compression = True
+        self.bg = bg
+        self.quantization_factor = quantization_factor
+
+    def deactivate_compression(self):
+        """
+        Deactivate B3D compression when saving particles.
+
+        Returns
+        -------
+        None
+        """
+
+        self.compression = False
+        self.bg = None
+        self.quantization_factor = None
+
     def _parse_acquisition_settings(self):
 
         print('Waiting for AcquireSettings.txt file in {}'.
@@ -217,7 +251,7 @@ class clearscopeRunningPipeline():
         -------
         is_available: bool
             True if a new tile is available, False otherwise
-        tile: runningTile
+        tile: tileLoader
             tile object is available, None otherwise
         """
 
@@ -300,7 +334,7 @@ class clearscopeRunningPipeline():
 
         Returns
         -------
-        tile: runningTile
+        tile: tileLoader
             tile object
         """
 
@@ -318,9 +352,9 @@ class clearscopeRunningPipeline():
                                         folder_root=self.path,
                                         channel=channel)
 
-    # def _pre_stitch(self, tile):
-    #
-    #     # Max project current tile on the overlaping area.
+    def _pre_stitch(self, tile):
+
+       # Max project current tile on the overlaping area.
 
     def _check_conversion(self, tile):
         """
@@ -328,7 +362,7 @@ class clearscopeRunningPipeline():
 
         Parameters
         ----------
-        tile: runningTile
+        tile: tileLoader
             tile object to try if conversion worked as expected using facy metrics.
 
         Returns
@@ -349,7 +383,7 @@ class clearscopeRunningPipeline():
 
         Parameters
         ----------
-        tile: runningTile
+        tile: tileLoader
             tile object to be converted to APR.
 
         Returns
@@ -376,345 +410,3 @@ class clearscopeRunningPipeline():
         filename = '{}_{}.apr'.format(tile.row, tile.col)
         pyapr.io.write(os.path.join(self.folder_apr, 'ch{}'.format(tile.channel), filename),
                        apr, parts, tree_parts=tree_parts)
-
-    def set_compression(self, quantization_factor=1, bg=108):
-        """
-        Activate B3D compression for saving tiles.
-
-        Parameters
-        ----------
-        quantization_factor: int
-            quantization factor: the higher, the more compressed (refer to B3D paper for more detail).
-        bg: int
-            background value: any value below this threshold will be set to the background value. This helps
-            save up space by having the same value for the background (refer to B3D paper for more details).
-
-        Returns
-        -------
-        None
-        """
-
-        self.compression = True
-        self.bg = bg
-        self.quantization_factor = quantization_factor
-
-    def deactivate_compression(self):
-        """
-        Deactivate B3D compression when saving particles.
-
-        Returns
-        -------
-        None
-        """
-
-        self.compression = False
-        self.bg = None
-        self.quantization_factor = None
-
-
-class runningTile():
-    """
-    Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.
-
-    Tile post processing is done on APR data, so if the input data is tiff it is first converted.
-    """
-
-    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root,
-                 channel, n_channels):
-        """
-        Constructor for the runningTile class.
-
-       Parameters
-        ----------
-        path: string
-            path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)
-        row: int
-            vertical position of the tile (for multi-tile acquisition)
-        col: int
-            horizontal position of the tile (for multi-tile acquisition)
-        ftype: str
-            tile file type ('apr', 'tiff3D', 'tiff2D')
-        neighbors: list
-            neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
-            neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
-            represented by an 'o' while other tile are represented by an 'x'::
-
-                            x --- o --- x --- x
-                            |     |     |     |
-                            x --- x --- x --- x
-                            |     |     |     |
-                            x --- x --- x --- x
-                            |     |     |     |
-                            x --- x --- x --- x
-
-            in this case neighbors = [[0, 2], [1, 1]]
-
-        neighbors_tot: list
-            neighbors list containing all the neighbors position [row, col]. For example, below the
-            tile [0, 1] is represented by an 'o' while other tile are represented by an 'x'::
-
-                            x --- o --- x --- x
-                            |     |     |     |
-                            x --- x --- x --- x
-                            |     |     |     |
-                            x --- x --- x --- x
-                            |     |     |     |
-                            x --- x --- x --- x
-
-            in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
-        neighbors_path: list
-            path of the neighbors whose coordinates are stored in neighbors
-        frame_size: int
-            camera frame size (only square sensors are supported for now).
-        folder_root: str
-            root folder where everything should be saved.
-        n_channels: int
-            number of channels that will be acquired
-        """
-        self.path = path
-        self.row = row
-        self.col = col
-        self.type = ftype
-        self.neighbors = neighbors
-        self.neighbors_tot = neighbors_tot
-        self.neighbors_path = neighbors_path
-        self.frame_size = frame_size
-        self.folder_root = folder_root
-        self.channel = channel
-        self.n_channels = n_channels
-
-        # Initialize attributes to load tile data
-        self.data = None  # Pixel data
-        self.apr = None  # APR tree
-        self.parts = None  # Particles
-        self.parts_cc = None  # Connected component
-        self.lazy_data = None  # Lazy reconstructed data
-
-        # Initialize attributes to load neighbors data
-        self.data_neighbors = None
-        self.apr_neighbors = None
-        self.parts_neighbors = None
-        self.parts_cc_neighbors = None
-
-    def load_tile(self):
-        """
-        Load the current tile if not already loaded.
-
-        Returns
-        -------
-        None
-        """
-        if self.type == 'apr':
-            if self.apr is None:
-                self.apr, self.parts = self._load_data(self.path)
-        else:
-            if self.data is None:
-                self.data = self._load_data(self.path)
-
-    def lazy_load_tile(self, level_delta=0):
-        """
-        Load the tile lazily at the given resolution.
-
-        Parameters
-        ----------
-        level_delta: int
-            parameter controlling the resolution at which the APR will be read lazily
-
-        Returns
-        -------
-        None
-        """
-
-        if self.type != 'apr':
-            raise TypeError('Error: lazy loading is only supported for APR data.')
-
-        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
-
-    def load_neighbors(self):
-        """
-        Load the current tile neighbors if not already loaded.
-
-        Returns
-        -------
-        None
-        """
-        if self.data_neighbors is None:
-            if self.type == 'apr':
-                aprs = []
-                partss = []
-                for path_neighbor in self.neighbors_path:
-                    apr, parts = self._load_data(path_neighbor)
-                    aprs.append(apr)
-                    partss.append(parts)
-                self.apr_neighbors = aprs
-                self.parts_neighbors = partss
-            else:
-                u = []
-                for path_neighbor in self.neighbors_path:
-                    u.append(self._load_data(path_neighbor))
-                self.data_neighbors = u
-        else:
-            print('Tile neighbors already loaded.')
-
-    def load_segmentation(self, load_tree=False):
-        """
-        Load the current tile connected component (cc) if not already loaded.
-
-        Returns
-        -------
-        None
-        """
-        if self.parts_cc is None:
-            cc = pyapr.LongParticles()
-            aprfile = pyapr.io.APRFile()
-            aprfile.set_read_write_tree(True)
-            aprfile.open(self.path, 'READ')
-            if load_tree:
-                apr = pyapr.APR()
-                aprfile.read_apr(apr, t=0, channel_name='t')
-                self.apr = apr
-            aprfile.read_particles(self.apr, 'segmentation cc', cc, t=0)
-            aprfile.close()
-            self.parts_cc = cc
-        else:
-            print('Tile cc already loaded.')
-
-    def load_neighbors_segmentation(self, load_tree=False):
-        """
-        Load the current tile neighbors connected component (cc) if not already loaded.
-
-        Returns
-        -------
-        None
-        """
-        if self.data_neighbors is None:
-            if self.type == 'apr':
-                aprs = []
-                ccs = []
-                for i, path_neighbor in enumerate(self.neighbors_path):
-                    if not load_tree:
-                        apr = self.apr_neighbors[i]
-                    cc = pyapr.LongParticles()
-                    aprfile = pyapr.io.APRFile()
-                    aprfile.set_read_write_tree(True)
-                    aprfile.open(path_neighbor, 'READ')
-                    if load_tree:
-                        apr = pyapr.APR()
-                        aprfile.read_apr(apr, t=0, channel_name='t')
-                    aprfile.read_particles(apr, 'segmentation cc', cc, t=0)
-                    aprfile.close()
-                    aprs.append(apr)
-                    ccs.append(cc)
-                self.apr_neighbors = aprs
-                self.parts_neighbors = ccs
-
-            else:
-                u = []
-                for path_neighbor in self.neighbors_path:
-                    u.append(self._load_data(path_neighbor))
-                self.data_neighbors = u
-        else:
-            print('Tile neighbors already loaded.')
-
-    def _erase_from_disk(self):
-        """
-        Delete the pixel data
-
-        Returns
-        -------
-        None
-        """
-
-        if self.type == 'tiff3D':
-            os.remove(self.path)
-
-    def _load_data(self, path):
-        """
-        Load data at given path.
-
-        Parameters
-        ----------
-        path: string
-            path to the data to be loaded.
-
-        Returns
-        -------
-        u: array_like
-            numpy array containing the data.
-        """
-        if self.type == 'colm':
-            u = self._load_colm(path)
-        elif self.type == 'clearscope':
-            u = self._load_clearscope(path)
-        elif self.type == 'tiff3D':
-            u = imread(path)
-        elif self.type == 'apr':
-            apr = pyapr.APR()
-            parts = pyapr.ShortParticles()
-            pyapr.io.read(path, apr, parts)
-            u = (apr, parts)
-        elif self.type == 'raw':
-            u = self._load_raw(path)
-        else:
-            raise TypeError('Error: image type {} not supported.'.format(self.type))
-        return u
-
-    def _load_raw(self, path):
-        """
-        Load raw data at given path.
-
-        Parameters
-        ----------
-        path: string
-            path to the data to be loaded.
-
-        Returns
-        -------
-        u: array_like
-            numpy array containing the data.
-        """
-        u = np.fromfile(path, dtype='uint16', count=-1)
-        return u.reshape((-1, self.frame_size, self.frame_size))
-
-    def _load_colm(self, path):
-        """
-        Load a sequence of images in a folder and return it as a 3D array.
-
-        Parameters
-        ----------
-        path: string
-            path to folder where the data should be loaded.
-
-        Returns
-        -------
-        v: array_like
-            numpy array containing the data.
-        """
-        files_sorted = sorted(glob(os.path.join(path, '*CHN0' + str(self.channel) + '_*tif')))
-        n_files = len(files_sorted)
-        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
-        for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
-            v[i] = imread(f)
-        return v
-
-    def _load_clearscope(self, path):
-        """
-        Load a sequence of images in a folder and return it as a 3D array.
-
-        Parameters
-        ----------
-        path: string
-            path to folder where the data should be loaded.
-
-        Returns
-        -------
-        v: array_like
-            numpy array containing the data.
-        """
-        files_sorted = sorted(glob(os.path.join(self.path, '*')))
-        n_files = len(files_sorted)
-        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
-        for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
-            v[i] = imread(f)
-
-        return v

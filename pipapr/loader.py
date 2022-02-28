@@ -144,6 +144,7 @@ class tileLoader():
         self.frame_size = frame_size
         self.folder_root = folder_root
         self.channel = channel
+        self.is_loaded = False
 
         # Initialize attributes to load tile data
         self.data = None                    # Pixel data
@@ -172,6 +173,7 @@ class tileLoader():
         else:
             if self.data is None:
                 self.data = self._load_data(self.path)
+        self.is_loaded = True
 
     def lazy_load_tile(self, level_delta=0):
         """
@@ -191,6 +193,7 @@ class tileLoader():
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
         self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
+        self.is_loaded = True
 
     def load_neighbors(self):
         """

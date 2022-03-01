@@ -1017,13 +1017,15 @@ class baseStitcher():
         # Safely create folder to save max-projs
         Path(self.tiles.folder_max_projs).mkdir(parents=True, exist_ok=True)
 
-        for row in self.nrow:
-            for col in self.ncol:
+        for row in range(self.nrow):
+            for col in range(self.ncol):
                 proj = self.projs[row, col]
-                for loc in proj.keys():
-                    for i, d in enumerate(['zy', 'zx', 'yx']):
-                        np.save(os.path.join(self.tiles.folder_max_projs,
-                                             '{}_{}_{}_{}.npy'.format(row, col, loc, d)), proj[i])
+                if proj is not None:
+                    for loc in proj.keys():
+                        for i, d in enumerate(['zy', 'zx', 'yx']):
+                            data = proj[loc]
+                            np.save(os.path.join(self.tiles.folder_max_projs,
+                                                 '{}_{}_{}_{}.npy'.format(row, col, loc, d)), data[i])
 
         # for tile in tqdm(self.tiles):
         #     tile.load_tile()

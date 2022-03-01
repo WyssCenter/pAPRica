@@ -180,17 +180,17 @@ def get_cc_from_features(apr, parts_pred):
 
 
 # Parameters
-path = r'../data/apr/'
+path = r'./data/apr/'
 path_classifier=r'../data/random_forest_n100.joblib'
 n = 1
 
 # Parse data
 t_ini = time()
-tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
+tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
 t = time()
 
 # Stitch and segment
-stitcher = pipapr.stitcher.tileStitcher(tiles)
+stitcher = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
 # stitcher.activate_mask(99)
 # segmenter = pipapr.segmenter.tileSegmenter(path_classifier, compute_features, get_cc_from_features, verbose=True)
 # stitcher.activate_segmentation(segmenter)

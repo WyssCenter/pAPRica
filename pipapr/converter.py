@@ -121,7 +121,10 @@ class tileConverter():
         # Safely create folder to save apr data
         if path is None:
             base_folder, _ = os.path.split(self.path)
-            folder_apr = os.path.join(base_folder, 'APR')
+            if self.tiles.channel is None:
+                folder_apr = os.path.join(base_folder, 'APR')
+            else:
+                folder_apr = os.path.join(base_folder, 'APR', 'ch{}'.format(self.tiles.channel))
         else:
             folder_apr = path
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
@@ -169,7 +172,8 @@ class tileConverter():
                     pyapr.io.write(os.path.join(folder_apr, filename[:-4] + '.apr'), apr, parts, tree_parts=tree_parts)
             else:
                 filename = '{}_{}.apr'.format(tile.row, tile.col)
-                pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
+                pyapr.io.write(os.path.join(folder_apr, filename),
+                               apr, parts, tree_parts=tree_parts)
 
         if self.is_multitile:
             # Modify tileParser object to use APR instead

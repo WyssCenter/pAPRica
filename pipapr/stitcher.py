@@ -48,7 +48,8 @@ import os
 from pathlib import Path
 import warnings
 from tqdm import tqdm
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+import seaborn as sns
 
 def max_sum_over_single_max(reference_image, moving_image, d):
     """
@@ -189,6 +190,7 @@ def phase_cross_correlation(reference_image,
     else:
         return shifts
 
+
 def phase_cross_correlation_cv(reference_image, moving_image):
         """
         Compute openCV to compute the phase cross correlation. It is around 16 times faster than the implementation using
@@ -219,6 +221,7 @@ def phase_cross_correlation_cv(reference_image, moving_image):
 
         return d_correct
 
+
 def _compute_shift(reference_image, moving_image):
     """
     Backbone function to compute the registration and the registration error used for the global optimisation.
@@ -242,8 +245,10 @@ def _compute_shift(reference_image, moving_image):
 
     d = phase_cross_correlation_cv(reference_image, moving_image)
     e = max_sum_over_single_max(reference_image, moving_image, d)
+    e = e/np.sqrt(np.mean(reference_image))*10
 
     return d, e
+
 
 def _get_max_proj_apr(apr, parts, patch, patch_yx=None, plot=False):
     """
@@ -288,6 +293,7 @@ def _get_max_proj_apr(apr, parts, patch, patch_yx=None, plot=False):
             ax[i].set_title(title)
 
     return proj[0], proj[1], proj[2]
+
 
 def _get_proj_shifts(proj1, proj2):
     """
@@ -360,6 +366,7 @@ def _get_proj_shifts(proj1, proj2):
     # print('ok')
 
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
+
 
 def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
     """
@@ -655,10 +662,10 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                v[0, :] = 2**16-1
-                v[-1, :] = 2**16-1
-                v[:, 0] = 2**16-1
-                v[:, -1] = 2**16-1
+                v[self.overlap_v, :] = 2**16-1
+                v[-self.overlap_v, :] = 2**16-1
+                v[:, self.overlap_h] = 2**16-1
+                v[:, -self.overlap_h] = 2**16-1
 
             x1 = int(H_pos[i])
             x2 = int(H_pos[i] + v.shape[1])
@@ -668,7 +675,7 @@ class baseStitcher():
             V[y1:y2, x1:x2] = np.maximum(V[y1:y2, x1:x2], v)
             H[y1:y2, x1:x2] = np.maximum(H[y1:y2, x1:x2], h)
 
-        H = rescale_intensity(gaussian(H, sigma=5), out_range=np.float64)*0.66
+        H = rescale_intensity(gaussian(H, sigma=5/downsample), out_range=np.float64)*0.66
         V = np.log(V + 200)
         vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
         V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
@@ -677,8 +684,11 @@ class baseStitcher():
         rescale_intensity(rgb, out_range='uint8')
 
         if plot:
-            plt.figure()
-            plt.imshow(rgb)
+            ax, fig = plt.subplots(1, 1)
+            h = ax.imshow(rgb)
+            divider = make_axes_locatable(ax)
+            cax = divider.append_axes('right', size='5%', pad=0.05)
+            fig.colorbar(h, cax=cax, orientation='vertical')
 
         return rgb
 
@@ -737,10 +747,10 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                data[0, :] = 2**16-1
-                data[-1, :] = 2**16-1
-                data[:, 0] = 2**16-1
-                data[:, -1] = 2**16-1
+                v[self.overlap_v, :] = 2**16-1
+                v[-self.overlap_v, :] = 2**16-1
+                v[:, self.overlap_h] = 2**16-1
+                v[:, -self.overlap_h] = 2**16-1
 
             x1 = int(H_pos[i])
             x2 = int(H_pos[i] + data.shape[1])
@@ -835,10 +845,10 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                data[0, :] = 2**16-1
-                data[-1, :] = 2**16-1
-                data[:, 0] = 2**16-1
-                data[:, -1] = 2**16-1
+                v[self.overlap_v, :] = 2**16-1
+                v[-self.overlap_v, :] = 2**16-1
+                v[:, self.overlap_h] = 2**16-1
+                v[:, -self.overlap_h] = 2**16-1
 
             x1 = int(tiles_pos[i, 2])
             x2 = int(tiles_pos[i, 2] + data.shape[1])
@@ -933,10 +943,10 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                data[0, :] = 2**16-1
-                data[-1, :] = 2**16-1
-                data[:, 0] = 2**16-1
-                data[:, -1] = 2**16-1
+                v[self.overlap_v, :] = 2**16-1
+                v[-self.overlap_v, :] = 2**16-1
+                v[:, self.overlap_h] = 2**16-1
+                v[:, -self.overlap_h] = 2**16-1
 
             y1 = int(tiles_pos[i, 1])
             y2 = int(tiles_pos[i, 1] + data.shape[1])
@@ -1269,12 +1279,9 @@ class tileStitcher(baseStitcher):
         """
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
         if on_disk:
-            # TODO: reuse precompute max-poj here and make save-max proj just saving and not computing
             # It makes more sens and it avoids loading the max-proj when it is computed.
-            # self._save_max_projs()
             self._precompute_max_projs()
             self._save_max_projs()
-            # projs = self._load_max_projs()
         else:
             self._precompute_max_projs()
 
@@ -1473,7 +1480,7 @@ class tileStitcher(baseStitcher):
             raise TypeError('Error: minimum spanning tree not computed yet, please use optimize_sparse_graph()'
                             'before trying to plot the trees.')
 
-        fig, ax = self.plot_graph(annotate=annotate)
+        fig, ax = self.plot_graph(annotate=False)
 
         for i, d in enumerate(['H', 'V', 'D']):
             ind_from = getattr(self, 'ctree_from_' + d)
@@ -1484,14 +1491,36 @@ class tileStitcher(baseStitcher):
             row, col = np.unravel_index(ind_to, shape=(self.nrow, self.ncol))
             V2 = np.vstack((row, col)).T
 
-            rel = getattr(self, 'relia_' + d)
             dX = getattr(self, 'd' + d)
             for ii in range(V1.shape[0]):
                 ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko-', markerfacecolor='r', linewidth=2)
+                if annotate:
+                    p1 = ax[i].transData.transform_point([V1[ii, 1], V1[ii, 0]])
+                    p2 = ax[i].transData.transform_point([V2[ii, 1], V2[ii, 0]])
+                    dy = p2[1]-p1[1]
+                    dx = p2[0]-p1[0]
+                    rot = np.degrees(np.arctan2(dy, dx))
+                    ax[i].annotate(text='{:.2f}'.format(dX[self._get_ind(ind_from[ii], ind_to[ii])]),
+                                   xy=((V1[ii, 1]+V2[ii, 1])/2, (V1[ii, 0]+V2[ii, 0])/2),
+                                   ha='center',
+                                   va='center',
+                                   fontsize=8,
+                                   rotation=rot,
+                                   backgroundcolor='w',
+                                   color='r')
             ax[i].set_title(d + ' tree')
 
     def plot_stitching_info(self):
+        """
+        Plot pair-wise registration error for each axis [H, V, D].
 
+        Returns
+        -------
+        rel_map: array
+            error matrix
+        d_map: array
+            shift matrix
+        """
 
         if self.min_tree_H is None:
             raise TypeError('Error: minimum spanning tree not computed yet, please use optimize_sparse_graph()'
@@ -1512,14 +1541,65 @@ class tileStitcher(baseStitcher):
                 rel_map[i, row, col] = np.max((rel_map[i, row, col], rel))
 
         fig, ax = plt.subplots(1, 3, sharex=True, sharey=True)
-        for i in range(3):
-            ax[i].imshow(rel_map[i], cmap='turbo', vmin=0, vmax=2)
+        for i, d in enumerate(['H', 'V', 'D']):
+            h = ax[i].imshow(rel_map[i], cmap='turbo', vmin=0, vmax=2)
+            ax[i].set_title('Registration {}'.format(d))
+            divider = make_axes_locatable(ax[i])
+            cax = divider.append_axes('right', size='5%', pad=0.05)
+            fig.colorbar(h, cax=cax, label='Estimated error [a.u.]')
+
 
         plt.figure()
         plt.imshow(np.mean(rel_map, axis=0), cmap='turbo')
-        plt.colorbar()
+        plt.colorbar(label='Total stimated error [a.u.]')
 
-        return rel_map
+        if self.graph_relia_H is None:
+            raise TypeError('Error: graph not build yet, please use build_sparse_graph()'
+                            'before trying to plot the graph.')
+
+        fig, ax = plt.subplots(1, 3)
+        for i, d in enumerate(['H', 'V', 'D']):
+
+
+            ind_from = getattr(self, 'cgraph_from')
+            row, col = np.unravel_index(ind_from, shape=(self.nrow, self.ncol))
+            V1 = np.vstack((row, col)).T+0.25
+
+            ind_to = getattr(self, 'cgraph_to')
+            row, col = np.unravel_index(ind_to, shape=(self.nrow, self.ncol))
+            V2 = np.vstack((row, col)).T+0.25
+
+            for ii in range(V1.shape[0]):
+                ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko', markerfacecolor='r')
+            ax[i].set_title(d + ' tree')
+            ax[i].invert_yaxis()
+
+            ind_from = getattr(self, 'ctree_from_' + d)
+            row, col = np.unravel_index(ind_from, shape=(self.nrow, self.ncol))
+            V1 = np.vstack((row, col)).T+0.25
+
+            ind_to = getattr(self, 'ctree_to_' + d)
+            row, col = np.unravel_index(ind_to, shape=(self.nrow, self.ncol))
+            V2 = np.vstack((row, col)).T+0.25
+
+            dX = getattr(self, 'd' + d)
+            for ii in range(V1.shape[0]):
+                ax[i].plot([V1[ii, 1], V2[ii, 1]], [V1[ii, 0], V2[ii, 0]], 'ko-', markerfacecolor='r', linewidth=2)
+                p1 = ax[i].transData.transform_point([V1[ii, 1], V1[ii, 0]])
+                p2 = ax[i].transData.transform_point([V2[ii, 1], V2[ii, 0]])
+                dy = p2[1] - p1[1]
+                dx = p2[0] - p1[0]
+                rot = np.degrees(np.arctan2(dy, dx))
+                ax[i].annotate(text='{:.2f}'.format(dX[self._get_ind(ind_from[ii], ind_to[ii])]),
+                               xy=((V1[ii, 1] + V2[ii, 1]) / 2, (V1[ii, 0] + V2[ii, 0]) / 2),
+                               ha='center',
+                               va='center',
+                               fontsize=8,
+                               rotation=rot,
+                               backgroundcolor='w',
+                               color='r')
+
+            sns.heatmap(self.registration_map_rel[i], annot=True, fmt='4.0f', ax=ax[i], cbar=False)
 
     def plot_registration_map(self):
         """
@@ -2193,9 +2273,9 @@ class tileMerger():
             raise TypeError('Error: please merge data before equalizing histogram.')
 
         if method == 'opencv':
-            # clahe = cv.createCLAHE(tileGridSize=(8, 8))
-            # for i in range(self.merged_data.shape[0]):
-                # self.merged_data[i] = clahe.apply(self.merged_data[i])
+            clahe = cv.createCLAHE(tileGridSize=(8, 8))
+            for i in range(self.merged_data.shape[0]):
+                self.merged_data[i] = clahe.apply(self.merged_data[i])
             print('opencv not currently supported due to incompatibility with pyqt5')
         elif method == 'skimage':
             self.merged_data = equalize_adapthist(self.merged_data)

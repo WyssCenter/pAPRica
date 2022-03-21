@@ -428,36 +428,68 @@ class tileParser(baseParser):
         Return tiles, add neighbors information before returning.
 
         """
-        if isinstance(item, tuple):
-            if (item[0] > self.nrow) or (item[0] < 0):
-                raise ValueError('Error: tile at requested coordinates does not exists.')
-            if (item[1] > self.ncol) or (item[1] < 0):
-                raise ValueError('Error: tile at requested coordinates does not exists.')
-            t = self.tiles_list[item[0]*self.ncol + item[1]]
+        if isinstance(item, slice):
+            iter_data = []
+            for i in range(item.start if item.start is not None else 0,
+                           item.stop if item.stop is not None else len(self),
+                           item.step if item.step is not None else 1):
+                t = self.tiles_list[i]
+                path = t['path']
+                col = t['col']
+                row = t['row']
+                neighbors = self.neighbors[row, col]
+                neighbors_tot = self.neighbors_tot[row, col]
+
+                neighbors_path = []
+                for r, c in neighbors:
+                    if self.tiles_pattern[r, c]:
+                        neighbors_path.append(self.tile_pattern_path[r, c])
+
+                iter_data.append(pipapr.loader.tileLoader(path=path,
+                                                          row=row,
+                                                          col=col,
+                                                          ftype=self.type,
+                                                          neighbors=neighbors,
+                                                          neighbors_tot=neighbors_tot,
+                                                          neighbors_path=neighbors_path,
+                                                          frame_size=self.frame_size,
+                                                          folder_root=self.folder_root,
+                                                          channel=self.channel))
+            return iter_data
         else:
-            t = self.tiles_list[item]
+            if isinstance(item, tuple):
+                if (item[0] > self.nrow) or (item[0] < 0):
+                    raise ValueError('Error: tile at requested coordinates does not exists.')
+                if (item[1] > self.ncol) or (item[1] < 0):
+                    raise ValueError('Error: tile at requested coordinates does not exists.')
+                t = self.tiles_list[item[0]*self.ncol + item[1]]
+            else:
+                t = self.tiles_list[item]
 
-        path = t['path']
-        col = t['col']
-        row = t['row']
-        neighbors = self.neighbors[row, col]
-        neighbors_tot = self.neighbors_tot[row, col]
 
-        neighbors_path = []
-        for r, c in neighbors:
-            if self.tiles_pattern[r, c]:
-                neighbors_path.append(self.tile_pattern_path[r, c])
+            path = t['path']
+            col = t['col']
+            row = t['row']
+            neighbors = self.neighbors[row, col]
+            neighbors_tot = self.neighbors_tot[row, col]
 
-        return pipapr.loader.tileLoader(path=path,
-                                          row=row,
-                                          col=col,
-                                          ftype=self.type,
-                                          neighbors=neighbors,
-                                          neighbors_tot=neighbors_tot,
-                                          neighbors_path=neighbors_path,
-                                          frame_size=self.frame_size,
-                                          folder_root=self.folder_root,
-                                          channel=self.channel)
+            neighbors_path = []
+            for r, c in neighbors:
+                if self.tiles_pattern[r, c]:
+                    neighbors_path.append(self.tile_pattern_path[r, c])
+
+            return pipapr.loader.tileLoader(path=path,
+                                              row=row,
+                                              col=col,
+                                              ftype=self.type,
+                                              neighbors=neighbors,
+                                              neighbors_tot=neighbors_tot,
+                                              neighbors_path=neighbors_path,
+                                              frame_size=self.frame_size,
+                                              folder_root=self.folder_root,
+                                              channel=self.channel)
+
+
 
 
 class colmParser(tileParser):
@@ -473,7 +505,7 @@ class colmParser(tileParser):
         Parameters
         ----------
         path: string
-            path where to look for the data.
+            path where to look for the data. More specifically it should be the folder that contains the acquisition.
         nrow: int
             number of row for parsing COLM LOCXXX data
         ncol: int

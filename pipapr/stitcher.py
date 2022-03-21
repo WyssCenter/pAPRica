@@ -459,7 +459,6 @@ def _get_masked_proj_shifts(proj1, proj2, threshold, upsample_factor=1):
     return np.array([dz, dy, dx]), np.array([rz, ry, rx])
 
 
-
 class baseStitcher():
     """
     Base class for stitching multi-tile data.
@@ -675,20 +674,20 @@ class baseStitcher():
             V[y1:y2, x1:x2] = np.maximum(V[y1:y2, x1:x2], v)
             H[y1:y2, x1:x2] = np.maximum(H[y1:y2, x1:x2], h)
 
-        H = rescale_intensity(gaussian(H, sigma=5/downsample), out_range=np.float64)*0.66
+        H = rescale_intensity(gaussian(H, sigma=2), out_range=np.float64)*0.66
         V = np.log(V + 200)
         vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
         V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
-        S = S * V
+        S = S * V**1.5
         rgb = hsv_to_rgb(np.dstack((H,S,V)))
         rescale_intensity(rgb, out_range='uint8')
 
         if plot:
-            ax, fig = plt.subplots(1, 1)
-            h = ax.imshow(rgb)
+            fig, ax = plt.subplots(1, 1)
+            h = ax.imshow(rgb, cmap='turbo', vmin=0, vmax=n_proj*downsample*5)
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='5%', pad=0.05)
-            fig.colorbar(h, cax=cax, orientation='vertical')
+            fig.colorbar(h, cax=cax, orientation='vertical', label='Depth [um]')
 
         return rgb
 
@@ -747,10 +746,12 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                v[self.overlap_v, :] = 2**16-1
-                v[-self.overlap_v, :] = 2**16-1
-                v[:, self.overlap_h] = 2**16-1
-                v[:, -self.overlap_h] = 2**16-1
+                xv = int(self.expected_overlap_v/downsample)
+                xh = int(self.expected_overlap_h/downsample)
+                data[xv, xh:-xh] = 2**16-1
+                data[-xv, xh:-xh] = 2**16-1
+                data[xv:-xv, xh] = 2**16-1
+                data[xv:-xv, -xh] = 2**16-1
 
             x1 = int(H_pos[i])
             x2 = int(H_pos[i] + data.shape[1])
@@ -845,10 +846,13 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                v[self.overlap_v, :] = 2**16-1
-                v[-self.overlap_v, :] = 2**16-1
-                v[:, self.overlap_h] = 2**16-1
-                v[:, -self.overlap_h] = 2**16-1
+                xv = int(self.expected_overlap_v/downsample)
+                xh = int(self.expected_overlap_h/downsample)
+                data[xv, xh:-xh] = 2**16-1
+                data[-xv, xh:-xh] = 2**16-1
+                data[xv:-xv, xh] = 2**16-1
+                data[xv:-xv, -xh] = 2**16-1
+
 
             x1 = int(tiles_pos[i, 2])
             x2 = int(tiles_pos[i, 2] + data.shape[1])
@@ -943,10 +947,13 @@ class baseStitcher():
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
-                v[self.overlap_v, :] = 2**16-1
-                v[-self.overlap_v, :] = 2**16-1
-                v[:, self.overlap_h] = 2**16-1
-                v[:, -self.overlap_h] = 2**16-1
+                xv = int(self.expected_overlap_v/downsample)
+                xh = int(self.expected_overlap_h/downsample)
+                data[xv, xh:-xh] = 2**16-1
+                data[-xv, xh:-xh] = 2**16-1
+                data[xv:-xv, xh] = 2**16-1
+                data[xv:-xv, -xh] = 2**16-1
+
 
             y1 = int(tiles_pos[i, 1])
             y2 = int(tiles_pos[i, 1] + data.shape[1])
@@ -2255,7 +2262,7 @@ class tileMerger():
             if zlim[1] != self.merged_data.shape[0]:
                 self.merged_data[zlim[1]:, :, :] = background
 
-    def equalize_hist(self, method='skimage'):
+    def equalize_hist(self, method='opencv'):
         """
         Perform histogram equalization to improve the contrast on merged data.
         Both OpenCV (only 2D) and Skimage (3D but 10 times slower) are available.
@@ -2276,7 +2283,6 @@ class tileMerger():
             clahe = cv.createCLAHE(tileGridSize=(8, 8))
             for i in range(self.merged_data.shape[0]):
                 self.merged_data[i] = clahe.apply(self.merged_data[i])
-            print('opencv not currently supported due to incompatibility with pyqt5')
         elif method == 'skimage':
             self.merged_data = equalize_adapthist(self.merged_data)
         else:

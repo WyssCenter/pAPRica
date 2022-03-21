@@ -282,7 +282,7 @@ class tileSegmenter():
         aprfile.close()
 
 
-class tileCells():
+class multitileSegmenter():
     """
     Class for storing the high level cell information (e.g. cell center position).
     It allows to extract cells position and merge them across multiple tiles taking into account the precomputed
@@ -292,6 +292,9 @@ class tileCells():
     def __init__(self,
                  tiles: pipapr.parser.tileParser,
                  database: (str, pd.DataFrame),
+                 clf,
+                 func_to_compute_features,
+                 func_to_get_cc,
                  verbose=True):
         """
 
@@ -301,8 +304,22 @@ class tileCells():
             tile object for loading the tile (or containing the preloaded tile).
         database: pd.DataFrame, string
             dataframe (or path to the csv file) containing the registration parameters to correctly place each tile.
-
+        clf: sklearn.classifier
+            pre-trained classifier
+        func_to_compute_features: func
+            function to compute the features on ParticleData. Must be the same set of
+            as the one used to train the classifier.
+        func_to_get_cc: func
+            function to post process the segmentation map into a connected component (each cell has
+                                        a unique id)
         """
+
+        # Store classifier
+        self.clf = clf
+        # Store function to compute features
+        self.func_to_compute_features = func_to_compute_features
+        # Store post processing steps
+        self.func_to_get_cc = func_to_get_cc
 
         # If database is a path then load database, if it's a DataFrame keep it as it is.
         if isinstance(database, str):
@@ -328,6 +345,110 @@ class tileCells():
         self.cells = None
         self.atlas = None
 
+
+    @classmethod
+    def from_trainer(cls,
+                     tiles: pipapr.parser.tileParser,
+                     database: (str, pd.DataFrame),
+                     trainer,
+                     verbose=True):
+        """
+        Instantiate tileSegmenter object with a tileTrainer object.
+
+        Parameters
+        ----------
+        trainer: tileTrainer
+            trainer object previously trained for segmentation
+        verbose: bool
+            control function output
+
+        Returns
+        -------
+        tileSegmenter object
+        """
+
+        return cls(tiles=tiles,
+                   database= database,
+                   clf=trainer.clf,
+                   func_to_compute_features=trainer.func_to_compute_features,
+                   func_to_get_cc=trainer.func_to_get_cc,
+                   verbose=verbose)
+
+    @classmethod
+    def from_classifier(cls,
+                        tiles: pipapr.parser.tileParser,
+                        database: (str, pd.DataFrame),
+                        classifier,
+                        func_to_compute_features,
+                        func_to_get_cc=None,
+                        verbose=True):
+        """
+        Instantiate tileSegmenter object with a classifier, function to compute the features and to get the
+        connected components.
+
+        Parameters
+        ----------
+        classifier
+        func_to_compute_features: func
+            function to compute features used by the classifier to perform the segmentation.
+        func_to_get_cc: func
+            function to compute the connected component from the classifier prediction.
+        verbose: bool
+            control function output.
+
+        Returns
+        -------
+        tileSegmenter object
+        """
+
+        if isinstance(classifier, str):
+            clf = load(classifier)
+        else:
+            clf = classifier
+
+        return cls(tiles=tiles,
+                   database= database,
+                   clf=clf,
+                   func_to_compute_features=func_to_compute_features,
+                   func_to_get_cc=func_to_get_cc,
+                   verbose=verbose)
+
+
+    def compute_multitile_segmentation(self, save_cc=True, save_mask=False, lowe_ratio=0.7, distance_max=5):
+        """
+        Compute the segmentation and stores the result as an independent APR.
+
+        Parameters
+        ----------
+        verbose: bool
+            control the verbosity of the function to print some info
+
+        Returns
+        -------
+        None
+        """
+
+        for tile in tqdm(self.tiles, desc='Extracting and merging cells..'):
+
+            # Perform tile segmentation
+            tile = self._segment_tile(tile, save_cc=save_cc, save_mask=save_mask)
+
+            # Remove objects on the edge
+            tile = self._remove_edge_cells(tile)
+
+            # Initialized merged cells for the first tile
+            if self.cells is None:
+                self.cells = pyapr.numerics.transform.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
+                self.cells += self._get_tile_position(tile.row, tile.col)
+            # Then merge the rest on the first tile
+            else:
+                self._merge_cells(tile, lowe_ratio=lowe_ratio, distance_max=distance_max)
+
+            try:
+                self.save_cells(output_path=os.path.join(self.tiles.path, 'cells_backup.csv'))
+            except:
+                print('Failed to backup cells: {}'.format(e))
+
     def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5):
         """
         Function to extract cell positions in each tile and merging across all tiles.
@@ -351,7 +472,7 @@ class tileCells():
             tile.load_segmentation()
             
             # Remove objects on the edge
-            tile = self._remove_edge_cells(tile)
+            tile = _remove_edge_cells(tile)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -376,39 +497,56 @@ class tileCells():
         """
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
-        
-    def _remove_edge_cells(self, tile):
+
+    def _segment_tile(self, tile: pipapr.loader.tileLoader,
+                             save_cc=True, save_mask=False):
         """
-        Remove cells/objects that are touching the tile edge and if this edge is overlapping another tile.
+        Compute the segmentation and stores the result as an independent APR.
 
         Parameters
         ----------
-        tile: tileLoader
-            tile to remove the object on
         verbose: bool
-            option to display information
+            control the verbosity of the function to print some info
 
         Returns
         -------
-        tile: tileLoader
-            tile with removed objects.
+        None
         """
 
-        shape = tile.apr.shape()
-        s_min = np.array([np.nan, 0, 0])
-        s_max = np.array([np.nan, shape[1], shape[2]])
-        
-        minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
+        if tile.apr is None:
+            tile.load_tile()
 
-        for i in range(1, minc.shape[0]):
-            if (minc[i, :] == s_min).any():
-                ind = np.where(tile.parts_cc == i)
-                for ii in ind[0]:
-                    tile.parts_cc[ii] = 0
-            if (maxc[i, :] == s_max).any():
-                ind = np.where(tile.parts_cc == i)
-                for ii in ind[0]:
-                    tile.parts_cc[ii] = 0
+        # Compute features on APR
+        if self.verbose:
+            t = time()
+            print('Computing features on APR')
+        f = self.func_to_compute_features(tile.apr, tile.parts)
+        self.filtered_APR = f
+        if self.verbose:
+            print('Features computation took {:0.2f} s.'.format(time()-t))
+
+        # Predict particle class
+        parts_pred = _predict_on_APR_block(f, self.clf, verbose=self.verbose)
+        if self.verbose:
+            # Display inference info
+            print('\n****** INFERENCE RESULTS ******')
+            for l in self.clf.classes_:
+                print('Class {}: {} particles ({:0.2f}%)'.format(l, np.sum(parts_pred == l),
+                                                      np.sum(parts_pred == l) / len(parts_pred) * 100))
+            print('*******************************')
+
+        # Compute connected component from classification
+        if self.func_to_get_cc is not None:
+            cc = self.func_to_get_cc(tile.apr, parts_pred)
+            tile.parts_cc = cc
+
+        # Save results
+        if save_mask:
+            self._save_segmentation(tile.path, name='segmentation mask', parts=parts_pred)
+        if save_cc:
+            self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
+
+        tile.parts_mask = parts_pred
 
         return tile
 
@@ -547,9 +685,67 @@ class tileCells():
 
         # Display info
         if self.verbose:
-            print('{:0.2f}% of cells were removed.'.format(len(ind_c2)/(c1.shape[0]+c2.shape[0]-len(ind_c2))*100))
+            try:
+                print('{:0.2f}% of cells were removed.'.format(len(ind_c2)/(c1.shape[0]+c2.shape[0]-len(ind_c2))*100))
+            except ZeroDivisionError:
+                print('No cell removed.')
 
         return np.vstack((c1, c2))
+
+    def _remove_edge_cells(self, tile):
+        """
+        Remove cells/objects that are touching the tile edge and if this edge is overlapping another tile.
+
+        Parameters
+        ----------
+        tile: tileLoader
+            tile to remove the object on
+        verbose: bool
+            option to display information
+
+        Returns
+        -------
+        tile: tileLoader
+            tile with removed objects.
+        """
+
+        shape = tile.apr.shape()
+        s_min = np.array([np.nan, 0, 0])
+        s_max = np.array([np.nan, shape[1], shape[2]])
+
+        minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
+
+        for i in range(1, minc.shape[0]):
+            if (minc[i, :] == s_min).any():
+                ind = np.where(tile.parts_cc == i)
+                for ii in ind[0]:
+                    tile.parts_cc[ii] = 0
+            if (maxc[i, :] == s_max).any():
+                ind = np.where(tile.parts_cc == i)
+                for ii in ind[0]:
+                    tile.parts_cc[ii] = 0
+
+        return tile
+
+    def _save_segmentation(self, path, name, parts):
+        """
+        Save segmentation particles by appending the original APR file.
+
+        Parameters
+        ----------
+        parts: pyapr.ParticleData
+            particles to save. Note that the APR tree should be the same otherwise the data
+            will be inconsistent and not readable.
+
+        Returns
+        -------
+        None
+        """
+        aprfile = pyapr.io.APRFile()
+        aprfile.set_read_write_tree(True)
+        aprfile.open(path, 'READWRITE')
+        aprfile.write_particles(name, parts, t=0)
+        aprfile.close()
 
 
 class tileTrainer():
@@ -698,7 +894,8 @@ class tileTrainer():
         self.labels = data[:, -1]
         self.labels_manual = sparse.COO(coords=self.pixel_list.T, data=self.labels)
 
-    def train_classifier(self, verbose=True):
+    def train_classifier(self, verbose=True, n_estimators=10, class_weight='balanced',
+                         mean_norm=True, std_norm=True):
         """
         Train the classifier for segmentation.
 
@@ -706,6 +903,37 @@ class tileTrainer():
         ----------
         verbose: bool
             option to print out information.
+        n_estimators : int
+            The number of trees in the random forest.
+        class_weight : {"balanced", "balanced_subsample"}, dict or list of dicts,
+            Weights associated with classes in the form ``{class_label: weight}``.
+            If not given, all classes are supposed to have weight one. For
+            multi-output problems, a list of dicts can be provided in the same
+            order as the columns of y.
+
+            Note that for multioutput (including multilabel) weights should be
+            defined for each class of every column in its own dict. For example,
+            for four-class multilabel classification weights should be
+            [{0: 1, 1: 1}, {0: 1, 1: 5}, {0: 1, 1: 1}, {0: 1, 1: 1}] instead of
+            [{1:1}, {2:5}, {3:1}, {4:1}].
+
+            The "balanced" mode uses the values of y to automatically adjust
+            weights inversely proportional to class frequencies in the input data
+            as ``n_samples / (n_classes * np.bincount(y))``
+
+            The "balanced_subsample" mode is the same as "balanced" except that
+            weights are computed based on the bootstrap sample for every tree
+            grown.
+
+            For multi-output, the weights of each column of y will be multiplied.
+
+            Note that these weights will be multiplied with sample_weight (passed
+            through the fit method) if sample_weight is specified.
+        mean_norm : bool
+            If True, center the data before scaling.
+        std_norm : bool
+            If True, scale the data to unit variance (or equivalently,
+            unit standard deviation).
 
         Returns
         -------
@@ -726,15 +954,15 @@ class tileTrainer():
 
         # We compute features and train the classifier
         if self.f is None:
-            f = self.func_to_compute_features(self.apr, self.parts)
+            self.f = self.func_to_compute_features(self.apr, self.parts)
 
         # Fetch data that was manually labelled
-        x = f[self.parts_train_idx]
+        x = self.f[self.parts_train_idx]
         y = self.parts_labels
 
         # Train random forest
-        clf = make_pipeline(preprocessing.StandardScaler(with_mean=True, with_std=True),
-                            RandomForestClassifier(n_estimators=10, class_weight='balanced'))
+        clf = make_pipeline(preprocessing.StandardScaler(with_mean=mean_norm, with_std=std_norm),
+                            RandomForestClassifier(n_estimators=n_estimators, class_weight=class_weight))
         t = time()
         clf.fit(x, y.ravel())
         print('Training took {} s.\n'.format(time() - t))
@@ -751,7 +979,6 @@ class tileTrainer():
             print('******************************\n')
 
         self.clf = clf
-        self.f = f
 
     def segment_training_tile(self, bg_label=None, display_result=True, verbose=True):
         """

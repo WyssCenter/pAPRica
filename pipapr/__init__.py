@@ -16,7 +16,7 @@ from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter, r
 from .parser import tileParser, baseParser
 from .converter import tileConverter
 from .atlaser import tileAtlaser
-from .segmenter import tileSegmenter, tileCells, tileTrainer
+from .segmenter import tileSegmenter, multitileSegmenter, tileTrainer
 from .viewer import tileViewer
 from .stitcher import tileStitcher, channelStitcher
 from .runner import clearscopeRunningPipeline

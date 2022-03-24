@@ -21,6 +21,7 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 from glob import glob
+import copy
 import os
 import re
 import numpy as np
@@ -57,6 +58,7 @@ class baseParser():
         self.tiles_pattern, self.tile_pattern_path = None, None
         self.neighbors, self.n_edges = None, None
         self.neighbors_tot = None
+        self.neighbors_path = None
         self.path_list = self._get_path_list()
         self._print_info()
 
@@ -265,10 +267,36 @@ class baseParser():
                                           ftype=self.type,
                                           neighbors=self.neighbors,
                                           neighbors_tot=self.neighbors_tot,
-                                          neighbors_path=None,
+                                          neighbors_path=self.neighbors_path,
                                           frame_size=self.frame_size,
                                           folder_root=self.folder_root,
                                           channel=self.channel)
+
+    def __iter__(self):
+        """
+        Method called under the hood when iterating on tiles. Because it is a generator, the memory is released at
+        each iteration.
+
+        Returns
+        -------
+        Generator containing the tileLoader object.
+        """
+        for i in range(self.n_tiles):
+                t = self.tiles_list[i]
+                path = t['path']
+                col = t['col']
+                row = t['row']
+
+                yield pipapr.loader.tileLoader(path=path,
+                                              row=row,
+                                              col=col,
+                                              ftype=self.type,
+                                              neighbors=self.neighbors,
+                                              neighbors_tot=self.neighbors_tot,
+                                              neighbors_path=self.neighbors_path,
+                                              frame_size=self.frame_size,
+                                              folder_root=self.folder_root,
+                                              channel=self.channel)
 
     def __len__(self):
         """
@@ -425,48 +453,44 @@ class tileParser(baseParser):
 
     def __getitem__(self, item):
         """
-        Return tiles, add neighbors information before returning.
+        If item is an int, then returns the corresponding tileLoader object.
+
+        If item is a tuple, then returns the corresponding (row, col) tileLoader object.
+
+        If item is a slice, then it creates a generator so the tileLoader object is garbage collected at each iteration.
 
         """
-        if isinstance(item, slice):
-            iter_data = []
-            for i in range(item.start if item.start is not None else 0,
-                           item.stop if item.stop is not None else len(self),
-                           item.step if item.step is not None else 1):
-                t = self.tiles_list[i]
-                path = t['path']
-                col = t['col']
-                row = t['row']
-                neighbors = self.neighbors[row, col]
-                neighbors_tot = self.neighbors_tot[row, col]
 
-                neighbors_path = []
-                for r, c in neighbors:
-                    if self.tiles_pattern[r, c]:
-                        neighbors_path.append(self.tile_pattern_path[r, c])
+        if isinstance(item, tuple):
+            if (item[0] > self.nrow) or (item[0] < 0):
+                raise ValueError('Error: tile at requested coordinates does not exists.')
+            if (item[1] > self.ncol) or (item[1] < 0):
+                raise ValueError('Error: tile at requested coordinates does not exists.')
+            t = self.tiles_list[item[0]*self.ncol + item[1]]
+            path = t['path']
+            col = t['col']
+            row = t['row']
+            neighbors = self.neighbors[row, col]
+            neighbors_tot = self.neighbors_tot[row, col]
 
-                iter_data.append(pipapr.loader.tileLoader(path=path,
-                                                          row=row,
-                                                          col=col,
-                                                          ftype=self.type,
-                                                          neighbors=neighbors,
-                                                          neighbors_tot=neighbors_tot,
-                                                          neighbors_path=neighbors_path,
-                                                          frame_size=self.frame_size,
-                                                          folder_root=self.folder_root,
-                                                          channel=self.channel))
-            return iter_data
-        else:
-            if isinstance(item, tuple):
-                if (item[0] > self.nrow) or (item[0] < 0):
-                    raise ValueError('Error: tile at requested coordinates does not exists.')
-                if (item[1] > self.ncol) or (item[1] < 0):
-                    raise ValueError('Error: tile at requested coordinates does not exists.')
-                t = self.tiles_list[item[0]*self.ncol + item[1]]
-            else:
-                t = self.tiles_list[item]
+            neighbors_path = []
+            for r, c in neighbors:
+                if self.tiles_pattern[r, c]:
+                    neighbors_path.append(self.tile_pattern_path[r, c])
 
+            return pipapr.loader.tileLoader(path=path,
+                                            row=row,
+                                            col=col,
+                                            ftype=self.type,
+                                            neighbors=neighbors,
+                                            neighbors_tot=neighbors_tot,
+                                            neighbors_path=neighbors_path,
+                                            frame_size=self.frame_size,
+                                            folder_root=self.folder_root,
+                                            channel=self.channel)
 
+        elif isinstance(item, int):
+            t = self.tiles_list[item]
             path = t['path']
             col = t['col']
             row = t['row']
@@ -489,7 +513,44 @@ class tileParser(baseParser):
                                               folder_root=self.folder_root,
                                               channel=self.channel)
 
+        elif isinstance(item, slice):
+            sliced_parser = copy.copy(self)
+            sliced_parser.tiles_list = sliced_parser.tiles_list[item]
+            sliced_parser.n_tiles = len(sliced_parser.tiles_list)
+            return iter(sliced_parser)
 
+    def __iter__(self):
+        """
+        Method called under the hood when iterating on tiles. Because it is a generator, the memory is released at
+        each iteration.
+
+        Returns
+        -------
+        Generator containing the tileLoader object.
+        """
+        for i in range(self.n_tiles):
+                t = self.tiles_list[i]
+                path = t['path']
+                col = t['col']
+                row = t['row']
+                neighbors = self.neighbors[row, col]
+                neighbors_tot = self.neighbors_tot[row, col]
+
+                neighbors_path = []
+                for r, c in neighbors:
+                    if self.tiles_pattern[r, c]:
+                        neighbors_path.append(self.tile_pattern_path[r, c])
+
+                yield pipapr.loader.tileLoader(path=path,
+                                              row=row,
+                                              col=col,
+                                              ftype=self.type,
+                                              neighbors=neighbors,
+                                              neighbors_tot=neighbors_tot,
+                                              neighbors_path=neighbors_path,
+                                              frame_size=self.frame_size,
+                                              folder_root=self.folder_root,
+                                              channel=self.channel)
 
 
 class colmParser(tileParser):
@@ -681,3 +742,28 @@ class clearscopeParser(tileParser):
 
         return row, col
 
+    def _find_missing_frames(self):
+
+        folders = sorted(self._get_tiles_path())
+
+        missing_frames = np.zeros(len(folders))
+        for i, folder in enumerate(folders):
+            files = sorted(glob(os.path.join(folder, '*.tif')))
+
+            n = []
+            for file in files:
+                pattern_search = re.findall('\d{6}_\d{6}___(\d{6})_\dc.tif', file)
+                n.append(int(pattern_search[0]))
+
+            n = np.array(n)
+            dn = np.diff(n)
+            inds = np.where(dn > 1)[0]
+
+            if len(inds)>0:
+                print('\nTile {}'.format(folder))
+            for ind in inds:
+                print('Missing {} frames at index {}'.format(dn[ind] - 1, ind))
+
+            missing_frames[i] = self.n_planes - len(files)
+
+        return missing_frames

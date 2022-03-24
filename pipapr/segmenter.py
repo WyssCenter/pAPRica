@@ -103,7 +103,7 @@ def map_feature(apr, parts_cc, features):
     objects_volume = pyapr.numerics.transform.find_label_volume(apr, parts_cc)
     hash_idx = np.arange(0, len(objects_volume))
     # Object with volume 0 are not in CC so we need to get rid of them
-    hash_idx = hash_idx[plaque_volume > 0]
+    hash_idx = hash_idx[objects_volume > 0]
     # We also need to get rid of the background
     hash_idx = hash_idx[1:]
 
@@ -234,7 +234,7 @@ class tileSegmenter():
             t = time()
             print('Computing features on APR')
         f = self.func_to_compute_features(tile.apr, tile.parts)
-        self.filtered_APR = f
+        # self.filtered_APR = f
         if self.verbose:
             print('Features computation took {:0.2f} s.'.format(time()-t))
 
@@ -447,7 +447,7 @@ class multitileSegmenter():
             try:
                 self.save_cells(output_path=os.path.join(self.tiles.path, 'cells_backup.csv'))
             except:
-                print('Failed to backup cells: {}'.format(e))
+                print('Could not back up cells.')
 
     def extract_and_merge_cells(self, lowe_ratio=0.7, distance_max=5):
         """
@@ -472,7 +472,7 @@ class multitileSegmenter():
             tile.load_segmentation()
             
             # Remove objects on the edge
-            tile = _remove_edge_cells(tile)
+            tile = self._remove_edge_cells(tile)
 
             # Initialized merged cells for the first tile
             if self.cells is None:

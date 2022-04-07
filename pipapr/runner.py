@@ -25,6 +25,7 @@ import matplotlib.pyplot as plt
 import warnings
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
+import napari
 
 class clearscopeRunningPipeline():
 
@@ -64,6 +65,13 @@ class clearscopeRunningPipeline():
         self._parse_acquisition_settings()
         self.n_tiles = self.nrow * self.ncol
         self.projs = np.empty((self.nrow, self.ncol), dtype=object)
+        #
+        # # Viewer initialisation
+        # if viewer:
+        #     self.viewer = napari.Viewer()
+        #     napari.run()
+        # else:
+        #     self.viewer = None
 
         # Converter attributes
         self.converter = None
@@ -155,6 +163,9 @@ class clearscopeRunningPipeline():
 
                 if self.stitcher is True:
                     self._pre_stitch(tile)
+                #
+                # if self.viewer is not None:
+                #     self._update_viewer(tile)
 
                 self._update_next_tile()
 
@@ -414,6 +425,27 @@ class clearscopeRunningPipeline():
         self.overlap_v = int(self.expected_overlap_v*(1+margin/100))
         if self.expected_overlap_v > self.frame_size:
             self.expected_overlap_v = self.frame_size
+
+    # def _update_viewer(self, tile):
+    #     """
+    #     Update the viewer with the latest acquired data.
+    #
+    #     Parameters
+    #     ----------
+    #     tile: tileLoader
+    #         latest tileLoader object.
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #
+    #     lazy_data = pyapr.data_containers.LazySlicer(tile.path, level_delta=0)
+    #     self.Viewer.add_image(lazy_data,
+    #                           translation=[0,
+    #                                        tile.row * (self.frame_size - self.expected_overlap_v) + self.expected_overlap_v,
+    #                                        tile.col * (
+    #                                                    self.frame_size - self.expected_overlap_h) + self.expected_overlap_h])
 
     def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
@@ -1556,16 +1588,6 @@ class clearscopeRunningPipeline():
                                color='r')
 
             sns.heatmap(self.registration_map_abs[i], annot=True, fmt='4.0f', ax=ax[i], cbar=False)
-
-
-# class runningInfo():
-#
-#     def __init__(self, nrow, ncol):
-#
-#         self.nrow = nrow
-#         self.ncol = ncol
-#         self.n_vertex = n_row * ncol
-#         self.n_edge =
 
 
 

@@ -284,9 +284,7 @@ class tileSegmenter():
 
 class multitileSegmenter():
     """
-    Class for storing the high level cell information (e.g. cell center position).
-    It allows to extract cells position and merge them across multiple tiles taking into account the precomputed
-    registration.
+    Class used to segment multitiles acquisition.
     """
 
     def __init__(self,
@@ -472,7 +470,7 @@ class multitileSegmenter():
             tile.load_segmentation()
             
             # Remove objects on the edge
-            tile = self._remove_edge_cells(tile)
+            pyapr.numerics.transform.remove_edge_objects(tile.apr, tile.parts_cc)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -481,6 +479,11 @@ class multitileSegmenter():
             # Then merge the rest on the first tile
             else:
                 self._merge_cells(tile, lowe_ratio=lowe_ratio, distance_max=distance_max)
+
+            try:
+                self.save_cells(output_path=os.path.join(self.tiles.path, 'cells_backup.csv'))
+            except:
+                print('Could not back up cells.')
 
     def save_cells(self, output_path):
         """
@@ -605,12 +608,15 @@ class multitileSegmenter():
         cells2_out = cells2[ind, :]
         cells2_overlap = np.delete(cells2, ind, axis=0)
 
-        cells_filtered_overlap = self._filter_cells_flann(cells1_overlap,
-                                                          cells2_overlap,
-                                                          lowe_ratio=lowe_ratio,
-                                                          distance_max=distance_max)
+        if cells2_overlap.shape[0] > 0:
+            cells_filtered_overlap = self._filter_cells_flann(cells1_overlap,
+                                                              cells2_overlap,
+                                                              lowe_ratio=lowe_ratio,
+                                                              distance_max=distance_max)
 
-        self.cells = np.vstack((cells1_out, cells2_out, cells_filtered_overlap))
+            self.cells = np.vstack((cells1_out, cells2_out, cells_filtered_overlap))
+        else:
+            self.cells = np.vstack((cells1_out, cells2_out))
 
     def _get_tile_position(self, row, col):
         """
@@ -691,41 +697,6 @@ class multitileSegmenter():
                 print('No cell removed.')
 
         return np.vstack((c1, c2))
-
-    def _remove_edge_cells(self, tile):
-        """
-        Remove cells/objects that are touching the tile edge and if this edge is overlapping another tile.
-
-        Parameters
-        ----------
-        tile: tileLoader
-            tile to remove the object on
-        verbose: bool
-            option to display information
-
-        Returns
-        -------
-        tile: tileLoader
-            tile with removed objects.
-        """
-
-        shape = tile.apr.shape()
-        s_min = np.array([np.nan, 0, 0])
-        s_max = np.array([np.nan, shape[1], shape[2]])
-
-        minc, maxc = pyapr.numerics.transform.find_objects(tile.apr, tile.parts_cc)
-
-        for i in range(1, minc.shape[0]):
-            if (minc[i, :] == s_min).any():
-                ind = np.where(tile.parts_cc == i)
-                for ii in ind[0]:
-                    tile.parts_cc[ii] = 0
-            if (maxc[i, :] == s_max).any():
-                ind = np.where(tile.parts_cc == i)
-                for ii in ind[0]:
-                    tile.parts_cc[ii] = 0
-
-        return tile
 
     def _save_segmentation(self, path, name, parts):
         """

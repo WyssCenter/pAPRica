@@ -26,6 +26,7 @@ import os
 import re
 import numpy as np
 import pipapr
+from skimage.io import imread, imsave
 
 
 class baseParser():
@@ -762,8 +763,75 @@ class clearscopeParser(tileParser):
             if len(inds)>0:
                 print('\nTile {}'.format(folder))
             for ind in inds:
-                print('Missing {} frames at index {}'.format(dn[ind] - 1, ind))
+                print('Missing {} frames at index {}'.format(dn[ind] - 1, ind+1))
 
             missing_frames[i] = self.n_planes - len(files)
 
         return missing_frames
+
+    def interpolate_missing_frames(self):
+        """
+        Interpolate missing frames and save them.
+
+        Returns
+        -------
+        None
+        """
+
+        folders = sorted(self._get_tiles_path())
+
+        for i, folder in enumerate(folders):
+
+            # First we build a list of all filenames
+            files = sorted(glob(os.path.join(folder, '*.tif')))
+            list_of_filenames = []
+            for file in files:
+                _, filename = os.path.split(file)
+                list_of_filenames.append(filename)
+
+            # Then we check if some are missing
+            patterns = re.findall('(\d{6})_(\d{6})___\d{6}_(\d)c.tif', files[0])
+            patterns = patterns[0]
+            a1 = patterns[0]
+            a2 = patterns[1]
+            a3 = patterns[2]
+            missing_ind = []
+            for ii in range(self.n_planes):
+                expected_filename = '{}_{}___{:06d}_{}c.tif'.format(a1, a2, ii, a3)
+                if expected_filename not in list_of_filenames:
+                    print('Missing frames: {}'.format(expected_filename))
+                    missing_ind.append(ii)
+
+            # Check if there are contiguous numbers:
+            if missing_ind != []:
+                cnt = 0
+                cnt2 = 1
+                list_of_ind = [[missing_ind[0]]]
+                while cnt < len(missing_ind)-1:
+                    if missing_ind[cnt+1] - missing_ind[cnt] == 1:
+                        if len(list_of_ind) < cnt2:
+                            list_of_ind.append([])
+                        list_of_ind[cnt2-1].append(missing_ind[cnt+1])
+                    else:
+                        cnt2 += 1
+                        list_of_ind.append([missing_ind[cnt+1]])
+
+                    cnt += 1
+
+                for ind_frames in list_of_ind:
+                    n_interp = len(ind_frames)
+
+                    # If missing frame is first or last then we just copy
+                    if ind_frames[0] == 0:
+                        print('not imp')
+                    elif ind_frames[-1] == self.n_planes:
+                        print('not imp')
+                    else:
+                        u1 = imread(os.path.join(folder, '{}_{}___{:06d}_{}c.tif'.format(a1, a2, ind_frames[0]-1, a3)))
+                        u2 = imread(os.path.join(folder, '{}_{}___{:06d}_{}c.tif'.format(a1, a2, ind_frames[-1]+1, a3)))
+
+                        for ii, ind in enumerate(ind_frames):
+                            u = (ii+1)/(1+n_interp)*u1 + (1-(ii+1)/(1+n_interp))*u2
+                            imsave(os.path.join(folder, '{}_{}___{:06d}_{}c_interp.tif'.format(a1, a2, ind, a3)),
+                                   u.astype('uint16'),
+                                   check_contrast=False)

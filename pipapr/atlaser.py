@@ -265,6 +265,7 @@ class tileAtlaser():
         n_not_found = 0
         area_unknown = {}
         for l in labels:
+            # Fetch the ancestor map of the label.
             try:
                 ids = ancestor_map[int(l)]
             except KeyError:
@@ -279,12 +280,16 @@ class tileAtlaser():
                     area_unknown[int(l)] += 1
                 continue
 
-            if len(ids) <= 2:
+            # At the bottom of the tree each regions has 10 ancestors, with 'root' being the higher
+            n_ancestors = len(ids)
+            n_start = 10 - n_ancestors
+            if n <= n_start:
                 id = ids[0]
-            elif len(ids) <= n:
-                id = ids[-2]
-            else:
-                id = ids[n if n < len(ids) - 1 else n - 1]
+            elif n > n_start:
+                if n_ancestors > n - n_start + 1:
+                    id = ids[n - n_start]
+                else:
+                    id = ids[-2]
 
             # Get the name and store it
             name = name_map[id]
@@ -297,13 +302,61 @@ class tileAtlaser():
         if n == 0:
             if n_not_found > 0:
                 print('\nUnknown ontology ID found for {} objects ({:0.2f}%).'.format(n_not_found,
-                                                                                      n_not_found/len(labels)*100))
+                                                                                      100 * n_not_found / len(labels)))
                 print('Unknown ontology IDs and occurrences:\n')
                 print(area_unknown)
             else:
                 print('\nAll objects were assigned to an atlas ontology category.\n')
 
         return pd.DataFrame.from_dict(area_count, orient='index')
+
+        # rspc = ReferenceSpaceCache(25, 'annotation/ccf_2017', manifest='manifest.json')
+        # tree = rspc.get_structure_tree(structure_graph_id=1)
+        # name_map = tree.get_name_map()
+        # ancestor_map = tree.get_ancestor_id_map()
+        # area_count = {}
+        # n_not_found = 0
+        # area_unknown = {}
+        # for l in labels:
+        #     try:
+        #         ids = ancestor_map[int(l)]
+        #     except KeyError:
+        #         n_not_found += 1
+        #         if 'unknown' not in area_count:
+        #             area_count['unknown'] = 1
+        #         else:
+        #             area_count['unknown'] += 1
+        #         if int(l) not in area_unknown:
+        #             area_unknown[int(l)] = 1
+        #         else:
+        #             area_unknown[int(l)] += 1
+        #         continue
+        #
+        #     if len(ids) <= 2:
+        #         id = ids[0]
+        #     elif len(ids) <= n:
+        #         id = ids[-2]
+        #     else:
+        #         id = ids[n if n < len(ids) - 1 else n - 1]
+        #
+        #     # Get the name and store it
+        #     name = name_map[id]
+        #     if name not in area_count:
+        #         area_count[name] = 1
+        #     else:
+        #         area_count[name] += 1
+        #
+        # # Display summary
+        # if n == 0:
+        #     if n_not_found > 0:
+        #         print('\nUnknown ontology ID found for {} objects ({:0.2f}%).'.format(n_not_found,
+        #                                                                               n_not_found/len(labels)*100))
+        #         print('Unknown ontology IDs and occurrences:\n')
+        #         print(area_unknown)
+        #     else:
+        #         print('\nAll objects were assigned to an atlas ontology category.\n')
+        #
+        # return pd.DataFrame.from_dict(area_count, orient='index')
 
     def get_cells_number_per_region(self, cells_id):
         """

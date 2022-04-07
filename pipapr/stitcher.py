@@ -609,7 +609,7 @@ class baseStitcher():
         self.reg_y = reg_y
         self.reg_z = reg_z
 
-    def reconstruct_z_color(self, z=None, n_proj=0, downsample=1, debug=False, plot=True):
+    def reconstruct_z_color(self, z=None, n_proj=10, downsample=1, debug=False, plot=True):
         """
         Reconstruct and merge the sample at a given depth z.
 

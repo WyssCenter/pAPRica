@@ -215,11 +215,11 @@ class tileAtlaser():
         labels: ndarray
             containing the cell region ID.
         """
-        labels = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
+        cells_id = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 1]/self.y_downsample).astype('uint64'),
                         np.floor(cells.cells[:, 2]/self.x_downsample).astype('uint64')]
 
-        return labels
+        return cells_id
 
     def get_loc_id(self, x, y, z):
         """
@@ -310,54 +310,6 @@ class tileAtlaser():
 
         return pd.DataFrame.from_dict(area_count, orient='index')
 
-        # rspc = ReferenceSpaceCache(25, 'annotation/ccf_2017', manifest='manifest.json')
-        # tree = rspc.get_structure_tree(structure_graph_id=1)
-        # name_map = tree.get_name_map()
-        # ancestor_map = tree.get_ancestor_id_map()
-        # area_count = {}
-        # n_not_found = 0
-        # area_unknown = {}
-        # for l in labels:
-        #     try:
-        #         ids = ancestor_map[int(l)]
-        #     except KeyError:
-        #         n_not_found += 1
-        #         if 'unknown' not in area_count:
-        #             area_count['unknown'] = 1
-        #         else:
-        #             area_count['unknown'] += 1
-        #         if int(l) not in area_unknown:
-        #             area_unknown[int(l)] = 1
-        #         else:
-        #             area_unknown[int(l)] += 1
-        #         continue
-        #
-        #     if len(ids) <= 2:
-        #         id = ids[0]
-        #     elif len(ids) <= n:
-        #         id = ids[-2]
-        #     else:
-        #         id = ids[n if n < len(ids) - 1 else n - 1]
-        #
-        #     # Get the name and store it
-        #     name = name_map[id]
-        #     if name not in area_count:
-        #         area_count[name] = 1
-        #     else:
-        #         area_count[name] += 1
-        #
-        # # Display summary
-        # if n == 0:
-        #     if n_not_found > 0:
-        #         print('\nUnknown ontology ID found for {} objects ({:0.2f}%).'.format(n_not_found,
-        #                                                                               n_not_found/len(labels)*100))
-        #         print('Unknown ontology IDs and occurrences:\n')
-        #         print(area_unknown)
-        #     else:
-        #         print('\nAll objects were assigned to an atlas ontology category.\n')
-        #
-        # return pd.DataFrame.from_dict(area_count, orient='index')
-
     def get_cells_number_per_region(self, cells_id):
         """
         Retuns the number of cell per region.
@@ -445,3 +397,35 @@ class tileAtlaser():
             heatmap[z, y, x] = 1
 
         return gaussian(heatmap, sigma=kernel_size)
+
+    def get_cell_number_by_acronym(self, acronym_list, cells_ids):
+        """
+        Get the total number of segmented cell in different regions referenced by their acronyms.
+
+        Parameters
+        ----------
+        acronym_list: list
+            list of acronyms (ABA)
+        cells_ids: ndarray
+            cells ID (typically computed by self.get_cells_id())
+
+        Returns
+        -------
+        cell_number: arraylike
+            list containing the total number of cells for each asked region.
+        """
+
+        if isinstance(acronym_list, str):
+            acronym_list = [acronym_list]
+
+        rspc = ReferenceSpaceCache(25, 'annotation/ccf_2017', manifest='manifest.json')
+        tree = rspc.get_structure_tree(structure_graph_id=1)
+
+        structures = tree.get_structures_by_acronym(acronym_list)
+
+        cell_number = []
+        for structure in structures:
+            ids = tree.descendant_ids([structure['id']])
+            cell_number.append(np.sum(np.isin(element=cells_ids, test_elements=ids)))
+
+        return cell_number

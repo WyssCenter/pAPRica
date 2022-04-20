@@ -832,6 +832,6 @@ class clearscopeParser(tileParser):
 
                         for ii, ind in enumerate(ind_frames):
                             u = (ii+1)/(1+n_interp)*u1 + (1-(ii+1)/(1+n_interp))*u2
-                            imsave(os.path.join(folder, '{}_{}___{:06d}_{}c_interp.tif'.format(a1, a2, ind, a3)),
+                            imsave(os.path.join(folder, '{}_{}___{:06d}_{}c.tif'.format(a1, a2, ind, a3)),
                                    u.astype('uint16'),
                                    check_contrast=False)

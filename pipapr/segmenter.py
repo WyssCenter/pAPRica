@@ -412,7 +412,7 @@ class multitileSegmenter():
                    verbose=verbose)
 
 
-    def compute_multitile_segmentation(self, save_cc=True, save_mask=False, lowe_ratio=0.7, distance_max=5):
+    def compute_multitile_segmentation(self, save_cc=True, save_mask=False, lowe_ratio=0.7, distance_max=5, lazy_loading=True):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -420,6 +420,16 @@ class multitileSegmenter():
         ----------
         verbose: bool
             control the verbosity of the function to print some info
+        save_cc: bool
+            option to save the connected component particle to file
+        save_mask: bool
+            option to save the prediction mask to file
+        lowe_ratio: float in ]0, 1[
+            ratio between the second nearest neighbor and the first nearest neighbor to be considered a good match
+        distance_max: float
+            maximum distance in pixel for two objects to be matched
+        lazy_loading: bool
+            option to save the tree particles to allow for lazy loading later on
 
         Returns
         -------
@@ -429,10 +439,10 @@ class multitileSegmenter():
         for tile in tqdm(self.tiles, desc='Extracting and merging cells..'):
 
             # Perform tile segmentation
-            tile = self._segment_tile(tile, save_cc=save_cc, save_mask=save_mask)
+            tile = self._segment_tile(tile, save_cc=save_cc, save_mask=save_mask, lazy_loading=lazy_loading)
 
             # Remove objects on the edge
-            tile = self._remove_edge_cells(tile)
+            pyapr.numerics.transform.remove_edge_objects(tile.apr, tile.parts_cc)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -502,7 +512,7 @@ class multitileSegmenter():
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
 
     def _segment_tile(self, tile: pipapr.loader.tileLoader,
-                             save_cc=True, save_mask=False):
+                             save_cc=True, save_mask=False, lazy_loading=True):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -545,9 +555,23 @@ class multitileSegmenter():
 
         # Save results
         if save_mask:
-            self._save_segmentation(tile.path, name='segmentation mask', parts=parts_pred)
+            # Write particles
+            pyapr.io.write_particles(tile.path, parts_pred, parts_name='segmentation mask', tree=False, append=True)
+            if lazy_loading:
+                # Compute tree parts
+                tree_parts = pyapr.ShortParticles()
+                pyapr.numerics.fill_tree_max(tile.apr, parts_pred, tree_parts)
+                # Save tree parts
+                pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation mask', tree=True, append=True)
         if save_cc:
-            self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
+            # Write particles
+            pyapr.io.write_particles(tile.path, cc, parts_name='segmentation cc', tree=False, append=True)
+            if lazy_loading:
+                # Compute tree parts
+                tree_parts = pyapr.LongParticles()
+                pyapr.numerics.fill_tree_max(tile.apr, cc, tree_parts)
+                # Save tree parts
+                pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation cc', tree=True, append=True)
 
         tile.parts_mask = parts_pred
 
@@ -572,7 +596,10 @@ class multitileSegmenter():
         None
         """
 
-        r1 = np.max(self.cells, axis=0)
+        if self.cells.shape[0]>0:
+            r1 = np.max(self.cells, axis=0)
+        else:
+            r1 = np.array([0, 0, 0])
         r2 = self._get_tile_position(tile.row, tile.col)
 
         v_size = np.array(tile.apr.shape())
@@ -592,6 +619,7 @@ class multitileSegmenter():
             else:
                 ind = np.concatenate((ind, np.where(self.cells[:, i] < overlap_i[i])[0]))
             ind = np.concatenate((ind, np.where(self.cells[:, i] > overlap_f[i])[0]))
+
         ind = np.unique(ind)
 
         cells1_out = self.cells[ind, :]
@@ -608,7 +636,8 @@ class multitileSegmenter():
         cells2_out = cells2[ind, :]
         cells2_overlap = np.delete(cells2, ind, axis=0)
 
-        if cells2_overlap.shape[0] > 0:
+        # Number of cells should be higher than the number of features for the KNN implementation to work.
+        if cells2_overlap.shape[0] > 4:
             cells_filtered_overlap = self._filter_cells_flann(cells1_overlap,
                                                               cells2_overlap,
                                                               lowe_ratio=lowe_ratio,
@@ -698,7 +727,7 @@ class multitileSegmenter():
 
         return np.vstack((c1, c2))
 
-    def _save_segmentation(self, path, name, parts):
+    def _save_segmentation(self, path, name, parts, tree_parts):
         """
         Save segmentation particles by appending the original APR file.
 
@@ -707,15 +736,18 @@ class multitileSegmenter():
         parts: pyapr.ParticleData
             particles to save. Note that the APR tree should be the same otherwise the data
             will be inconsistent and not readable.
+        tree_parts: pyapr.ParticleData
+            tree particles necessary for lazy loading.
 
         Returns
         -------
         None
         """
+        pyapr.io.write_particles()
         aprfile = pyapr.io.APRFile()
         aprfile.set_read_write_tree(True)
         aprfile.open(path, 'READWRITE')
-        aprfile.write_particles(name, parts, t=0)
+        aprfile.write_particles(name, parts, t=0, tree_parts=tree_parts)
         aprfile.close()
 
 
@@ -863,7 +895,7 @@ class tileTrainer():
         data = np.load(path)
         self.pixel_list = data[:, :-1]
         self.labels = data[:, -1]
-        self.labels_manual = sparse.COO(coords=self.pixel_list.T, data=self.labels)
+        self.labels_manual = sparse.COO(coords=self.pixel_list.T, data=self.labels, shape=self.shape)
 
     def train_classifier(self, verbose=True, n_estimators=10, class_weight='balanced',
                          mean_norm=True, std_norm=True):

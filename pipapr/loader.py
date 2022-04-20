@@ -244,6 +244,25 @@ class tileLoader():
         else:
             print('Tile cc already loaded.')
 
+    def lazy_load_segmentation(self, level_delta=0):
+        """
+        Load the parts_cc lazily at the given resolution.
+
+        Parameters
+        ----------
+        level_delta: int
+            parameter controlling the resolution at which the APR will be read lazily
+
+        Returns
+        -------
+        None
+        """
+        if self.type != 'apr':
+            raise TypeError('Error: lazy loading is only supported for APR data.')
+
+        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
+        self.is_loaded = True
+
     def load_neighbors_segmentation(self, load_tree=False):
         """
         Load the current tile neighbors connected component (cc) if not already loaded.
@@ -292,6 +311,19 @@ class tileLoader():
         if self.apr is None:
             self.load_tile()
         pipapr.viewer.display_apr(self.apr, self.parts, **kwargs)
+
+    def _compute_segmentation_cc_tree_particles(self):
+
+        # Load APR file
+        self.apr, self.parts = self._load_data(self.path)
+
+        # Compute tree particles
+        apr, parts = pyapr.io.read(self.path, parts_name='segmentation cc')
+        tree_parts = pyapr.LongParticles()
+        pyapr.numerics.fill_tree_max(apr, parts, tree_parts)
+
+        # Save back data
+        pyapr.io.write_particles(self.path, tree_parts, t=0, channel_name='t', parts_name='segmentation cc', tree=True, append=True)
 
     def _load_data(self, path):
         """

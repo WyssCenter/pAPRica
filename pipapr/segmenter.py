@@ -108,7 +108,8 @@ def map_feature(apr, parts_cc, features):
     hash_idx = hash_idx[1:]
 
     if len(hash_idx) != len(features):
-        raise ValueError('Error: features length should be the same as the number of connected components.')
+        raise ValueError('Error: features length ({}) should be the same as the number of connected components ({}).'
+                         .format(len(features), len(hash_idx)))
 
     # Create hash dict
     hash_dict = {x: y for x, y in zip(hash_idx, features)}
@@ -743,7 +744,6 @@ class multitileSegmenter():
         -------
         None
         """
-        pyapr.io.write_particles()
         aprfile = pyapr.io.APRFile()
         aprfile.set_read_write_tree(True)
         aprfile.open(path, 'READWRITE')

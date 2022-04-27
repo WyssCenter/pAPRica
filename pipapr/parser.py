@@ -26,6 +26,7 @@ import os
 import re
 import numpy as np
 import pipapr
+from tqdm import tqdm
 from skimage.io import imread, imsave
 
 
@@ -94,6 +95,34 @@ class baseParser():
 
         if cnt == 0:
             print('All tiles are readable.')
+
+    def compute_average_CR(self):
+        """
+        Compute the average Computational Ratio (CR). Note: data must be of type APR.
+
+        Returns
+        -------
+        cr: float
+            average CR for the dataset
+        """
+
+        if self.type != 'apr':
+            raise TypeError('Error: data set must be of type APR.')
+
+        n_parts = []
+        n_pixels = []
+        try:
+            for tile in tqdm(self, desc='Computing CR'):
+                tile.lazy_load_tile()
+                n_parts.append(tile.lazy_data.parts.dataset_size())
+                n_pixels.append(np.prod(tile.lazy_data.shape))
+
+        except: #Lazy loading not available
+            for tile in tqdm(self, desc='Computing CR'):
+                tile.load_tile()
+                n_parts.append(len(tile.parts))
+                n_pixels.append(tile.shape())
+        return np.sum(n_pixels)/np.sum(n_parts)
 
     def _print_info(self):
         """

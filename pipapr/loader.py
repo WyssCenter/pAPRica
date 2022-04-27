@@ -192,7 +192,8 @@ class tileLoader():
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
-        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
+        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta, parts_name='particles',
+                                                          tree_parts_name='particles')
         self.is_loaded = True
 
     def load_neighbors(self):
@@ -260,8 +261,9 @@ class tileLoader():
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
-        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta)
-        self.is_loaded = True
+        self.lazy_segmentation = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta,
+                                                                  parts_name='segmentation cc',
+                                                                  tree_parts_name='segmentation cc')
 
     def load_neighbors_segmentation(self, load_tree=False):
         """

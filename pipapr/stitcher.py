@@ -38,6 +38,7 @@ from skimage.exposure import equalize_adapthist, rescale_intensity
 from skimage.transform import warp, AffineTransform, downscale_local_mean
 from skimage.metrics import normalized_root_mse, structural_similarity, peak_signal_noise_ratio
 from skimage.filters import gaussian
+from skimage.color import label2rgb
 from matplotlib.colors import hsv_to_rgb
 import dill
 import matplotlib.pyplot as plt
@@ -50,6 +51,7 @@ import warnings
 from tqdm import tqdm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
+
 
 def max_sum_over_single_max(reference_image, moving_image, d):
     """
@@ -575,10 +577,10 @@ class baseStitcher():
 
         self.segment = False
 
-    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True):
+    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, seg=False):
 
         if dim == 0:
-            return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+            return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot, seg=seg)
         elif dim == 1:
             return self._reconstruct_y_slice(y=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
         elif dim == 2:
@@ -691,7 +693,7 @@ class baseStitcher():
 
         return rgb
 
-    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
+    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True, seg=False):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -714,6 +716,8 @@ class baseStitcher():
 
         tile = self.tiles[0]
         tile.lazy_load_tile(level_delta=level_delta)
+        if seg:
+            tile.lazy_load_segmentation(level_delta=level_delta)
 
         if z is None:
             z = int(tile.lazy_data.shape[0] / 2)
@@ -732,17 +736,25 @@ class baseStitcher():
             merged_data[:, :, 2] = 0
         else:
             merged_data = np.zeros((ny, nx), dtype='uint16')
+            if seg:
+                merged_seg = np.zeros((ny, nx), dtype='float32')
 
         H_pos = (x_pos - x_pos.min()) / downsample
         V_pos = (y_pos - y_pos.min()) / downsample
 
         for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
             tile.lazy_load_tile(level_delta=level_delta)
+            if seg:
+                tile.lazy_load_segmentation(level_delta=level_delta)
             zf = min(z+n_proj, tile.lazy_data.shape[0])
             if zf > z:
                 data = tile.lazy_data[z:zf].max(axis=0)
+                if seg:
+                    cc = tile.lazy_segmentation[z:zf].max(axis=0)
             else:
                 data = tile.lazy_data[z]
+                if seg:
+                    cc = tile.lazy_segmentation[z]
 
             # In debug mode we highlight each tile edge to see where it was
             if debug:
@@ -771,13 +783,18 @@ class baseStitcher():
                         merged_data[y1:y2, x1:x2, 0] = np.maximum(merged_data[y1:y2, x1:x2, 0], data)
             else:
                 merged_data[y1:y2, x1:x2] = np.maximum(merged_data[y1:y2, x1:x2], data)
+                if seg:
+                    merged_seg[y1:y2, x1:x2] = np.maximum(merged_seg[y1:y2, x1:x2], cc)
 
         if plot:
             plt.figure()
             if color:
                 plt.imshow(self._process_RGB_for_display(merged_data))
             else:
-                plt.imshow(np.log(merged_data), cmap='gray')
+                if seg:
+                    plt.imshow(label2rgb(merged_seg, image=self._process_GRAY_for_display(merged_data),  bg_label=0))
+                else:
+                    plt.imshow(self._process_GRAY_for_display(merged_data), cmap='gray')
 
         return merged_data
 
@@ -1002,6 +1019,26 @@ class baseStitcher():
             tmp = np.log(u[:, :, i] + 200)
             vmin, vmax = np.percentile(tmp[tmp > np.log(1 + 200)], (1, 99.9))
             data_to_display[:, :, i] = rescale_intensity(tmp, in_range=(vmin, vmax), out_range='uint8')
+
+        return data_to_display
+
+    def _process_GRAY_for_display(self, u):
+        """
+        Process RGB data for correctly displaying it.
+
+        Parameters
+        ----------
+        u: ndarray
+            RGB data
+
+        Returns
+        -------
+        data_to_display: ndarray
+            RGB data displayable with correct contrast and colors.
+        """
+        u = np.log(u+200)
+        vmin, vmax = np.percentile(u[u > np.log(1 + 200)], (1, 99.9))
+        data_to_display = rescale_intensity(u, in_range=(vmin, vmax), out_range='uint16')
 
         return data_to_display
 
@@ -2013,6 +2050,8 @@ class channelStitcher(baseStitcher):
         self.segment = False
         self.segmentation_verbose = None
 
+        self.patch = pyapr.ReconPatch()
+
     def compute_rigid_registration(self):
         """
         Compute the rigid registration between each pair of tiles across different channels.
@@ -2030,22 +2069,48 @@ class channelStitcher(baseStitcher):
             if self.segment:
                 self.segmenter.compute_segmentation(tile2)
 
-            patch = pyapr.ReconPatch()
-            proj1 = _get_max_proj_apr(tile1.apr, tile1.parts, patch)
-
-            patch = pyapr.ReconPatch()
-            proj2 = _get_max_proj_apr(tile2.apr, tile2.parts, patch)
+            proj1 = _get_max_proj_apr(tile1.apr, tile1.parts, self.patch)
+            proj2 = _get_max_proj_apr(tile2.apr, tile2.parts, self.patch)
 
             if self.mask:
                 reg, rel = _get_masked_proj_shifts(proj1, proj2, self.threshold)
             else:
                 reg, rel = _get_proj_shifts(proj1, proj2)
 
-            reg, rel = self._regularize(reg, rel)
-
-
+            # TODO: add regularization to avoid aberrant shifts.
 
             self._update_database(tile2.row, tile2.col, reg)
+
+    def set_lim(self, x_begin=None, x_end=None, y_begin=None, y_end=None, z_begin=None, z_end=None):
+        """
+        Define spatial limits to compute the maximum intensity projection.
+
+        Parameters
+        ----------
+        x_begin: int
+        x_end: int
+        y_begin: int
+        y_end: int
+        z_begin: int
+        z_end: int
+
+        Returns
+        -------
+        None
+        """
+
+        if x_begin is not None:
+            self.patch.x_begin = x_begin
+        if x_end is not None:
+            self.patch.x_end = x_end
+        if y_begin is not None:
+            self.patch.y_begin = y_begin
+        if y_end is not None:
+            self.patch.y_end = y_end
+        if z_begin is not None:
+            self.patch.z_begin = z_begin
+        if z_end is not None:
+            self.patch.z_end = z_end
 
     def _update_database(self, row, col, d):
         """
@@ -2076,7 +2141,7 @@ class tileMerger():
     the sample to an Atlas.
 
     """
-    def __init__(self, tiles, database):
+    def     __init__(self, tiles, database):
         """
         Constructor for the tileMerger class.
 

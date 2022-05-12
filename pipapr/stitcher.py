@@ -2287,6 +2287,61 @@ class tileMerger():
 
             self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
 
+    def merge_segmentation(self, reconstruction_mode='constant', tree_mode='mean', debug=False):
+        """
+        Perform merging with a maximum algorithm for overlapping areas.
+
+        Parameters
+        ----------
+        mode: string
+            APR reconstruction type among ('constant', 'smooth', 'level')
+        debug: bool
+            add white border on the edge of each tile to see where it was overlapping.
+
+        Returns
+        -------
+        None
+        """
+        if self.merged_segmentation is None:
+            self._initialize_merged_segmentation()
+
+        H_pos = self.database['ABS_H'].to_numpy()
+        H_pos = (H_pos - H_pos.min())/self.downsample
+        V_pos = self.database['ABS_V'].to_numpy()
+        V_pos = (V_pos - V_pos.min())/self.downsample
+        D_pos = self.database['ABS_D'].to_numpy()
+        D_pos = (D_pos - D_pos.min())/self.downsample
+
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+
+            if self.type == 'apr':
+                if self.lazy:
+                    tile.lazy_load_segmentation(level_delta=self.level_delta)
+                    data = tile.lazy_segmentation[:, :, :]
+                else:
+                    tile.load_segmentation()
+                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts_cc, level_delta=self.level_delta,
+                                                        mode=reconstruction_mode, tree_mode=tree_mode)
+                    data = u[:, :, :]
+
+            # In debug mode we highlight each tile edge to see where it was
+            if debug:
+                data[0, :, :] = 2**16-1
+                data[-1, :, :] = 2 ** 16 - 1
+                data[:, 0, :] = 2 ** 16 - 1
+                data[:, -1, :] = 2 ** 16 - 1
+                data[:, :, 0] = 2 ** 16 - 1
+                data[:, :, -1] = 2 ** 16 - 1
+
+            x1 = int(H_pos[i])
+            x2 = int(H_pos[i] + data.shape[2])
+            y1 = int(V_pos[i])
+            y2 = int(V_pos[i] + data.shape[1])
+            z1 = int(D_pos[i])
+            z2 = int(D_pos[i] + data.shape[0])
+
+            self.merged_segmentation[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_segmentation[z1:z2, y1:y2, x1:x2], data)
+
     def crop(self, background=0, xlim=None, ylim=None, zlim=None):
         """
         Add a black mask around the brain (rather than really cropping which makes the overlays complicated in
@@ -2388,6 +2443,20 @@ class tileMerger():
         self.nz = int(np.ceil(self._get_nz() / self.downsample))
 
         self.merged_data = np.zeros((self.nz, self.ny, self.nx), dtype='uint16')
+
+    def _initialize_merged_segmentation(self):
+        """
+        Initialize the merged array in accordance with the asked downsampling.
+
+        Returns
+        -------
+        None
+        """
+        self.nx = int(np.ceil(self._get_nx() / self.downsample))
+        self.ny = int(np.ceil(self._get_ny() / self.downsample))
+        self.nz = int(np.ceil(self._get_nz() / self.downsample))
+
+        self.merged_segmentation = np.zeros((self.nz, self.ny, self.nx), dtype='uint16')
 
     def _get_nx(self):
         """

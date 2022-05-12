@@ -16,6 +16,7 @@ import numpy as np
 import pipapr
 import pyapr
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def tile_from_apr(apr, parts):
     """
@@ -49,6 +50,7 @@ def tile_from_apr(apr, parts):
     tile.parts = parts
     return tile
 
+
 def tile_from_path(path):
     """
     Function to generate a *tile* object from the path of an APR object.
@@ -73,6 +75,7 @@ def tile_from_path(path):
                       frame_size=2048,
                       folder_root=os.path.basename(path),
                       channel=None)
+
 
 class tileLoader():
     """
@@ -313,6 +316,36 @@ class tileLoader():
         if self.apr is None:
             self.load_tile()
         pipapr.viewer.display_apr(self.apr, self.parts, **kwargs)
+
+    def plot_particles_size_distribution(self):
+        """
+        Plot the particle size distribution of the tile.
+
+        Returns
+        -------
+        None
+        """
+        if self.type != 'apr':
+            raise TypeError('Error: particles distributoin can only be computed for APR.')
+
+        if not self.is_loaded:
+            self.load_tile()
+
+        it = self.apr.iterator()
+        nparts = []
+        for level in range(self.apr.level_min(), self.apr.level_max()):
+            nparts.append(it.total_number_particles(level + 1) - it.total_number_particles(level))
+        x = np.array([2 ** x for x in range(self.apr.level_max() - self.apr.level_min() - 1, -1, -1)])
+        plt.figure()
+        plt.bar(x[2:], nparts[2:] / np.sum(nparts), width=np.diff(x[:-1]) / 10, log=True, align="center")
+        plt.xscale('log')
+        plt.xlabel('Particle size [pixel]', fontsize=14)
+        plt.ylabel('Normalized particle distribution', fontsize=14)
+        plt.xticks(x[2:], x[2:])
+        plt.rc('xtick', labelsize=12)
+        plt.rc('ytick', labelsize=12)
+        plt.title('CR = {:0.2f}'.format(self.apr.computational_ratio()))
+        plt.tight_layout()
 
     def _compute_segmentation_cc_tree_particles(self):
 

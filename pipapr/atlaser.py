@@ -215,9 +215,9 @@ class tileAtlaser():
         labels: ndarray
             containing the cell region ID.
         """
-        cells_id = self.atlas[np.floor(cells.cells[:, 0]/self.z_downsample).astype('uint64'),
-                        np.floor(cells.cells[:, 1]/self.y_downsample).astype('uint64'),
-                        np.floor(cells.cells[:, 2]/self.x_downsample).astype('uint64')]
+        cells_id = self.atlas[np.floor(cells[:, 0]/self.z_downsample).astype('uint64'),
+                        np.floor(cells[:, 1]/self.y_downsample).astype('uint64'),
+                        np.floor(cells[:, 2]/self.x_downsample).astype('uint64')]
 
         return cells_id
 
@@ -429,3 +429,34 @@ class tileAtlaser():
             cell_number.append(np.sum(np.isin(element=cells_ids, test_elements=ids)))
 
         return cell_number
+
+    def get_area_mask_by_acronym(self, acronym_list):
+        """
+        Return the mask corresponding to brain regions given in `acronym_list`, brain regions referred by their
+        Allen brain acronym.
+
+        Parameters
+        ----------
+        acronym_list: list
+            list of Allen Brain region acronyms to count the mapped cells.
+
+        Returns
+        -------
+        mask: ndarray
+            mask containing `1` for the region in `acronym_list` ans `0` elsewhere.
+        """
+
+
+        rspc = ReferenceSpaceCache(25, 'annotation/ccf_2017', manifest='manifest.json')
+        tree = rspc.get_structure_tree(structure_graph_id=1)
+
+        structures = tree.get_structures_by_acronym(acronym_list)
+
+        ids = []
+        for structure in structures:
+            ids.extend(tree.descendant_ids([structure['id']]))
+
+        ids = np.array(ids)
+        mask = np.isin(element=self.atlas, test_elements=ids)
+
+        return mask

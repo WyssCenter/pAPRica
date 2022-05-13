@@ -30,9 +30,9 @@ def compute_gradients(apr, parts, sobel=True):
     dy = pyapr.FloatParticles()
     dz = pyapr.FloatParticles()
 
-    pyapr.numerics.gradient(apr, parts, dz, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dz, dimension=2, delta=par.dz, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
     return dz, dx, dy
 
 
@@ -58,9 +58,9 @@ def compute_laplacian(apr, parts, grad=None, sobel=True):
     dx2 = pyapr.FloatParticles()
     dy2 = pyapr.FloatParticles()
     dz2 = pyapr.FloatParticles()
-    pyapr.numerics.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.numerics.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
+    pyapr.filter.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
+    pyapr.filter.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
     return dz2 + dx2 + dy2
 
 
@@ -79,7 +79,7 @@ def compute_gradmag(apr, parts, sobel=True):
 
     par = apr.get_parameters()
     gradmag = pyapr.FloatParticles()
-    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
+    pyapr.filter.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
     return gradmag
 
 
@@ -100,8 +100,8 @@ def compute_inplane_gradmag(apr, parts, sobel=True):
     dx = pyapr.FloatParticles()
     dy = pyapr.FloatParticles()
 
-    pyapr.numerics.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
 
     dx = np.array(dx, copy=False)
     dy = np.array(dy, copy=False)
@@ -123,10 +123,9 @@ def gaussian_blur(apr, parts, sigma=1.5, size=11):
     Blurred APR.
     """
 
-    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
+    stencil = pyapr.filter.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
     output = pyapr.FloatParticles()
-    pyapr.numerics.filter.convolve_pencil(apr, parts, output, stencil, use_stencil_downsample=True,
-                                          normalize_stencil=True, use_reflective_boundary=True)
+    pyapr.filter.convolve(apr, parts, stencil, output)
     return output
 
 

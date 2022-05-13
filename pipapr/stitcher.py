@@ -278,15 +278,14 @@ def _get_max_proj_apr(apr, parts, patch, patch_yx=None, plot=False):
             # dim=0: project along Y to produce a ZY plane
             # dim=1: project along X to produce a ZX plane
             # dim=2: project along Z to produce an YX plane
-            proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                               dim=d, patch=patch, method='auto'))
+            proj.append(pyapr.transform.maximum_projection(apr, parts, dim=d, patch=patch, method='auto'))
     else:
-        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                           dim=0, patch=patch, method='auto'))
-        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                           dim=1, patch=patch, method='auto'))
-        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                           dim=2, patch=patch_yx, method='auto'))
+        proj.append(pyapr.transform.projection.maximum_projection(apr, parts,
+                                                                  dim=0, patch=patch, method='auto'))
+        proj.append(pyapr.transform.projection.maximum_projection(apr, parts,
+                                                                  dim=1, patch=patch, method='auto'))
+        proj.append(pyapr.transform.projection.maximum_projection(apr, parts,
+                                                                  dim=2, patch=patch_yx, method='auto'))
 
     if plot:
         fig, ax = plt.subplots(1, 3)
@@ -2212,7 +2211,7 @@ class tileMerger():
                     data = tile.lazy_data[:, :, :]
                 else:
                     tile.load_tile()
-                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
+                    u = pyapr.reconstruction.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
                                                         mode=reconstruction_mode, tree_mode=tree_mode)
                     data = u[:, :, :]
             else:
@@ -2262,7 +2261,7 @@ class tileMerger():
                     data = tile.lazy_data[:, :, :]
                 else:
                     tile.load_tile()
-                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
+                    u = pyapr.reconstruction.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
                                                         mode=reconstruction_mode, tree_mode=tree_mode)
                     data = u[:, :, :]
             else:
@@ -2320,7 +2319,7 @@ class tileMerger():
                     data = tile.lazy_segmentation[:, :, :]
                 else:
                     tile.load_segmentation()
-                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts_cc, level_delta=self.level_delta,
+                    u = pyapr.reconstruction.APRSlicer(tile.apr, tile.parts_cc, level_delta=self.level_delta,
                                                         mode=reconstruction_mode, tree_mode=tree_mode)
                     data = u[:, :, :]
 

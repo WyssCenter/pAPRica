@@ -158,7 +158,7 @@ class tileConverter():
 
             if lazy_loading:
                 tree_parts = pyapr.ShortParticles()
-                pyapr.numerics.fill_tree_mean(apr, parts, tree_parts)
+                pyapr.tree.fill_tree_mean(apr, parts, tree_parts)
             else:
                 tree_parts = None
 
@@ -207,11 +207,11 @@ class tileConverter():
             tile.load_tile()
 
             if mode == 'constant':
-                data = pyapr.numerics.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
+                data = pyapr.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
             elif mode == 'smoth':
-                data = pyapr.numerics.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
+                data = pyapr.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
             elif mode == 'level':
-                data = pyapr.numerics.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
+                data = pyapr.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
             else:
                 raise ValueError('Error: unknown mode for APR reconstruction.')
 

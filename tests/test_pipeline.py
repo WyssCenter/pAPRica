@@ -13,7 +13,7 @@ import numpy as np
 import pyapr
 
 
-def compute_gradients(apr, parts, sobel=True):
+def compute_gradients(apr, parts):
     """
     Compute gradient for each spatial direction directly on APR.
 
@@ -29,13 +29,10 @@ def compute_gradients(apr, parts, sobel=True):
     """
 
     par = apr.get_parameters()
-    dx = pyapr.FloatParticles()
-    dy = pyapr.FloatParticles()
-    dz = pyapr.FloatParticles()
 
-    pyapr.numerics.gradient(apr, parts, dz, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    dz = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
+    dx = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
+    dy = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
     return dz, dx, dy
 
 
@@ -60,16 +57,13 @@ def compute_laplacian(apr, parts, grad=None, sobel=True):
         dz, dx, dy = compute_gradients(apr, parts, sobel)
     else:
         dz, dx, dy = grad
-    dx2 = pyapr.FloatParticles()
-    dy2 = pyapr.FloatParticles()
-    dz2 = pyapr.FloatParticles()
-    pyapr.numerics.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.numerics.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
+    dz2 = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
+    dx2 = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
+    dy2 = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
     return dz2 + dx2 + dy2
 
 
-def compute_gradmag(apr, parts, sobel=True):
+def compute_gradmag(apr, parts):
     """
     Compute gradient magnitude directly on APR.
 
@@ -85,8 +79,7 @@ def compute_gradmag(apr, parts, sobel=True):
     """
 
     par = apr.get_parameters()
-    gradmag = pyapr.FloatParticles()
-    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
+    gradmag = pyapr.filter.gradient_magnitude(apr, parts, deltas=(par.dz, par.dx, par.dy))
     return gradmag
 
 
@@ -106,11 +99,8 @@ def gaussian_blur(apr, parts, sigma=1.5, size=11):
     Blurred APR.
     """
 
-    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
-    output = pyapr.FloatParticles()
-    pyapr.numerics.filter.convolve_pencil(apr, parts, output, stencil, use_stencil_downsample=True,
-                                          normalize_stencil=True, use_reflective_boundary=True)
-    return output
+    stencil = pyapr.filter.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
+    return pyapr.filter.convolve(apr, parts, stencil)
 
 
 def particle_levels(apr):
@@ -164,14 +154,14 @@ def compute_features(apr, parts):
 def get_cc_from_features(apr, parts_pred):
 
     # Create a mask from particle classified as cells (cell=0, background=1, membrane=2)
-    parts_cells = (parts_pred == 0)
+    parts_cells = (parts_pred == 1)
 
     # Use opening to separate touching cells
-    pyapr.numerics.transform.opening(apr, parts_cells, radius=1, binary=True, inplace=True)
+    pyapr.morphology.opening(apr, parts_cells, radius=1, binary=True, inplace=True)
 
     # Apply connected component
     cc = pyapr.LongParticles()
-    pyapr.numerics.segmentation.connected_component(apr, parts_cells, cc)
+    pyapr.measure.connected_component(apr, parts_cells, cc)
 
     # Remove small objects
     # cc = pyapr.numerics.transform.remove_small_objects(apr, cc, 128)
@@ -189,11 +179,8 @@ t_ini = time()
 tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
 t = time()
 
-# Stitch and segment
+# Stitch
 stitcher = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
-# stitcher.activate_mask(99)
-# segmenter = pipapr.segmenter.tileSegmenter(path_classifier, compute_features, get_cc_from_features, verbose=True)
-# stitcher.activate_segmentation(segmenter)
 
 t = time()
 stitcher.compute_registration()
@@ -207,10 +194,17 @@ print('Elapsed time new registration on disk: {} s.'.format((time()-t)/n))
 
 stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 
-# Extract cell position and merge across the whole volume.
-cells = pipapr.segmenter.tileCells(tiles, stitcher.database)
-cells.extract_and_merge_cells(lowe_ratio=0.7, distance_max=30)
+# Segment and extract objects across the whole volume
+trainer = pipapr.tileTrainer(tiles[0],
+                             func_to_compute_features=compute_features,
+                             func_to_get_cc=get_cc_from_features)
+trainer.manually_annotate()
+trainer.train_classifier(n_estimators=100)
+segmenter = pipapr.segmenter.multitileSegmenter(tiles, stitcher.database, clf=trainer.clf,
+                                                func_to_compute_features=compute_features,
+                                                func_to_get_cc=get_cc_from_features)
+segmenter.compute_multitile_segmentation(save_cc=True)
 
 # Display result
-viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=cells.cells)
+viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=segmenter.cells)
 viewer.display_all_tiles(pyramidal=True, downsample=1, contrast_limits=[0, 3000])

@@ -45,6 +45,7 @@ def display_apr_from_path(path, **kwargs):
     layer = apr_to_napari_Image(apr, parts)
     display_layers_pyramidal([layer], level_delta=0, **kwargs)
 
+
 def display_apr(apr, parts, **kwargs):
     """
     Display an APR using Napari from previously loaded data.
@@ -109,7 +110,7 @@ def apr_to_napari_Image(apr: pyapr.APR,
     else:
         tree_mode = 'mean'
     par = apr.get_parameters()
-    return Image(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode=tree_mode),
+    return Image(data=pyapr.reconstruction.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode=tree_mode),
                  rgb=False, multiscale=False, contrast_limits=contrast_limits,
                  scale=[par.dz, par.dx, par.dy], **kwargs)
 
@@ -147,7 +148,7 @@ def apr_to_napari_Labels(apr: pyapr.APR,
     if 'contrast_limits' in kwargs:
         del kwargs['contrast_limits']
     par = apr.get_parameters()
-    return Labels(data=pyapr.data_containers.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode='max'),
+    return Labels(data=pyapr.reconstruction.APRSlicer(apr, parts, mode=mode, level_delta=level_delta, tree_mode='max'),
                   multiscale=False, scale=[par.dz, par.dx, par.dy], **kwargs)
 
 # Define a callback that will take the value of the slider and the viewer
@@ -213,7 +214,7 @@ def display_layers_pyramidal(layers, level_delta):
 
     my_slider = QSlider(Qt.Horizontal)
     my_slider.setMinimum(0)
-    layers_apr = [l for l in layers if isinstance(l.data, pyapr.data_containers.APRSlicer)]
+    layers_apr = [l for l in layers if isinstance(l.data, pyapr.reconstruction.APRSlicer)]
     l_max = np.min([l.data.apr.level_max() for l in layers_apr])
     l_min = 5 if l_max > 5 else 1
     my_slider.setMaximum(l_max-l_min)
@@ -412,7 +413,7 @@ def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsa
         patch.x_begin = loc
         patch.x_end = locf
 
-    data = pyapr.numerics.reconstruction.reconstruct_constant(apr, parts, patch=patch)
+    data = pyapr.reconstruction.reconstruct_constant(apr, parts, patch=patch)
 
     V = data.max(axis=dim)
     S = np.ones_like(V) * 0.7
@@ -432,6 +433,7 @@ def reconstruct_colored_projection(apr, parts, loc=None, dim=0, n_proj=0, downsa
         plt.imshow(rgb)
 
     return rgb
+
 
 class tileViewer():
     """

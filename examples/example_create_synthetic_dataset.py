@@ -42,7 +42,6 @@ par.Ip_th = 120
 par.rel_error = 0.2
 par.gradient_smoothing = 2
 
-
 # Create synthetic dataset
 data = np.ones([length]*3, dtype='uint16')*100
 cell = ball(cell_radius)*500

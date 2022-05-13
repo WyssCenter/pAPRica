@@ -10,15 +10,13 @@ import pipapr
 import pyapr
 
 # Parameters
-apr_path = '/home/apr-benchmark/Desktop/data/sarah/APR/0_0.apr'
+apr_path = './data/apr/0_2.apr'
 
 # Load data
-apr = pyapr.APR()
-parts = pyapr.ShortParticles()
-pyapr.io.read(apr_path, apr, parts)
+apr, parts = pyapr.io.read(apr_path)
 
 # Down-sample and reconstruct data for Brainreg
-slicer = pyapr.data_containers.APRSlicer(apr, parts, level_delta=-2)
+slicer = pyapr.reconstruction.APRSlicer(apr, parts, level_delta=-2)
 data = slicer[:, :, :]
 
 # Atlas data
@@ -26,5 +24,5 @@ atlaser = pipapr.atlaser.tileAtlaser(original_pixel_size=[5, 5.26, 5.26],
                                      downsample=4,
                                      atlas=None,
                                      merged_data=data)
-atlaser.register_to_atlas(output_dir='/home/apr-benchmark/Desktop/data/sarah/APR',
+atlaser.register_to_atlas(output_dir='./data',
                           orientation='ipr')

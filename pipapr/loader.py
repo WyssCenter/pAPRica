@@ -234,17 +234,9 @@ class tileLoader():
         None
         """
         if self.parts_cc is None:
-            cc = pyapr.LongParticles()
-            aprfile = pyapr.io.APRFile()
-            aprfile.set_read_write_tree(True)
-            aprfile.open(self.path, 'READ')
+            self.parts_cc = pyapr.io.read_particles(self.path, parts_name='segmentation cc')
             if load_tree:
-                apr = pyapr.APR()
-                aprfile.read_apr(apr, t=0, channel_name='t')
-                self.apr = apr
-            aprfile.read_particles(self.apr, 'segmentation cc', cc, t=0)
-            aprfile.close()
-            self.parts_cc = cc
+                self.apr = pyapr.io.read_apr(self.path)
         else:
             print('Tile cc already loaded.')
 
@@ -264,9 +256,9 @@ class tileLoader():
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
-        self.lazy_segmentation = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta,
-                                                                  parts_name='segmentation cc',
-                                                                  tree_parts_name='segmentation cc')
+        self.lazy_segmentation = pyapr.reconstruction.LazySlicer(self.path, level_delta=level_delta,
+                                                                 parts_name='segmentation cc',
+                                                                 tree_parts_name='segmentation cc')
 
     def load_neighbors_segmentation(self, load_tree=False):
         """
@@ -355,7 +347,7 @@ class tileLoader():
         # Compute tree particles
         apr, parts = pyapr.io.read(self.path, parts_name='segmentation cc')
         tree_parts = pyapr.LongParticles()
-        pyapr.numerics.fill_tree_max(apr, parts, tree_parts)
+        pyapr.tree.fill_tree_max(apr, parts, tree_parts)
 
         # Save back data
         pyapr.io.write_particles(self.path, tree_parts, t=0, channel_name='t', parts_name='segmentation cc', tree=True, append=True)

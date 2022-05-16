@@ -1267,7 +1267,7 @@ class tileStitcher(baseStitcher):
         self.database = None
         self.projs = None
 
-    def compute_registration(self):
+    def _compute_registration_old(self):
         """
         Compute the pair-wise registration for all tiles. This implementation loads the data twice and is therefore
         not efficient.
@@ -1314,7 +1314,7 @@ class tileStitcher(baseStitcher):
         self._build_database()
         self._print_info()
 
-    def compute_registration_fast(self, on_disk=False):
+    def compute_registration(self, on_disk=False):
         """
         Compute the pair-wise registration for all tiles. This implementation loads the data once by precomputing
         the max-proj and is therefore efficient.

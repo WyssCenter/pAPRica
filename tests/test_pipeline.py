@@ -36,7 +36,7 @@ def compute_gradients(apr, parts):
     return dz, dx, dy
 
 
-def compute_laplacian(apr, parts, grad=None, sobel=True):
+def compute_laplacian(apr, parts, grad=None):
     """
     Compute Laplacian for each spatial direction directly on APR.
 
@@ -54,12 +54,12 @@ def compute_laplacian(apr, parts, grad=None, sobel=True):
 
     par = apr.get_parameters()
     if grad is None:
-        dz, dx, dy = compute_gradients(apr, parts, sobel)
+        dz, dx, dy = compute_gradients(apr, parts)
     else:
         dz, dx, dy = grad
-    dz2 = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
-    dx2 = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
-    dy2 = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
+    dz2 = pyapr.filter.gradient(apr, dz, dim=2, delta=par.dz)
+    dx2 = pyapr.filter.gradient(apr, dx, dim=1, delta=par.dx)
+    dy2 = pyapr.filter.gradient(apr, dy, dim=0, delta=par.dy)
     return dz2 + dx2 + dy2
 
 

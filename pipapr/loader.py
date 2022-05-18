@@ -195,7 +195,7 @@ class tileLoader():
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
-        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta, parts_name='particles',
+        self.lazy_data = pyapr.reconstruction.LazySlicer(self.path, level_delta=level_delta, parts_name='particles',
                                                           tree_parts_name='particles')
         self.is_loaded = True
 

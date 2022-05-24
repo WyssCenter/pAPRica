@@ -206,4 +206,4 @@ for tile in tiles:
 # Note that it is possible to perform the stitching and the segmentation at the same time, optimizing IO operations:
 stitcher = pipapr.tileStitcher(tiles, overlap_h=20, overlap_v=20)
 stitcher.activate_segmentation(segmenter)
-stitcher.compute_registration_fast()
+stitcher.compute_registration()

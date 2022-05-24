@@ -34,7 +34,7 @@ stitcher_expected.reconstruct_slice(color=True)
 
 # Now we can stitch the dataset properly
 stitcher = pipapr.tileStitcher(tiles_nissl, overlap_h=20, overlap_v=20)
-stitcher.compute_registration_fast()
+stitcher.compute_registration()
 
 # We can compare the computed and expected tile positions
 pipapr.viewer.compare_stitching(stitcher_expected, stitcher, color=True)

@@ -6,26 +6,29 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import re
-from glob import glob
 import os
+import re
+import warnings
+from glob import glob
+from pathlib import Path
+from time import sleep
+
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import pyapr
+import seaborn as sns
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
+from skimage.exposure import rescale_intensity
+from skimage.filters import gaussian
+from skimage.color import hsv2rgb
+from tqdm import tqdm
+
 import pipapr
 from pipapr.stitcher import _get_max_proj_apr, _get_proj_shifts, _get_masked_proj_shifts
-from time import sleep
-import pyapr
-from skimage.io import imread
-from skimage.exposure import rescale_intensity
-from tqdm import tqdm
-from pathlib import Path
-import pandas as pd
-from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
-from scipy.sparse import csr_matrix
-import matplotlib.pyplot as plt
-import warnings
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import seaborn as sns
-import napari
+
 
 class clearscopeRunningPipeline():
 
@@ -273,6 +276,28 @@ class clearscopeRunningPipeline():
         self.quantization_factor = None
 
     def activate_stitching(self, channel):
+        """
+        Activate stitching the data for the running pipeline.
+
+        Stitching the data consists in:
+
+        1) Computing the maximum intensity projections for each side that will have a neighboring tile once a tile is
+        completely acquired
+        2) Once a neighboring tile is available and the maximum intensity projections have been computed for this tile,
+        estimate the pairwise registration parameters, saving the results in a graph for each dimension, along with the
+        reliability of the estimation.
+        3) Globaly optimize at the end to find the optimal tile placement.
+
+
+        Parameters
+        ----------
+        channel: int
+            Number of the channel to perform the stitching on.
+
+        Returns
+        -------
+        None
+        """
 
         self.stitcher = True
         self.stitched_channel = channel
@@ -307,6 +332,33 @@ class clearscopeRunningPipeline():
         self.reg_z = reg_z
 
     def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True):
+        """
+        Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
+        reconstruct a maximum intensity projection if `n_proj>0`.
+
+        Parameters
+        ----------
+        loc: int (default: middle of the sample)
+            Position of the plane where the reconstruction should be done. The location varies depending on the
+            downsample parameter and should be adapted.
+        n_proj: int (default: 0)
+            Number of planes to perform the maximum intensity projection.
+        dim: int (default: 0)
+            Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).
+        downsample: int (default: 1)
+            Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].
+        color: bool (default: False)
+            Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.
+        debug: bool (default: False)
+            Option to add a white square for each tile, making it easy to see overlapping areas.
+        plot: bool (default: True)
+            Define if the function plots the results with Matplotlib or just returns an array.
+
+        Returns
+        -------
+        _: ndarray
+            Array containing the reconstructed data.
+        """
 
         if dim == 0:
             return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug,
@@ -390,7 +442,7 @@ class clearscopeRunningPipeline():
         vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
         V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
         S = S * V
-        rgb = hsv_to_rgb(np.dstack((H, S, V)))
+        rgb = hsv2rgb(np.dstack((H, S, V)))
         rescale_intensity(rgb, out_range='uint8')
 
         if plot:
@@ -426,27 +478,6 @@ class clearscopeRunningPipeline():
         if self.expected_overlap_v > self.frame_size:
             self.expected_overlap_v = self.frame_size
 
-    # def _update_viewer(self, tile):
-    #     """
-    #     Update the viewer with the latest acquired data.
-    #
-    #     Parameters
-    #     ----------
-    #     tile: tileLoader
-    #         latest tileLoader object.
-    #
-    #     Returns
-    #     -------
-    #     None
-    #     """
-    #
-    #     lazy_data = pyapr.reconstruction.LazySlicer(tile.path, level_delta=0)
-    #     self.Viewer.add_image(lazy_data,
-    #                           translation=[0,
-    #                                        tile.row * (self.frame_size - self.expected_overlap_v) + self.expected_overlap_v,
-    #                                        tile.col * (
-    #                                                    self.frame_size - self.expected_overlap_h) + self.expected_overlap_h])
-
     def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
         Reconstruct and merge the sample at a given depth z.
@@ -454,11 +485,21 @@ class clearscopeRunningPipeline():
         Parameters
         ----------
         z: int
-            reconstruction depth
-        downsample: int
-            downsample for reconstruction (must be a power of 2)
-        debug: bool
-            if true the border of each tile will be highlighted
+            reconstruction depth (vary with downsample)
+        n_proj: int (default: 0)
+            Number of planes to perform the maximum intensity projection.
+        dim: int (default: 0)
+            Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).
+        downsample: int (default: 1)
+            Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].
+        color: bool (default: False)
+            Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.
+        debug: bool (default: False)
+            Option to add a white square for each tile, making it easy to see overlapping areas.
+        plot: bool (default: True)
+            Define if the function plots the results with Matplotlib or just returns an array.
+        seg: bool (default: False)
+            Option to also reconstruct the segmentation. Only works with `dim=0`
 
         Returns
         -------
@@ -541,204 +582,20 @@ class clearscopeRunningPipeline():
 
         return merged_data
 
-    # TODO: adapt for iterating on the correct position values
-    # def _reconstruct_y_slice(self, y=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
-    #     """
-    #     Reconstruct and merge the sample at a given depth z.
-    #
-    #     Parameters
-    #     ----------
-    #     y: int
-    #         reconstruction location in y
-    #     downsample: int
-    #         downsample for reconstruction (must be a power of 2)
-    #     debug: bool
-    #         if true the border of each tile will be highlighted
-    #
-    #     Returns
-    #     -------
-    #     merged_data: ndarray
-    #         Merged frame at position y.
-    #     """
-    #
-    #     level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
-    #
-    #     tile = self.tiles[0]
-    #     tile.lazy_load_tile(level_delta=level_delta)
-    #     tile_shape = tile.lazy_data.shape
-    #
-    #     if y is None:
-    #         y = int(tile_shape[1] * self.tiles.nrow / 2)
-    #
-    #     if y > tile.lazy_data.shape[1] * self.tiles.nrow:
-    #         raise ValueError('Error: y is too large ({}), maximum depth at this downsample is {}.'
-    #                          .format(y, tile.lazy_data.shape[1] * self.tiles.nrow))
-    #
-    #     x_pos = self.database['ABS_H'].to_numpy()
-    #     nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + tile_shape[2]))
-    #     y_pos = self.database['ABS_V'].to_numpy()
-    #     ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + tile_shape[1]))
-    #     z_pos = self.database['ABS_D'].to_numpy()
-    #     nz = int(np.ceil((z_pos.max() - z_pos.min()) / downsample + tile_shape[0]))
-    #
-    #     # Determine tiles to load
-    #     tiles_to_load = []
-    #     tiles_pos = []
-    #     for x_loc, y_loc, z_loc, tile in zip(x_pos / downsample, y_pos / downsample, z_pos / downsample, self.tiles):
-    #         if (y > y_loc) and (y < y_loc + tile_shape[1]):
-    #             tiles_to_load.append(tile)
-    #             tiles_pos.append([z_loc, y_loc, x_loc])
-    #     tiles_pos = np.array(tiles_pos).astype('uint64')
-    #
-    #     if color:
-    #         merged_data = np.ones((nz, nx, 3), dtype='uint16')
-    #         merged_data[:, :, 2] = 0
-    #     else:
-    #         merged_data = np.zeros((nz, nx), dtype='uint16')
-    #
-    #     for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging')):
-    #         tile.lazy_load_tile(level_delta=level_delta)
-    #         y_tile = int(y - tiles_pos[i, 1])
-    #         yf = min(y_tile + n_proj, tiles_pos[i, 1] + tile.lazy_data.shape[1])
-    #         if yf > y:
-    #             data = tile.lazy_data[:, y_tile:yf, :].max(axis=1)
-    #         else:
-    #             data = tile.lazy_data[:, y_tile, :]
-    #
-    #         # In debug mode we highlight each tile edge to see where it was
-    #         if debug:
-    #             data[0, :] = 2 ** 16 - 1
-    #             data[-1, :] = 2 ** 16 - 1
-    #             data[:, 0] = 2 ** 16 - 1
-    #             data[:, -1] = 2 ** 16 - 1
-    #
-    #         x1 = int(tiles_pos[i, 2])
-    #         x2 = int(tiles_pos[i, 2] + data.shape[1])
-    #         z1 = int(tiles_pos[i, 0])
-    #         z2 = int(tiles_pos[i, 0] + data.shape[0])
-    #
-    #         if color:
-    #             if tile.col % 2:
-    #                 if tile.row % 2:
-    #                     merged_data[z1:z2, x1:x2, 0] = np.maximum(merged_data[z1:z2, x1:x2, 1], data)
-    #                 else:
-    #                     merged_data[z1:z2, x1:x2, 1] = np.maximum(merged_data[z1:z2, x1:x2, 0], data)
-    #             else:
-    #                 if tile.row % 2:
-    #                     merged_data[z1:z2, x1:x2, 1] = np.maximum(merged_data[z1:z2, x1:x2, 1], data)
-    #                 else:
-    #                     merged_data[z1:z2, x1:x2, 0] = np.maximum(merged_data[z1:z2, x1:x2, 0], data)
-    #         else:
-    #             merged_data[z1:z2, x1:x2] = np.maximum(merged_data[z1:z2, x1:x2], data)
-    #
-    #     if plot:
-    #         plt.figure()
-    #         if color:
-    #             plt.imshow(self._process_RGB_for_display(merged_data))
-    #         else:
-    #             plt.imshow(np.log(merged_data), cmap='gray')
-    #
-    #     return merged_data
-    #
-    # def _reconstruct_x_slice(self, x=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
-    #     """
-    #     Reconstruct and merge the sample at a given depth z.
-    #
-    #     Parameters
-    #     ----------
-    #     x: int
-    #         reconstruction location in x
-    #     downsample: int
-    #         downsample for reconstruction (must be a power of 2)
-    #     debug: bool
-    #         if true the border of each tile will be highlighted
-    #
-    #     Returns
-    #     -------
-    #     merged_data: ndarray
-    #         Merged frame at position x.
-    #     """
-    #
-    #     level_delta = int(-np.sign(downsample) * np.log2(np.abs(downsample)))
-    #
-    #     tile = self.tiles[0]
-    #     tile.lazy_load_tile(level_delta=level_delta)
-    #     tile_shape = tile.lazy_data.shape
-    #
-    #     if x is None:
-    #         x = int(tile_shape[2] * self.tiles.ncol / 2)
-    #
-    #     if x > tile.lazy_data.shape[2] * self.tiles.ncol:
-    #         raise ValueError('Error: y is too large ({}), maximum depth at this downsample is {}.'
-    #                          .format(x, tile.lazy_data.shape[2] * self.tiles.ncol))
-    #
-    #     x_pos = self.database['ABS_H'].to_numpy()
-    #     nx = int(np.ceil((x_pos.max() - x_pos.min()) / downsample + tile_shape[2]))
-    #     y_pos = self.database['ABS_V'].to_numpy()
-    #     ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + tile_shape[1]))
-    #     z_pos = self.database['ABS_D'].to_numpy()
-    #     nz = int(np.ceil((z_pos.max() - z_pos.min()) / downsample + tile_shape[0]))
-    #
-    #     # Determine tiles to load
-    #     tiles_to_load = []
-    #     tiles_pos = []
-    #     for x_loc, y_loc, z_loc, tile in zip(x_pos / downsample, y_pos / downsample, z_pos / downsample, self.tiles):
-    #         if (x > x_loc) and (x < x_loc + tile_shape[2]):
-    #             tiles_to_load.append(tile)
-    #             tiles_pos.append([z_loc, y_loc, x_loc])
-    #     tiles_pos = np.array(tiles_pos).astype('uint64')
-    #
-    #     if color:
-    #         merged_data = np.ones((nz, ny, 3), dtype='uint16')
-    #         merged_data[:, :, 2] = 0
-    #     else:
-    #         merged_data = np.zeros((nz, ny), dtype='uint16')
-    #
-    #     for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging')):
-    #         tile.lazy_load_tile(level_delta=level_delta)
-    #         x_tile = int(x - tiles_pos[i, 2])
-    #         xf = min(x_tile + n_proj, tiles_pos[i, 2] + tile.lazy_data.shape[2])
-    #         if xf > x:
-    #             data = tile.lazy_data[:, :, x_tile:xf].max(axis=2)
-    #         else:
-    #             data = tile.lazy_data[:, :, x_tile]
-    #
-    #         # In debug mode we highlight each tile edge to see where it was
-    #         if debug:
-    #             data[0, :] = 2 ** 16 - 1
-    #             data[-1, :] = 2 ** 16 - 1
-    #             data[:, 0] = 2 ** 16 - 1
-    #             data[:, -1] = 2 ** 16 - 1
-    #
-    #         y1 = int(tiles_pos[i, 1])
-    #         y2 = int(tiles_pos[i, 1] + data.shape[1])
-    #         z1 = int(tiles_pos[i, 0])
-    #         z2 = int(tiles_pos[i, 0] + data.shape[0])
-    #
-    #         if color:
-    #             if tile.col % 2:
-    #                 if tile.row % 2:
-    #                     merged_data[z1:z2, y1:y2, 0] = np.maximum(merged_data[z1:z2, y1:y2, 1], data)
-    #                 else:
-    #                     merged_data[z1:z2, y1:y2, 1] = np.maximum(merged_data[z1:z2, y1:y2, 0], data)
-    #             else:
-    #                 if tile.row % 2:
-    #                     merged_data[z1:z2, y1:y2, 1] = np.maximum(merged_data[z1:z2, y1:y2, 1], data)
-    #                 else:
-    #                     merged_data[z1:z2, y1:y2, 0] = np.maximum(merged_data[z1:z2, y1:y2, 0], data)
-    #         else:
-    #             merged_data[z1:z2, y1:y2] = np.maximum(merged_data[z1:z2, y1:y2], data)
-    #
-    #     if plot:
-    #         plt.figure()
-    #         if color:
-    #             plt.imshow(self._process_RGB_for_display(merged_data))
-    #         else:
-    #             plt.imshow(np.log(merged_data), cmap='gray')
-    #
-    #     return merged_data
-
     def _check_for_apr_file(self, tile):
+        """
+        Check if a given APR file already exists at a given location.
+
+        Parameters
+        ----------
+        tile: pipapr.loader.tileLoader
+            tileLoader object
+
+        Returns
+        -------
+        apr, parts: pypapr.APR, pyapr.ParticleData
+            tuple containing APR and particles if found or (None, None) if not found.
+        """
 
         apr_path = os.path.join(self.folder_apr, 'ch{}'.format(tile.channel),
                                                     '{}_{}.apr'.format(tile.row, tile.col))
@@ -843,19 +700,17 @@ class clearscopeRunningPipeline():
 
     def _get_row_col(self, path):
         """
-        Get ClearScope tile row and col position given the tile number.
+        Get ClearScope tile row and col position given the tile path.
 
         Parameters
         ----------
-        n: int
-            ClearScope tile number
+        path: str
+            ClearScope tile path
 
         Returns
         -------
-        row: int
-            row number
-        col: int
-            col number
+        row, col: (int, int)
+            row and col numbers
         """
 
         pattern_search = re.findall('\d{6}_(\d{6})___\dc', path)
@@ -872,6 +727,19 @@ class clearscopeRunningPipeline():
         return row, col
 
     def _get_channel(self, path):
+        """
+        Get channel from Clearscope tile path.
+
+        Parameters
+        ----------
+        path: str
+            Clearscope tile path
+
+        Returns
+        -------
+        _: int
+            Channel number
+        """
 
         pattern_search = re.findall('\d{6}_\d{6}___(\d)c', path)
 
@@ -950,6 +818,19 @@ class clearscopeRunningPipeline():
                                         channel=channel)
 
     def _pre_stitch(self, tile):
+        """
+        Perform pre-stitching, i.e. perform maximum intensity projection of the tile and register with available
+        neighbors.
+
+        Parameters
+        ----------
+        tile: pipapr.loader.tileLoader
+            tileLoader object containing the tile to perform the pre-stitiching on.
+
+        Returns
+        -------
+        None
+        """
 
         if tile.channel == self.stitched_channel:
             # Max project current tile on the overlaping area.
@@ -959,6 +840,19 @@ class clearscopeRunningPipeline():
                 self._register_tile(tile)
 
     def _register_tile(self, tile):
+        """
+        Perform pair-wise registration of a given tile with all its previously processed neighbors.
+
+        Parameters
+        ----------
+        tile: pipapr.loader.tileLoader
+            tileLoader object containing the tile to perform the pre-stitiching on.
+
+        Returns
+        -------
+        None
+        """
+
         proj1 = self.projs[tile.row, tile.col]
 
         for coords in tile.neighbors:
@@ -1257,7 +1151,19 @@ class clearscopeRunningPipeline():
         """
         Remove too large displacement and replace them with expected one with a large uncertainty.
 
+        Parameters
+        ----------
+        reg: array_like
+            list of registration (displacement) parameters
+        rel: array_like
+            list of reliability parameters corresponding to each displacement.
+
+        Returns
+        -------
+        (reg, rel): (array_like, array_like)
+            Updated lists after regularization.
         """
+
         if np.abs(reg[2] - (self.overlap_h - self.expected_overlap_h)) > self.reg_x:
             reg[2] = (self.overlap_h - self.expected_overlap_h)
             rel[2] = 2
@@ -1274,6 +1180,9 @@ class clearscopeRunningPipeline():
         """
         Display stitching result information.
 
+        Returns
+        -------
+        None
         """
         overlap = np.median(np.diff(np.median(self.registration_map_abs[0], axis=0)))
         self.effective_overlap_h = (self.frame_size-overlap)/self.frame_size*100
@@ -1503,10 +1412,7 @@ class clearscopeRunningPipeline():
 
         Returns
         -------
-        rel_map: array
-            error matrix
-        d_map: array
-            shift matrix
+        None
         """
 
         if self.min_tree_H is None:

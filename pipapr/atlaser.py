@@ -10,15 +10,18 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import pandas as pd
-from skimage.io import imread, imsave
-from skimage.filters import gaussian
-import pipapr
-import numpy as np
 import os
 from pathlib import Path
+
+import numpy as np
+import pandas as pd
 from allensdk.core.reference_space_cache import ReferenceSpaceCache
+from skimage.filters import gaussian
+from skimage.io import imread, imsave
 from tqdm import tqdm
+
+import pipapr
+
 
 class tileAtlaser():
     """

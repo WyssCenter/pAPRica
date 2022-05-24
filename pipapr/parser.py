@@ -20,14 +20,16 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from glob import glob
 import copy
 import os
 import re
+from glob import glob
+
 import numpy as np
-import pipapr
-from tqdm import tqdm
 from skimage.io import imread, imsave
+from tqdm import tqdm
+
+import pipapr
 
 
 class baseParser():

@@ -9,14 +9,17 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from glob import glob
 import os
-from skimage.io import imread
-import numpy as np
-import pipapr
-import pyapr
-from tqdm import tqdm
+from glob import glob
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pyapr
+from skimage.io import imread
+from tqdm import tqdm
+
+import pipapr
+
 
 def tile_from_apr(apr, parts):
     """

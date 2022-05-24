@@ -7,17 +7,19 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import pandas as pd
-import pipapr
-import numpy as np
-import pyapr
-from joblib import load
-from time import time
-import cv2 as cv
-import sparse
-import napari
-from tqdm import tqdm
 import os
+from time import time
+
+import cv2 as cv
+import napari
+import numpy as np
+import pandas as pd
+import pyapr
+import sparse
+from joblib import load
+from tqdm import tqdm
+
+import pipapr
 
 
 def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):

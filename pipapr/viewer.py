@@ -7,21 +7,23 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from glob import glob
 import os
+from glob import glob
+
+import matplotlib.pyplot as plt
+import napari
+import numpy as np
 import pandas as pd
+import pyapr
+from matplotlib.colors import LogNorm
+from napari.layers import Image, Labels, Points
+from skimage.color import hsv2rgb
+from skimage.exposure import rescale_intensity
+from skimage.filters import gaussian
 from skimage.io import imread
 from skimage.transform import resize
-from skimage.exposure import rescale_intensity
-from skimage.color import hsv2rgb
-from skimage.filters import gaussian
-import numpy as np
-import pyapr
-import napari
-from napari.layers import Image, Labels, Points
+
 import pipapr
-from matplotlib.colors import LogNorm
-import matplotlib.pyplot as plt
 
 
 def display_apr_from_path(path, **kwargs):

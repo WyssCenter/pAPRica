@@ -9,12 +9,14 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import pipapr
-import pyapr
 import os
 from pathlib import Path
-from tqdm import tqdm
+
+import pyapr
 from skimage.io import imsave
+from tqdm import tqdm
+
+import pipapr
 
 
 class tileConverter():
@@ -106,6 +108,9 @@ class tileConverter():
             PSF size in y, used to compute the gradient
         dz: float
             PSF size in z, used to compute the gradient
+        path: str
+            path to save the converted APR data (defaut is creating a folder named `APR` in the raw
+            data directory.
         lazy_loading: bool
             if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
             the APR. It will require about 1/7 more storage.

@@ -10,7 +10,7 @@ import pipapr
 import pyapr
 
 # Parameters
-apr_path = './data/apr/0_2.apr'
+apr_path = 'data/apr/0_2.apr'
 
 # Load data
 apr, parts = pyapr.io.read(apr_path)
@@ -24,5 +24,5 @@ atlaser = pipapr.atlaser.tileAtlaser(original_pixel_size=[5, 5.26, 5.26],
                                      downsample=4,
                                      atlas=None,
                                      merged_data=data)
-atlaser.register_to_atlas(output_dir='./data',
+atlaser.register_to_atlas(output_dir='data',
                           orientation='ipr')

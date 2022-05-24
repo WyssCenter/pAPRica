@@ -15,6 +15,8 @@ path = r'./data/apr/'
 
 # Parse data
 tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
+tiles.check_files_integrity()
+tiles.compute_average_CR()
 
 # Verify that parsing is correct
 assert(tiles.n_tiles == 13)

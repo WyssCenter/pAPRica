@@ -170,7 +170,7 @@ def get_cc_from_features(apr, parts_pred):
 
 
 # Parameters
-path = r'./data/apr/'
+path = r'data/apr/'
 path_classifier=r'../data/random_forest_n100.joblib'
 n = 1
 

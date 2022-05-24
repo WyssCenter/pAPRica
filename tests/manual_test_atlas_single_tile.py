@@ -8,9 +8,10 @@ By using this code you agree to the terms of the software license agreement.
 
 import pipapr
 import pyapr
+import os
 
 # Parameters
-apr_path = 'data/apr/0_2.apr'
+apr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr', '0_2.apr')
 
 # Load data
 apr, parts = pyapr.io.read(apr_path)
@@ -24,5 +25,4 @@ atlaser = pipapr.atlaser.tileAtlaser(original_pixel_size=[5, 5.26, 5.26],
                                      downsample=4,
                                      atlas=None,
                                      merged_data=data)
-atlaser.register_to_atlas(output_dir='data',
-                          orientation='ipr')
+atlaser.register_to_atlas(orientation='ipr')

@@ -446,7 +446,7 @@ class multitileSegmenter():
             tile = self._segment_tile(tile, save_cc=save_cc, save_mask=save_mask, lazy_loading=lazy_loading)
 
             # Remove objects on the edge
-            pyapr.morphology.remove_edge_objects(tile.apr, tile.parts_cc)
+            pyapr.morphology.remove_edge_objects(tile.apr, tile.parts_cc, z_edges=False)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
@@ -562,9 +562,8 @@ class multitileSegmenter():
             # Write particles
             pyapr.io.write_particles(tile.path, parts_pred, parts_name='segmentation mask', tree=False, append=True)
             if lazy_loading:
-                # Compute tree parts
-                tree_parts = pyapr.ShortParticles()
-                pyapr.tree.fill_tree_max(tile.apr, parts_pred, tree_parts)
+                # Compute tree parts)
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, parts_pred)
                 # Save tree parts
                 pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation mask', tree=True, append=True)
         if save_cc:
@@ -572,8 +571,7 @@ class multitileSegmenter():
             pyapr.io.write_particles(tile.path, cc, parts_name='segmentation cc', tree=False, append=True)
             if lazy_loading:
                 # Compute tree parts
-                tree_parts = pyapr.LongParticles()
-                pyapr.tree.fill_tree_max(tile.apr, cc, tree_parts)
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, cc)
                 # Save tree parts
                 pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation cc', tree=True, append=True)
 
@@ -1044,9 +1042,12 @@ class tileTrainer():
         if self.parts_labels is not None:
             mask = np.zeros_like(self.parts, dtype='uint16')
             mask[self.parts_train_idx] = self.parts_labels
-            label_nap = napari.layers.Labels(data=pyapr.reconstruction.APRSlicer(self.apr, pyapr.ShortParticles(mask)),
-                                             name='APR labels', opacity=0.5)
-            viewer.add_layer(label_nap)
+            label_map = napari.layers.Labels(data=pyapr.reconstruction.APRSlicer(self.apr,
+                                                                                 pyapr.ShortParticles(mask),
+                                                                                 tree_mode='max'),
+                                             name='APR labels',
+                                             opacity=0.5)
+            viewer.add_layer(label_map)
         napari.run()
 
     def apply_on_tile(self, tile, bg_label=None, func_to_get_cc=None, display_result=True, verbose=True):

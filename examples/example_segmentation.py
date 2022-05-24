@@ -30,9 +30,9 @@ def compute_gradients(apr, parts, sobel=True):
     dy = pyapr.FloatParticles()
     dz = pyapr.FloatParticles()
 
-    pyapr.filter.gradient(apr, parts, dz, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.filter.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.filter.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dz, dim=2, delta=par.dz)
+    pyapr.filter.gradient(apr, parts, dx, dim=1, delta=par.dx)
+    pyapr.filter.gradient(apr, parts, dy, dim=0, delta=par.dy)
     return dz, dx, dy
 
 
@@ -58,9 +58,9 @@ def compute_laplacian(apr, parts, grad=None, sobel=True):
     dx2 = pyapr.FloatParticles()
     dy2 = pyapr.FloatParticles()
     dz2 = pyapr.FloatParticles()
-    pyapr.filter.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.filter.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.filter.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, dz, dz2, dim=2, delta=par.dz)
+    pyapr.filter.gradient(apr, dx, dx2, dim=1, delta=par.dx)
+    pyapr.filter.gradient(apr, dy, dy2, dim=0, delta=par.dy)
     return dz2 + dx2 + dy2
 
 
@@ -78,8 +78,7 @@ def compute_gradmag(apr, parts, sobel=True):
     """
 
     par = apr.get_parameters()
-    gradmag = pyapr.FloatParticles()
-    pyapr.filter.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
+    gradmag = pyapr.filter.gradient_magnitude(apr, parts, deltas=(par.dz, par.dx, par.dy))
     return gradmag
 
 
@@ -100,8 +99,8 @@ def compute_inplane_gradmag(apr, parts, sobel=True):
     dx = pyapr.FloatParticles()
     dy = pyapr.FloatParticles()
 
-    pyapr.filter.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.filter.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dx, dim=1, delta=par.dx)
+    pyapr.filter.gradient(apr, parts, dy, dim=0, delta=par.dy)
 
     dx = np.array(dx, copy=False)
     dy = np.array(dy, copy=False)

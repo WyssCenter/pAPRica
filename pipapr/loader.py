@@ -346,8 +346,7 @@ class tileLoader():
 
         # Compute tree particles
         apr, parts = pyapr.io.read(self.path, parts_name='segmentation cc')
-        tree_parts = pyapr.LongParticles()
-        pyapr.tree.fill_tree_max(apr, parts, tree_parts)
+        tree_parts = pyapr.tree.fill_tree_max(apr, parts)
 
         # Save back data
         pyapr.io.write_particles(self.path, tree_parts, t=0, channel_name='t', parts_name='segmentation cc', tree=True, append=True)

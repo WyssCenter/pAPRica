@@ -1241,8 +1241,7 @@ class clearscopeRunningPipeline():
             parts.set_background(self.bg)
 
         if self.lazy_loading:
-            tree_parts = pyapr.ShortParticles()
-            pyapr.tree.fill_tree_mean(apr, parts, tree_parts)
+            tree_parts = pyapr.tree.fill_tree_mean(apr, parts)
         else:
             tree_parts = None
 
@@ -2336,8 +2335,7 @@ class clearscopeRunningPipeline():
 #             parts.set_background(self.bg)
 #
 #         if self.lazy_loading:
-#             tree_parts = pyapr.ShortParticles()
-#             pyapr.tree.fill_tree_mean(apr, parts, tree_parts)
+#             tree_parts = pyapr.tree.fill_tree_mean(apr, parts)
 #         else:
 #             tree_parts = None
 #

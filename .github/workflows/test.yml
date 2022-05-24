@@ -3,11 +3,6 @@ name: tests
 on: pull_request
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: brainglobe/actions/lint@v1
-
   test:
     needs: lint
     runs-on: ${{ matrix.os }}

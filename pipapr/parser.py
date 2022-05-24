@@ -121,7 +121,8 @@ class baseParser():
             for tile in tqdm(self, desc='Computing CR'):
                 tile.load_tile()
                 n_parts.append(len(tile.parts))
-                n_pixels.append(tile.shape())
+                n_pixels.append(np.prod(tile.apr.shape()))
+
         return np.sum(n_pixels)/np.sum(n_parts)
 
     def _print_info(self):

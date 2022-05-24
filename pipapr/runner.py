@@ -440,7 +440,7 @@ class clearscopeRunningPipeline():
     #     None
     #     """
     #
-    #     lazy_data = pyapr.data_containers.LazySlicer(tile.path, level_delta=0)
+    #     lazy_data = pyapr.reconstruction.LazySlicer(tile.path, level_delta=0)
     #     self.Viewer.add_image(lazy_data,
     #                           translation=[0,
     #                                        tile.row * (self.frame_size - self.expected_overlap_v) + self.expected_overlap_v,

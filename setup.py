@@ -21,7 +21,8 @@ setup(
         'napari',
         'allensdk',
         'sparse',
-        'brainreg'
+        'brainreg',
+        'pytest'
     ],
     description='APR-based image processing pipeline for microscopy data',
     long_description=LONG_DESCR,

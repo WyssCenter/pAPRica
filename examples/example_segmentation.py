@@ -12,27 +12,23 @@ import pyapr
 import numpy as np
 from time import time
 
-def compute_gradients(apr, parts, sobel=True):
+def compute_gradients(apr, parts):
     """
     Compute gradient for each spatial direction directly on APR.
     Parameters
     ----------
     apr: (APR) APR object
     parts: (ParticleData) particle data sampled on APR
-    sobel: (bool) use sobel filter to compute the gradient
     Returns
     -------
     (dx, dy, dz): (arrays) gradient for each direction
     """
 
     par = apr.get_parameters()
-    dx = pyapr.FloatParticles()
-    dy = pyapr.FloatParticles()
-    dz = pyapr.FloatParticles()
 
-    pyapr.filter.gradient(apr, parts, dz, dim=2, delta=par.dz)
-    pyapr.filter.gradient(apr, parts, dx, dim=1, delta=par.dx)
-    pyapr.filter.gradient(apr, parts, dy, dim=0, delta=par.dy)
+    dx = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
+    dy = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
+    dz = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
     return dz, dx, dy
 
 

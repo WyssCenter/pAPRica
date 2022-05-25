@@ -156,7 +156,7 @@ def apr_to_napari_Labels(apr: pyapr.APR,
 # Define a callback that will take the value of the slider and the viewer
 def resolution_callback(viewer, value):
     for l in viewer.layers:
-        if isinstance(l.data, pyapr.APRSlicer):
+        if isinstance(l.data, pyapr.reconstruction.APRSlicer):
             old_value = -l.data.patch.level_delta
             l.data.set_level_delta(-value)
             l.translate = l.translate/2**(value-old_value)

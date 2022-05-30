@@ -123,6 +123,112 @@ def map_feature(apr, parts_cc, features):
     return mp[np.array(parts_cc, copy=False)]
 
 
+def compute_gradients(apr, parts):
+    """
+    Compute gradient for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    Returns
+    -------
+    (dx, dy, dz): (arrays) gradient for each direction
+    """
+
+    par = apr.get_parameters()
+
+    dz = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
+    dx = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
+    dy = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
+    return dz, dx, dy
+
+
+def compute_laplacian(apr, parts, grad=None):
+    """
+    Compute Laplacian for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    grad: (dz, dy, dx) gradient for each direction if precomputed (faster for Laplacian computation)
+
+    Returns
+    -------
+    Laplacian of APR.
+    """
+
+    par = apr.get_parameters()
+    if grad is None:
+        dz, dx, dy = compute_gradients(apr, parts)
+    else:
+        dz, dx, dy = grad
+    dz2 = pyapr.filter.gradient(apr, dz, dim=2, delta=par.dz)
+    dx2 = pyapr.filter.gradient(apr, dx, dim=1, delta=par.dx)
+    dy2 = pyapr.filter.gradient(apr, dy, dim=0, delta=par.dy)
+    return dz2 + dx2 + dy2
+
+
+def compute_gradmag(apr, parts):
+    """
+    Compute gradient magnitude directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+
+    Returns
+    -------
+    Gradient magnitude of APR.
+    """
+
+    par = apr.get_parameters()
+    gradmag = pyapr.filter.gradient_magnitude(apr, parts, deltas=(par.dz, par.dx, par.dy))
+    return gradmag
+
+
+def gaussian_blur(apr, parts, sigma=1.5, size=11):
+    """
+    Compute Gaussian blur directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sigma: (float) Gaussian blur standard deviation (kernel radius)
+    size: (int) kernel size (increase with caution, complexity is not linear)
+
+    Returns
+    -------
+    Blurred APR.
+    """
+
+    stencil = pyapr.filter.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
+    return pyapr.filter.convolve(apr, parts, stencil)
+
+
+def particle_levels(apr):
+    """
+    Returns apr level: for each particle the lvl is defined as the size of the particle in pixel.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+
+    Returns
+    -------
+    Particle level.
+    """
+
+    lvls = pyapr.ShortParticles(apr.total_number_particles())
+    lvls.fill_with_levels(apr)
+    lvls = np.array(lvls)
+
+    return 2 ** (lvls.max() - lvls)
+
+
 class tileSegmenter():
     """
     Class used to segment tiles. It is instantiated with a tileLoader object, a previously trained classifier,

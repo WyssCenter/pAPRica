@@ -64,7 +64,7 @@ def get_cc_from_features(apr, parts_pred):
 
 
 # Parameters
-path = './data/synthetic'
+path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'synthetic')
 length = 1024
 cell_radius = 5
 dH = 4

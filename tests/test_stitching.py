@@ -7,12 +7,12 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 from time import time
-import numpy as np
 import pipapr
 import pandas as pd
+import os
 
 # Parameters
-path = r'./data/apr/'
+path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr')
 
 # Parse data
 tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')

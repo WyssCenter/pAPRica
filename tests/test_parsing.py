@@ -9,9 +9,10 @@ By using this code you agree to the terms of the software license agreement.
 
 import pipapr
 import numpy as np
+import os
 
 # Parameters
-path = r'./data/apr/'
+path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr')
 
 # Parse data
 tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
@@ -47,19 +48,19 @@ neighbors_tot = np.array([[list([[1, 0]]), list([[0, 2], [1, 1]]), list([[0, 3],
         list([[3, 3], [3, 1]]), list([[3, 2], [2, 3]])]], dtype=object)
 assert((tiles.neighbors_tot == neighbors_tot).all())
 
-path_list = ['./data/apr/0_2.apr',
- './data/apr/0_3.apr',
- './data/apr/1_0.apr',
- './data/apr/1_1.apr',
- './data/apr/1_2.apr',
- './data/apr/1_3.apr',
- './data/apr/2_0.apr',
- './data/apr/2_1.apr',
- './data/apr/2_3.apr',
- './data/apr/3_0.apr',
- './data/apr/3_1.apr',
- './data/apr/3_2.apr',
- './data/apr/3_3.apr']
+path_list = [os.path.join(path, '0_2.apr'),
+             os.path.join(path, '0_3.apr'),
+             os.path.join(path, '1_0.apr'),
+             os.path.join(path, '1_1.apr'),
+             os.path.join(path, '1_2.apr'),
+             os.path.join(path, '1_3.apr'),
+             os.path.join(path, '2_0.apr'),
+             os.path.join(path, '2_1.apr'),
+             os.path.join(path, '2_3.apr'),
+             os.path.join(path, '3_0.apr'),
+             os.path.join(path, '3_1.apr'),
+             os.path.join(path, '3_2.apr'),
+             os.path.join(path, '3_3.apr')]
 assert(tiles.path_list == path_list)
 
 tiles_pattern = np.array([[0., 0., 1., 1.],
@@ -68,11 +69,11 @@ tiles_pattern = np.array([[0., 0., 1., 1.],
                            [1., 1., 1., 1.]])
 assert((tiles.tiles_pattern == tiles_pattern).all())
 
-tile_pattern_path = np.array([[None, None, './data/apr/0_2.apr', './data/apr/0_3.apr'],
-                               ['./data/apr/1_0.apr', './data/apr/1_1.apr', './data/apr/1_2.apr',
-                                './data/apr/1_3.apr'],
-                               ['./data/apr/2_0.apr', './data/apr/2_1.apr', None,
-                                './data/apr/2_3.apr'],
-                               ['./data/apr/3_0.apr', './data/apr/3_1.apr', './data/apr/3_2.apr',
-                                './data/apr/3_3.apr']], dtype=object)
+tile_pattern_path = np.array([[None, None, os.path.join(path, '0_2.apr'), os.path.join(path, '0_3.apr')],
+                               [os.path.join(path, '1_0.apr'), os.path.join(path, '1_1.apr'), os.path.join(path, '1_2.apr'),
+                                os.path.join(path, '1_3.apr')],
+                               [os.path.join(path, '2_0.apr'), os.path.join(path, '2_1.apr'), None,
+                                os.path.join(path, '2_3.apr')],
+                               [os.path.join(path, '3_0.apr'), os.path.join(path, '3_1.apr'), os.path.join(path, '3_2.apr'),
+                                os.path.join(path, '3_3.apr')]], dtype=object)
 assert((tiles.tile_pattern_path == tile_pattern_path).all())

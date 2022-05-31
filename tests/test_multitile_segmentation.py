@@ -12,8 +12,8 @@ import sparse
 def get_coordinates(v, dV, h, dH):
     x = int(v * dV)
     y = int(h * dH)
-    x_noise = int(max(v * dV + np.random.randn(1) * 5, 0))
-    y_noise = int(max(h * dH + np.random.randn(1) * 5, 0))
+    x_noise = int(max(v * dV + np.random.randn(1) * 2, 0))
+    y_noise = int(max(h * dH + np.random.randn(1) * 2, 0))
     return (x, y, x_noise, y_noise)
 
 
@@ -65,12 +65,12 @@ def get_cc_from_features(apr, parts_pred):
 
 # Parameters
 path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'synthetic')
-length = 1024
-cell_radius = 5
+length = 512
+cell_radius = 2
 dH = 4
 overlap_H = 25
 overlap_V = 25
-n_cells = 2048
+n_cells = 512
 
 dV = dH
 Path(os.path.join(path, 'tif')).mkdir(parents=True, exist_ok=True)

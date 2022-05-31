@@ -22,6 +22,7 @@ setup(
         'allensdk',
         'sparse',
         'brainreg',
+        'joblib',
         'pytest'
     ],
     description='APR-based image processing pipeline for microscopy data',

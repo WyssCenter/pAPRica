@@ -321,7 +321,7 @@ class tileSegmenter():
                    verbose=verbose)
 
     def compute_segmentation(self, tile: pipapr.loader.tileLoader,
-                             save_cc=True, save_mask=False):
+                             save_cc=True, save_mask=False, lazy_loading=True):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -364,31 +364,45 @@ class tileSegmenter():
 
         # Save results
         if save_mask:
-            self._save_segmentation(tile.path, name='segmentation mask', parts=parts_pred)
+            # Write particles
+            pyapr.io.write_particles(tile.path, parts_pred, parts_name='segmentation mask', tree=False, append=True)
+            if lazy_loading:
+                # Compute tree parts)
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, parts_pred)
+                # Save tree parts
+                pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation mask', tree=True, append=True)
         if save_cc:
-            self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
+            # Write particles
+            pyapr.io.write_particles(tile.path, cc, parts_name='segmentation cc', tree=False, append=True)
+            if lazy_loading:
+                # Compute tree parts
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, cc)
+                # Save tree parts
+                pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation cc', tree=True, append=True)
 
         tile.parts_mask = parts_pred
 
-    def _save_segmentation(self, path, name, parts):
-        """
-        Save segmentation particles by appending the original APR file.
-
-        Parameters
-        ----------
-        parts: pyapr.ParticleData
-            particles to save. Note that the APR tree should be the same otherwise the data
-            will be inconsistent and not readable.
-
-        Returns
-        -------
-        None
-        """
-        aprfile = pyapr.io.APRFile()
-        aprfile.set_read_write_tree(True)
-        aprfile.open(path, 'READWRITE')
-        aprfile.write_particles(name, parts, t=0)
-        aprfile.close()
+    # def _save_segmentation(self, path, name, parts):
+    #     """
+    #     Save segmentation particles by appending the original APR file.
+    #
+    #     Parameters
+    #     ----------
+    #     parts: pyapr.ParticleData
+    #         particles to save. Note that the APR tree should be the same otherwise the data
+    #         will be inconsistent and not readable.
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     pyapr.io.write_particles(path, parts, parts_name=name, append=True)
+    #     pyapr.io.write_particles(path, tree_parts, parts_name=name, append=True, tree=True)
+    #     # aprfile = pyapr.io.APRFile()
+    #     # aprfile.set_read_write_tree(True)
+    #     # aprfile.open(path, 'READWRITE')
+    #     # aprfile.write_particles(name, parts, t=0)
+    #     # aprfile.close()
 
 
 class multitileSegmenter():
@@ -837,27 +851,29 @@ class multitileSegmenter():
 
         return np.vstack((c1, c2))
 
-    def _save_segmentation(self, path, name, parts, tree_parts):
-        """
-        Save segmentation particles by appending the original APR file.
-
-        Parameters
-        ----------
-        parts: pyapr.ParticleData
-            particles to save. Note that the APR tree should be the same otherwise the data
-            will be inconsistent and not readable.
-        tree_parts: pyapr.ParticleData
-            tree particles necessary for lazy loading.
-
-        Returns
-        -------
-        None
-        """
-        aprfile = pyapr.io.APRFile()
-        aprfile.set_read_write_tree(True)
-        aprfile.open(path, 'READWRITE')
-        aprfile.write_particles(name, parts, t=0, tree_parts=tree_parts)
-        aprfile.close()
+    # def _save_segmentation(self, path, name, parts, tree_parts):
+    #     """
+    #     Save segmentation particles by appending the original APR file.
+    #
+    #     Parameters
+    #     ----------
+    #     parts: pyapr.ParticleData
+    #         particles to save. Note that the APR tree should be the same otherwise the data
+    #         will be inconsistent and not readable.
+    #     tree_parts: pyapr.ParticleData
+    #         tree particles necessary for lazy loading.
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     pyapr.io.write_particles(path, parts, parts_name=name, append=True)
+    #     pyapr.io.write_particles(path, tree_parts, parts_name=name, append=True, tree=True)
+    #     # aprfile = pyapr.io.APRFile()
+    #     # aprfile.set_read_write_tree(True)
+    #     # aprfile.open(path, 'READWRITE')
+    #     # aprfile.write_particles(name, parts, t=0, tree_parts=tree_parts)
+    #     # aprfile.close()
 
 
 class tileTrainer():

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stitch data super fast &mdash; pipapr 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/mystnb.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pipapr package" href="../pipapr.html" />
+    <link rel="prev" title="Batch convert voxel data to APR." href="converter_ne.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> pipapr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../documentation.html">How to install</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="converter_ne.html">Batch convert voxel data to APR.</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Stitch data super fast</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#before-stitching">Before Stitching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#after-stitching">After Stitching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id1">Before stitching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#id2">After Stitching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../pipapr.html">pipapr package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pipapr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../tutorials.html">Tutorials</a> &raquo;</li>
+      <li>Stitch data super fast</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/stitcher.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section class="tex2jax_ignore mathjax_ignore" id="stitch-data-super-fast">
+<h1>Stitch data super fast<a class="headerlink" href="#stitch-data-super-fast" title="Permalink to this heading"></a></h1>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pipapr</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ModuleNotFoundError</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
+<span class="nn">Input In [1],</span> in <span class="ni">&lt;cell line: 1&gt;</span><span class="nt">()</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="kn">import</span> <span class="nn">pipapr</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="ne">ModuleNotFoundError</span>: No module named &#39;pipapr&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s start by parsing a data-set:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;../../../tests/data/apr&#39;</span>
+<span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>**********  PARSING DATA **********
+../../../tests/data/apr
+Tiles are of type apr.
+13 tiles were detected.
+4 rows and 4 columns.
+***********************************
+</pre></div>
+</div>
+</div>
+</div>
+<p>The data-set can then be quickly displayed by using the parser module. The parser can already display</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stitcher_expected</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileStitcher</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">overlap_h</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">overlap_v</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">stitcher_expected</span><span class="o">.</span><span class="n">compute_expected_registration</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We provide a lazy reconstructor with the stitcher to display a cross-section (or a max projection) of stitched data-set along any given dimension:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">stitcher_expected</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Merging: 100%|██████████| 13/13 [00:00&lt;00:00, 60.08it/s]
+</pre></div>
+</div>
+<img alt="../_images/8b8627e59e859abf36b197a1f233b14ccde62021f38e8854a9bc6a7e9f8f12e9.png" src="../_images/8b8627e59e859abf36b197a1f233b14ccde62021f38e8854a9bc6a7e9f8f12e9.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stitcher</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileStitcher</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">overlap_h</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">overlap_v</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">stitcher</span><span class="o">.</span><span class="n">set_overlap_margin</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">stitcher</span><span class="o">.</span><span class="n">compute_registration</span><span class="p">()</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">stitcher</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Computing max. proj.: 100%|██████████| 13/13 [00:00&lt;00:00, 55.36it/s]
+Computing cross-correlations: 100%|██████████| 13/13 [00:00&lt;00:00, 108.74it/s]
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Effective horizontal overlap: 25.29%
+Effective vertical overlap: 24.71%
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Merging: 100%|██████████| 13/13 [00:00&lt;00:00, 152.40it/s]
+</pre></div>
+</div>
+<img alt="../_images/f649840c0180c7ff12c36ff329b46f7ad2ad5aca398d12a36132cbe798801035.png" src="../_images/f649840c0180c7ff12c36ff329b46f7ad2ad5aca398d12a36132cbe798801035.png" />
+</div>
+</div>
+<section id="before-stitching">
+<h2>Before Stitching<a class="headerlink" href="#before-stitching" title="Permalink to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">stitcher_expected</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mi">650</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Merging: 100%|██████████| 4/4 [00:00&lt;00:00, 12.05it/s]
+</pre></div>
+</div>
+<img alt="../_images/bce26a7799b30fd2d0e009757f808ef6f7fb28d4d11e72d379e60cdd4b3bd41b.png" src="../_images/bce26a7799b30fd2d0e009757f808ef6f7fb28d4d11e72d379e60cdd4b3bd41b.png" />
+</div>
+</div>
+</section>
+<section id="after-stitching">
+<h2>After Stitching<a class="headerlink" href="#after-stitching" title="Permalink to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">stitcher</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mi">650</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Merging: 100%|██████████| 4/4 [00:00&lt;00:00, 42.75it/s]
+</pre></div>
+</div>
+<img alt="../_images/d040d12bd036bc1a7a35cc7518c115bb65b4a3319a34308c8c975886602a98cf.png" src="../_images/d040d12bd036bc1a7a35cc7518c115bb65b4a3319a34308c8c975886602a98cf.png" />
+</div>
+</div>
+</section>
+<section id="id1">
+<h2>Before stitching<a class="headerlink" href="#id1" title="Permalink to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">stitcher_expected</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Merging: 100%|██████████| 6/6 [00:00&lt;00:00,  9.12it/s]
+</pre></div>
+</div>
+<img alt="../_images/1e1c22f971986ad50bef9e2b672e297e34758778ac8c7b06edba4c73e8acb4b2.png" src="../_images/1e1c22f971986ad50bef9e2b672e297e34758778ac8c7b06edba4c73e8acb4b2.png" />
+</div>
+</div>
+</section>
+<section id="id2">
+<h2>After Stitching<a class="headerlink" href="#id2" title="Permalink to this heading"></a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">stitcher</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">gcf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Merging: 100%|██████████| 6/6 [00:00&lt;00:00, 36.35it/s]
+</pre></div>
+</div>
+<img alt="../_images/7a88e5d939708bd39ed97fb2fb84a9c589215523f1334105699781a6757838a0.png" src="../_images/7a88e5d939708bd39ed97fb2fb84a9c589215523f1334105699781a6757838a0.png" />
+</div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="converter_ne.html" class="btn btn-neutral float-left" title="Batch convert voxel data to APR." accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../pipapr.html" class="btn btn-neutral float-right" title="pipapr package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

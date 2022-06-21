@@ -15,13 +15,16 @@ setup(
         'tqdm',
         'pandas',
         'scikit-image',
+        'scikit-learn',
         'opencv-contrib-python-headless',
         'dill',
         'matplotlib',
         'napari',
         'allensdk',
         'sparse',
-        'brainreg'
+        'brainreg',
+        'joblib',
+        'pytest'
     ],
     description='APR-based image processing pipeline for microscopy data',
     long_description=LONG_DESCR,

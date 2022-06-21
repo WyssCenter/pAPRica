@@ -9,14 +9,17 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from glob import glob
 import os
-from skimage.io import imread
-import numpy as np
-import pipapr
-import pyapr
-from tqdm import tqdm
+from glob import glob
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pyapr
+from skimage.io import imread
+from tqdm import tqdm
+
+import pipapr
+
 
 def tile_from_apr(apr, parts):
     """
@@ -195,7 +198,7 @@ class tileLoader():
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
-        self.lazy_data = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta, parts_name='particles',
+        self.lazy_data = pyapr.reconstruction.LazySlicer(self.path, level_delta=level_delta, parts_name='particles',
                                                           tree_parts_name='particles')
         self.is_loaded = True
 
@@ -234,17 +237,9 @@ class tileLoader():
         None
         """
         if self.parts_cc is None:
-            cc = pyapr.LongParticles()
-            aprfile = pyapr.io.APRFile()
-            aprfile.set_read_write_tree(True)
-            aprfile.open(self.path, 'READ')
+            self.parts_cc = pyapr.io.read_particles(self.path, parts_name='segmentation cc')
             if load_tree:
-                apr = pyapr.APR()
-                aprfile.read_apr(apr, t=0, channel_name='t')
-                self.apr = apr
-            aprfile.read_particles(self.apr, 'segmentation cc', cc, t=0)
-            aprfile.close()
-            self.parts_cc = cc
+                self.apr = pyapr.io.read_apr(self.path)
         else:
             print('Tile cc already loaded.')
 
@@ -264,9 +259,9 @@ class tileLoader():
         if self.type != 'apr':
             raise TypeError('Error: lazy loading is only supported for APR data.')
 
-        self.lazy_segmentation = pyapr.data_containers.LazySlicer(self.path, level_delta=level_delta,
-                                                                  parts_name='segmentation cc',
-                                                                  tree_parts_name='segmentation cc')
+        self.lazy_segmentation = pyapr.reconstruction.LazySlicer(self.path, level_delta=level_delta,
+                                                                 parts_name='segmentation cc',
+                                                                 tree_parts_name='segmentation cc')
 
     def load_neighbors_segmentation(self, load_tree=False):
         """
@@ -354,8 +349,7 @@ class tileLoader():
 
         # Compute tree particles
         apr, parts = pyapr.io.read(self.path, parts_name='segmentation cc')
-        tree_parts = pyapr.LongParticles()
-        pyapr.numerics.fill_tree_max(apr, parts, tree_parts)
+        tree_parts = pyapr.tree.fill_tree_max(apr, parts)
 
         # Save back data
         pyapr.io.write_particles(self.path, tree_parts, t=0, channel_name='t', parts_name='segmentation cc', tree=True, append=True)

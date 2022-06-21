@@ -7,17 +7,19 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import pandas as pd
-import pipapr
-import numpy as np
-import pyapr
-from joblib import load
-from time import time
-import cv2 as cv
-import sparse
-import napari
-from tqdm import tqdm
 import os
+from time import time
+
+import cv2 as cv
+import napari
+import numpy as np
+import pandas as pd
+import pyapr
+import sparse
+from joblib import load
+from tqdm import tqdm
+
+import pipapr
 
 
 def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
@@ -100,7 +102,7 @@ def map_feature(apr, parts_cc, features):
     Array of mapped values (each particle in the connected component now has the value present in features)
     """
 
-    objects_volume = pyapr.numerics.transform.find_label_volume(apr, parts_cc)
+    objects_volume = pyapr.measure.find_label_volume(apr, parts_cc)
     hash_idx = np.arange(0, len(objects_volume))
     # Object with volume 0 are not in CC so we need to get rid of them
     hash_idx = hash_idx[objects_volume > 0]
@@ -119,6 +121,112 @@ def map_feature(apr, parts_cc, features):
     mp = np.arange(0, parts_cc.max() + 1)
     mp[list(hash_dict.keys())] = list(hash_dict.values())
     return mp[np.array(parts_cc, copy=False)]
+
+
+def compute_gradients(apr, parts):
+    """
+    Compute gradient for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    Returns
+    -------
+    (dx, dy, dz): (arrays) gradient for each direction
+    """
+
+    par = apr.get_parameters()
+
+    dz = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
+    dx = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
+    dy = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
+    return dz, dx, dy
+
+
+def compute_laplacian(apr, parts, grad=None):
+    """
+    Compute Laplacian for each spatial direction directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    grad: (dz, dy, dx) gradient for each direction if precomputed (faster for Laplacian computation)
+
+    Returns
+    -------
+    Laplacian of APR.
+    """
+
+    par = apr.get_parameters()
+    if grad is None:
+        dz, dx, dy = compute_gradients(apr, parts)
+    else:
+        dz, dx, dy = grad
+    dz2 = pyapr.filter.gradient(apr, dz, dim=2, delta=par.dz)
+    dx2 = pyapr.filter.gradient(apr, dx, dim=1, delta=par.dx)
+    dy2 = pyapr.filter.gradient(apr, dy, dim=0, delta=par.dy)
+    return dz2 + dx2 + dy2
+
+
+def compute_gradmag(apr, parts):
+    """
+    Compute gradient magnitude directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+
+    Returns
+    -------
+    Gradient magnitude of APR.
+    """
+
+    par = apr.get_parameters()
+    gradmag = pyapr.filter.gradient_magnitude(apr, parts, deltas=(par.dz, par.dx, par.dy))
+    return gradmag
+
+
+def gaussian_blur(apr, parts, sigma=1.5, size=11):
+    """
+    Compute Gaussian blur directly on APR.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+    parts: (ParticleData) particle data sampled on APR
+    sigma: (float) Gaussian blur standard deviation (kernel radius)
+    size: (int) kernel size (increase with caution, complexity is not linear)
+
+    Returns
+    -------
+    Blurred APR.
+    """
+
+    stencil = pyapr.filter.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
+    return pyapr.filter.convolve(apr, parts, stencil)
+
+
+def particle_levels(apr):
+    """
+    Returns apr level: for each particle the lvl is defined as the size of the particle in pixel.
+
+    Parameters
+    ----------
+    apr: (APR) APR object
+
+    Returns
+    -------
+    Particle level.
+    """
+
+    lvls = pyapr.ShortParticles(apr.total_number_particles())
+    lvls.fill_with_levels(apr)
+    lvls = np.array(lvls)
+
+    return 2 ** (lvls.max() - lvls)
 
 
 class tileSegmenter():
@@ -213,7 +321,7 @@ class tileSegmenter():
                    verbose=verbose)
 
     def compute_segmentation(self, tile: pipapr.loader.tileLoader,
-                             save_cc=True, save_mask=False):
+                             save_cc=True, save_mask=False, lazy_loading=True):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -256,31 +364,45 @@ class tileSegmenter():
 
         # Save results
         if save_mask:
-            self._save_segmentation(tile.path, name='segmentation mask', parts=parts_pred)
+            # Write particles
+            pyapr.io.write_particles(tile.path, parts_pred, parts_name='segmentation mask', tree=False, append=True)
+            if lazy_loading:
+                # Compute tree parts)
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, parts_pred)
+                # Save tree parts
+                pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation mask', tree=True, append=True)
         if save_cc:
-            self._save_segmentation(tile.path, name='segmentation cc', parts=cc)
+            # Write particles
+            pyapr.io.write_particles(tile.path, cc, parts_name='segmentation cc', tree=False, append=True)
+            if lazy_loading:
+                # Compute tree parts
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, cc)
+                # Save tree parts
+                pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation cc', tree=True, append=True)
 
         tile.parts_mask = parts_pred
 
-    def _save_segmentation(self, path, name, parts):
-        """
-        Save segmentation particles by appending the original APR file.
-
-        Parameters
-        ----------
-        parts: pyapr.ParticleData
-            particles to save. Note that the APR tree should be the same otherwise the data
-            will be inconsistent and not readable.
-
-        Returns
-        -------
-        None
-        """
-        aprfile = pyapr.io.APRFile()
-        aprfile.set_read_write_tree(True)
-        aprfile.open(path, 'READWRITE')
-        aprfile.write_particles(name, parts, t=0)
-        aprfile.close()
+    # def _save_segmentation(self, path, name, parts):
+    #     """
+    #     Save segmentation particles by appending the original APR file.
+    #
+    #     Parameters
+    #     ----------
+    #     parts: pyapr.ParticleData
+    #         particles to save. Note that the APR tree should be the same otherwise the data
+    #         will be inconsistent and not readable.
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     pyapr.io.write_particles(path, parts, parts_name=name, append=True)
+    #     pyapr.io.write_particles(path, tree_parts, parts_name=name, append=True, tree=True)
+    #     # aprfile = pyapr.io.APRFile()
+    #     # aprfile.set_read_write_tree(True)
+    #     # aprfile.open(path, 'READWRITE')
+    #     # aprfile.write_particles(name, parts, t=0)
+    #     # aprfile.close()
 
 
 class multitileSegmenter():
@@ -314,7 +436,10 @@ class multitileSegmenter():
         """
 
         # Store classifier
-        self.clf = clf
+        if isinstance(clf, str):
+            self.clf = load(clf)
+        else:
+            self.clf = clf
         # Store function to compute features
         self.func_to_compute_features = func_to_compute_features
         # Store post processing steps
@@ -443,11 +568,11 @@ class multitileSegmenter():
             tile = self._segment_tile(tile, save_cc=save_cc, save_mask=save_mask, lazy_loading=lazy_loading)
 
             # Remove objects on the edge
-            pyapr.numerics.transform.remove_edge_objects(tile.apr, tile.parts_cc)
+            pyapr.morphology.remove_edge_objects(tile.apr, tile.parts_cc, z_edges=False)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
-                self.cells = pyapr.numerics.transform.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
+                self.cells = pyapr.measure.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
                 self.cells += self._get_tile_position(tile.row, tile.col)
             # Then merge the rest on the first tile
             else:
@@ -481,11 +606,11 @@ class multitileSegmenter():
             tile.load_segmentation()
             
             # Remove objects on the edge
-            pyapr.numerics.transform.remove_edge_objects(tile.apr, tile.parts_cc)
+            pyapr.morphology.remove_edge_objects(tile.apr, tile.parts_cc)
 
             # Initialized merged cells for the first tile
             if self.cells is None:
-                self.cells = pyapr.numerics.transform.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
+                self.cells = pyapr.measure.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
                 self.cells += self._get_tile_position(tile.row, tile.col)
             # Then merge the rest on the first tile
             else:
@@ -559,9 +684,8 @@ class multitileSegmenter():
             # Write particles
             pyapr.io.write_particles(tile.path, parts_pred, parts_name='segmentation mask', tree=False, append=True)
             if lazy_loading:
-                # Compute tree parts
-                tree_parts = pyapr.ShortParticles()
-                pyapr.numerics.fill_tree_max(tile.apr, parts_pred, tree_parts)
+                # Compute tree parts)
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, parts_pred)
                 # Save tree parts
                 pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation mask', tree=True, append=True)
         if save_cc:
@@ -569,8 +693,7 @@ class multitileSegmenter():
             pyapr.io.write_particles(tile.path, cc, parts_name='segmentation cc', tree=False, append=True)
             if lazy_loading:
                 # Compute tree parts
-                tree_parts = pyapr.LongParticles()
-                pyapr.numerics.fill_tree_max(tile.apr, cc, tree_parts)
+                tree_parts = pyapr.tree.fill_tree_max(tile.apr, cc)
                 # Save tree parts
                 pyapr.io.write_particles(tile.path, tree_parts, parts_name='segmentation cc', tree=True, append=True)
 
@@ -610,7 +733,7 @@ class multitileSegmenter():
         overlap_f = np.min((r1 + v_size, r2 + v_size), axis=0)
 
         # Retrieve cell centers
-        cells2 = pyapr.numerics.transform.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
+        cells2 = pyapr.measure.find_label_centers(tile.apr, tile.parts_cc, tile.parts)
         cells2 += r2
 
         # Filter cells to keep only those on the overlapping area
@@ -728,27 +851,29 @@ class multitileSegmenter():
 
         return np.vstack((c1, c2))
 
-    def _save_segmentation(self, path, name, parts, tree_parts):
-        """
-        Save segmentation particles by appending the original APR file.
-
-        Parameters
-        ----------
-        parts: pyapr.ParticleData
-            particles to save. Note that the APR tree should be the same otherwise the data
-            will be inconsistent and not readable.
-        tree_parts: pyapr.ParticleData
-            tree particles necessary for lazy loading.
-
-        Returns
-        -------
-        None
-        """
-        aprfile = pyapr.io.APRFile()
-        aprfile.set_read_write_tree(True)
-        aprfile.open(path, 'READWRITE')
-        aprfile.write_particles(name, parts, t=0, tree_parts=tree_parts)
-        aprfile.close()
+    # def _save_segmentation(self, path, name, parts, tree_parts):
+    #     """
+    #     Save segmentation particles by appending the original APR file.
+    #
+    #     Parameters
+    #     ----------
+    #     parts: pyapr.ParticleData
+    #         particles to save. Note that the APR tree should be the same otherwise the data
+    #         will be inconsistent and not readable.
+    #     tree_parts: pyapr.ParticleData
+    #         tree particles necessary for lazy loading.
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     pyapr.io.write_particles(path, parts, parts_name=name, append=True)
+    #     pyapr.io.write_particles(path, tree_parts, parts_name=name, append=True, tree=True)
+    #     # aprfile = pyapr.io.APRFile()
+    #     # aprfile.set_read_write_tree(True)
+    #     # aprfile.open(path, 'READWRITE')
+    #     # aprfile.write_particles(name, parts, t=0, tree_parts=tree_parts)
+    #     # aprfile.close()
 
 
 class tileTrainer():
@@ -804,7 +929,7 @@ class tileTrainer():
 
         # We call napari with the APRSlicer and the sparse array for storing the manual annotations
         viewer = napari.Viewer()
-        image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
+        image_layer = napari.layers.Image(data=pyapr.reconstruction.APRSlicer(self.apr, self.parts), **kwargs)
         viewer.add_layer(image_layer)
         viewer.add_labels(self.labels_manual)
         viewer.show(block=True)
@@ -842,7 +967,7 @@ class tileTrainer():
 
         # We call napari with the APRSlicer and the sparse array for storing the manual annotations
         viewer = napari.Viewer()
-        image_layer = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts), **kwargs)
+        image_layer = napari.layers.Image(data=pyapr.reconstruction.APRSlicer(self.apr, self.parts), **kwargs)
         viewer.add_layer(image_layer)
         viewer.add_labels(self.labels_manual)
         viewer.show(block=True)
@@ -1033,7 +1158,7 @@ class tileTrainer():
         -------
         None
         """
-        image_nap = napari.layers.Image(data=pyapr.data_containers.APRSlicer(self.apr, self.parts),
+        image_nap = napari.layers.Image(data=pyapr.reconstruction.APRSlicer(self.apr, self.parts),
                                         opacity=0.7, **kwargs)
         viewer = napari.Viewer()
         viewer.add_layer(image_nap)
@@ -1041,9 +1166,12 @@ class tileTrainer():
         if self.parts_labels is not None:
             mask = np.zeros_like(self.parts, dtype='uint16')
             mask[self.parts_train_idx] = self.parts_labels
-            label_nap = napari.layers.Labels(data=pyapr.data_containers.APRSlicer(self.apr, pyapr.ShortParticles(mask)),
-                                             name='APR labels', opacity=0.5)
-            viewer.add_layer(label_nap)
+            label_map = napari.layers.Labels(data=pyapr.reconstruction.APRSlicer(self.apr,
+                                                                                 pyapr.ShortParticles(mask),
+                                                                                 tree_mode='max'),
+                                             name='APR labels',
+                                             opacity=0.5)
+            viewer.add_layer(label_map)
         napari.run()
 
     def apply_on_tile(self, tile, bg_label=None, func_to_get_cc=None, display_result=True, verbose=True):

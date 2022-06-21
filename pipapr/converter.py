@@ -2,19 +2,21 @@
 Submodule containing classes and functions relative to **converting** tiles to APR.
 
 The general workflow is first to parse tiles using a *parser* object and then convert using the tileConverter class.
-This class is essentially a wrapper to pylibapr which allows to facilitate batch conversions and batch reconstructions.
+This class is essentially a wrapper to pyapr which allows to facilitate batch conversions and batch reconstructions.
 
 By using this code you agree to the terms of the software license agreement.
 
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import pipapr
-import pyapr
 import os
 from pathlib import Path
-from tqdm import tqdm
+
+import pyapr
 from skimage.io import imsave
+from tqdm import tqdm
+
+import pipapr
 
 
 class tileConverter():
@@ -88,7 +90,8 @@ class tileConverter():
                              dy=1,
                              dz=1,
                              path=None,
-                             lazy_loading=True):
+                             lazy_loading=True,
+                             tree_mode='mean'):
         """
         Convert all parsed tiles to APR using auto-parameters.
 
@@ -106,9 +109,14 @@ class tileConverter():
             PSF size in y, used to compute the gradient
         dz: float
             PSF size in z, used to compute the gradient
+        path: str
+            path to save the converted APR data (defaut is creating a folder named `APR` in the raw
+            data directory.
         lazy_loading: bool
             if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
             the APR. It will require about 1/7 more storage.
+        tree_mode: str ('mean' or 'max')
+            controls how downsampled particles are computed. Either the mean or the max is taken.
 
         Returns
         -------
@@ -117,6 +125,9 @@ class tileConverter():
 
         if self.tiles.type == 'apr':
             raise TypeError('Error: data already in APR format.')
+
+        if tree_mode not in ['mean', 'max']:
+            raise ValueError('Error: invalid tree_mode.')
 
         # Safely create folder to save apr data
         if path is None:
@@ -157,8 +168,10 @@ class tileConverter():
                 parts.set_background(self.bg)
 
             if lazy_loading:
-                tree_parts = pyapr.ShortParticles()
-                pyapr.numerics.fill_tree_mean(apr, parts, tree_parts)
+                if tree_mode == 'mean':
+                    tree_parts = pyapr.tree.fill_tree_mean(apr, parts)
+                elif tree_mode == 'max':
+                    tree_parts = pyapr.tree.fill_tree_max(apr, parts)
             else:
                 tree_parts = None
 
@@ -207,11 +220,11 @@ class tileConverter():
             tile.load_tile()
 
             if mode == 'constant':
-                data = pyapr.numerics.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
+                data = pyapr.reconstruction.reconstruct_constant(tile.apr, tile.parts).squeeze()
             elif mode == 'smoth':
-                data = pyapr.numerics.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
+                data = pyapr.reconstruction.reconstruct_smooth(tile.apr, tile.parts).squeeze()
             elif mode == 'level':
-                data = pyapr.numerics.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
+                data = pyapr.reconstruction.reconstruct_level(tile.apr, tile.parts).squeeze()
             else:
                 raise ValueError('Error: unknown mode for APR reconstruction.')
 

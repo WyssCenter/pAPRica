@@ -29,28 +29,28 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import numpy as np
-from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
-from scipy.sparse import csr_matrix
-import pandas as pd
+import os
+import warnings
+from pathlib import Path
+
 import cv2 as cv
-from skimage.exposure import equalize_adapthist, rescale_intensity
-from skimage.transform import warp, AffineTransform, downscale_local_mean
-from skimage.metrics import normalized_root_mse, structural_similarity, peak_signal_noise_ratio
-from skimage.filters import gaussian
-from skimage.color import label2rgb
-from matplotlib.colors import hsv_to_rgb
 import dill
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import pyapr
+import seaborn as sns
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 # from skimage.registration import phase_cross_correlation
 from scipy.signal import correlate
-import os
-from pathlib import Path
-import warnings
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import minimum_spanning_tree, depth_first_order
+from skimage.color import label2rgb, hsv2rgb
+from skimage.exposure import equalize_adapthist, rescale_intensity
+from skimage.filters import gaussian
+from skimage.metrics import normalized_root_mse
+from skimage.transform import warp, AffineTransform, downscale_local_mean
 from tqdm import tqdm
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-import seaborn as sns
 
 
 def max_sum_over_single_max(reference_image, moving_image, d):
@@ -219,7 +219,7 @@ def phase_cross_correlation_cv(reference_image, moving_image):
 
         d, e = cv.phaseCorrelate(reference_image.astype(np.float32), moving_image.astype(np.float32))
 
-        d_correct = [-np.round(d[1]).astype(np.int), -np.round(d[0]).astype(np.int)]
+        d_correct = [-np.round(d[1]).astype(int), -np.round(d[0]).astype(int)]
 
         return d_correct
 
@@ -278,15 +278,14 @@ def _get_max_proj_apr(apr, parts, patch, patch_yx=None, plot=False):
             # dim=0: project along Y to produce a ZY plane
             # dim=1: project along X to produce a ZX plane
             # dim=2: project along Z to produce an YX plane
-            proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                               dim=d, patch=patch, method='auto'))
+            proj.append(pyapr.transform.maximum_projection(apr, parts, dim=d, patch=patch, method='auto'))
     else:
-        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                           dim=0, patch=patch, method='auto'))
-        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                           dim=1, patch=patch, method='auto'))
-        proj.append(pyapr.numerics.transform.projection.maximum_projection(apr, parts,
-                                                                           dim=2, patch=patch_yx, method='auto'))
+        proj.append(pyapr.transform.projection.maximum_projection(apr, parts,
+                                                                  dim=0, patch=patch, method='auto'))
+        proj.append(pyapr.transform.projection.maximum_projection(apr, parts,
+                                                                  dim=1, patch=patch, method='auto'))
+        proj.append(pyapr.transform.projection.maximum_projection(apr, parts,
+                                                                  dim=2, patch=patch_yx, method='auto'))
 
     if plot:
         fig, ax = plt.subplots(1, 3)
@@ -578,6 +577,35 @@ class baseStitcher():
         self.segment = False
 
     def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, seg=False):
+        """
+        Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
+        reconstruct a maximum intensity projection if `n_proj>0`.
+
+        Parameters
+        ----------
+        loc: int (default: middle of the sample)
+            Position of the plane where the reconstruction should be done. The location varies depending on the
+            downsample parameter and should be adapted.
+        n_proj: int (default: 0)
+            Number of planes to perform the maximum intensity projection.
+        dim: int (default: 0)
+            Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).
+        downsample: int (default: 1)
+            Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].
+        color: bool (default: False)
+            Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.
+        debug: bool (default: False)
+            Option to add a white square for each tile, making it easy to see overlapping areas.
+        plot: bool (default: True)
+            Define if the function plots the results with Matplotlib or just returns an array.
+        seg: bool (default: False)
+            Option to also reconstruct the segmentation. Only works with `dim=0`
+
+        Returns
+        -------
+        _: ndarray
+            Array containing the reconstructed data.
+        """
 
         if dim == 0:
             return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot, seg=seg)
@@ -585,6 +613,8 @@ class baseStitcher():
             return self._reconstruct_y_slice(y=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
         elif dim == 2:
             return self._reconstruct_x_slice(x=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+        else:
+            raise ValueError('dim should be in [1, 2, 3], got dim = {}'.format(dim))
 
     def set_regularization(self, reg_x, reg_y, reg_z):
         """
@@ -676,12 +706,12 @@ class baseStitcher():
             V[y1:y2, x1:x2] = np.maximum(V[y1:y2, x1:x2], v)
             H[y1:y2, x1:x2] = np.maximum(H[y1:y2, x1:x2], h)
 
-        H = rescale_intensity(gaussian(H, sigma=2), out_range=np.float64)*0.66
+        H = rescale_intensity(gaussian(H, sigma=2/downsample), out_range=np.float64)*0.66
         V = np.log(V + 200)
         vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
         V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
-        S = S * V**1.5
-        rgb = hsv_to_rgb(np.dstack((H,S,V)))
+        S = rescale_intensity(V**1.5, out_range=np.float64)*0.66
+        rgb = hsv2rgb(np.dstack((H, S, V)))
         rescale_intensity(rgb, out_range='uint8')
 
         if plot:
@@ -700,11 +730,21 @@ class baseStitcher():
         Parameters
         ----------
         z: int
-            reconstruction depth
-        downsample: int
-            downsample for reconstruction (must be a power of 2)
-        debug: bool
-            if true the border of each tile will be highlighted
+            reconstruction depth (vary with downsample)
+        n_proj: int (default: 0)
+            Number of planes to perform the maximum intensity projection.
+        dim: int (default: 0)
+            Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).
+        downsample: int (default: 1)
+            Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].
+        color: bool (default: False)
+            Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.
+        debug: bool (default: False)
+            Option to add a white square for each tile, making it easy to see overlapping areas.
+        plot: bool (default: True)
+            Define if the function plots the results with Matplotlib or just returns an array.
+        seg: bool (default: False)
+            Option to also reconstruct the segmentation. Only works with `dim=0`
 
         Returns
         -------
@@ -800,16 +840,24 @@ class baseStitcher():
 
     def _reconstruct_y_slice(self, y=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
-        Reconstruct and merge the sample at a given depth z.
+        Reconstruct and merge the sample at a given position y.
 
         Parameters
         ----------
         y: int
             reconstruction location in y
-        downsample: int
-            downsample for reconstruction (must be a power of 2)
-        debug: bool
-            if true the border of each tile will be highlighted
+        n_proj: int (default: 0)
+            Number of planes to perform the maximum intensity projection.
+        dim: int (default: 0)
+            Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).
+        downsample: int (default: 1)
+            Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].
+        color: bool (default: False)
+            Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.
+        debug: bool (default: False)
+            Option to add a white square for each tile, making it easy to see overlapping areas.
+        plot: bool (default: True)
+            Define if the function plots the results with Matplotlib or just returns an array.
 
         Returns
         -------
@@ -901,16 +949,24 @@ class baseStitcher():
 
     def _reconstruct_x_slice(self, x=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
         """
-        Reconstruct and merge the sample at a given depth z.
+        Reconstruct and merge the sample at a given position x.
 
         Parameters
         ----------
         x: int
             reconstruction location in x
-        downsample: int
-            downsample for reconstruction (must be a power of 2)
-        debug: bool
-            if true the border of each tile will be highlighted
+        n_proj: int (default: 0)
+            Number of planes to perform the maximum intensity projection.
+        dim: int (default: 0)
+            Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).
+        downsample: int (default: 1)
+            Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].
+        color: bool (default: False)
+            Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.
+        debug: bool (default: False)
+            Option to add a white square for each tile, making it easy to see overlapping areas.
+        plot: bool (default: True)
+            Define if the function plots the results with Matplotlib or just returns an array.
 
         Returns
         -------
@@ -1268,7 +1324,7 @@ class tileStitcher(baseStitcher):
         self.database = None
         self.projs = None
 
-    def compute_registration(self):
+    def _compute_registration_old(self):
         """
         Compute the pair-wise registration for all tiles. This implementation loads the data twice and is therefore
         not efficient.
@@ -1315,7 +1371,7 @@ class tileStitcher(baseStitcher):
         self._build_database()
         self._print_info()
 
-    def compute_registration_fast(self, on_disk=False):
+    def compute_registration(self, on_disk=False):
         """
         Compute the pair-wise registration for all tiles. This implementation loads the data once by precomputing
         the max-proj and is therefore efficient.
@@ -2212,7 +2268,7 @@ class tileMerger():
                     data = tile.lazy_data[:, :, :]
                 else:
                     tile.load_tile()
-                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
+                    u = pyapr.reconstruction.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
                                                         mode=reconstruction_mode, tree_mode=tree_mode)
                     data = u[:, :, :]
             else:
@@ -2262,7 +2318,7 @@ class tileMerger():
                     data = tile.lazy_data[:, :, :]
                 else:
                     tile.load_tile()
-                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
+                    u = pyapr.reconstruction.APRSlicer(tile.apr, tile.parts, level_delta=self.level_delta,
                                                         mode=reconstruction_mode, tree_mode=tree_mode)
                     data = u[:, :, :]
             else:
@@ -2320,7 +2376,7 @@ class tileMerger():
                     data = tile.lazy_segmentation[:, :, :]
                 else:
                     tile.load_segmentation()
-                    u = pyapr.data_containers.APRSlicer(tile.apr, tile.parts_cc, level_delta=self.level_delta,
+                    u = pyapr.reconstruction.APRSlicer(tile.apr, tile.parts_cc, level_delta=self.level_delta,
                                                         mode=reconstruction_mode, tree_mode=tree_mode)
                     data = u[:, :, :]
 

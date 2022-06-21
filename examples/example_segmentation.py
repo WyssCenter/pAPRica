@@ -12,27 +12,23 @@ import pyapr
 import numpy as np
 from time import time
 
-def compute_gradients(apr, parts, sobel=True):
+def compute_gradients(apr, parts):
     """
     Compute gradient for each spatial direction directly on APR.
     Parameters
     ----------
     apr: (APR) APR object
     parts: (ParticleData) particle data sampled on APR
-    sobel: (bool) use sobel filter to compute the gradient
     Returns
     -------
     (dx, dy, dz): (arrays) gradient for each direction
     """
 
     par = apr.get_parameters()
-    dx = pyapr.FloatParticles()
-    dy = pyapr.FloatParticles()
-    dz = pyapr.FloatParticles()
 
-    pyapr.numerics.gradient(apr, parts, dz, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    dx = pyapr.filter.gradient(apr, parts, dim=2, delta=par.dz)
+    dy = pyapr.filter.gradient(apr, parts, dim=1, delta=par.dx)
+    dz = pyapr.filter.gradient(apr, parts, dim=0, delta=par.dy)
     return dz, dx, dy
 
 
@@ -58,9 +54,9 @@ def compute_laplacian(apr, parts, grad=None, sobel=True):
     dx2 = pyapr.FloatParticles()
     dy2 = pyapr.FloatParticles()
     dz2 = pyapr.FloatParticles()
-    pyapr.numerics.gradient(apr, dz, dz2, dimension=2, delta=par.dz, sobel=sobel)
-    pyapr.numerics.gradient(apr, dx, dx2, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, dy, dy2, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, dz, dz2, dim=2, delta=par.dz)
+    pyapr.filter.gradient(apr, dx, dx2, dim=1, delta=par.dx)
+    pyapr.filter.gradient(apr, dy, dy2, dim=0, delta=par.dy)
     return dz2 + dx2 + dy2
 
 
@@ -78,8 +74,7 @@ def compute_gradmag(apr, parts, sobel=True):
     """
 
     par = apr.get_parameters()
-    gradmag = pyapr.FloatParticles()
-    pyapr.numerics.gradient_magnitude(apr, parts, gradmag, deltas=(par.dz, par.dx, par.dy), sobel=sobel)
+    gradmag = pyapr.filter.gradient_magnitude(apr, parts, deltas=(par.dz, par.dx, par.dy))
     return gradmag
 
 
@@ -100,8 +95,8 @@ def compute_inplane_gradmag(apr, parts, sobel=True):
     dx = pyapr.FloatParticles()
     dy = pyapr.FloatParticles()
 
-    pyapr.numerics.gradient(apr, parts, dx, dimension=1, delta=par.dx, sobel=sobel)
-    pyapr.numerics.gradient(apr, parts, dy, dimension=0, delta=par.dy, sobel=sobel)
+    pyapr.filter.gradient(apr, parts, dx, dim=1, delta=par.dx)
+    pyapr.filter.gradient(apr, parts, dy, dim=0, delta=par.dy)
 
     dx = np.array(dx, copy=False)
     dy = np.array(dy, copy=False)
@@ -123,10 +118,9 @@ def gaussian_blur(apr, parts, sigma=1.5, size=11):
     Blurred APR.
     """
 
-    stencil = pyapr.numerics.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
+    stencil = pyapr.filter.get_gaussian_stencil(size, sigma, ndims=3, normalize=True)
     output = pyapr.FloatParticles()
-    pyapr.numerics.filter.convolve_pencil(apr, parts, output, stencil, use_stencil_downsample=True,
-                                          normalize_stencil=True, use_reflective_boundary=True)
+    pyapr.filter.convolve(apr, parts, stencil, output)
     return output
 
 
@@ -208,4 +202,4 @@ for tile in tiles:
 # Note that it is possible to perform the stitching and the segmentation at the same time, optimizing IO operations:
 stitcher = pipapr.tileStitcher(tiles, overlap_h=20, overlap_v=20)
 stitcher.activate_segmentation(segmenter)
-stitcher.compute_registration_fast()
+stitcher.compute_registration()

@@ -20,14 +20,17 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from glob import glob
 import copy
 import os
 import re
+from glob import glob
+import warnings
+
 import numpy as np
-import pipapr
-from tqdm import tqdm
 from skimage.io import imread, imsave
+from tqdm import tqdm
+
+import pipapr
 
 
 class baseParser():
@@ -107,7 +110,8 @@ class baseParser():
         """
 
         if self.type != 'apr':
-            raise TypeError('Error: data set must be of type APR.')
+            warnings.warn('Data-set should be of type APR to compute CR, returning 1.')
+            return 1
 
         n_parts = []
         n_pixels = []
@@ -121,7 +125,8 @@ class baseParser():
             for tile in tqdm(self, desc='Computing CR'):
                 tile.load_tile()
                 n_parts.append(len(tile.parts))
-                n_pixels.append(tile.shape())
+                n_pixels.append(np.prod(tile.apr.shape()))
+
         return np.sum(n_pixels)/np.sum(n_parts)
 
     def _print_info(self):

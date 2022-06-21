@@ -5,6 +5,7 @@ scipy
 napari[all]
 opencv-contrib-python-headless
 scikit-image
+scikit-learn
 pandas
 alive-progress
 dill

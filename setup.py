@@ -15,6 +15,7 @@ setup(
         'tqdm',
         'pandas',
         'scikit-image',
+        'scikit-learn',
         'opencv-contrib-python-headless',
         'dill',
         'matplotlib',

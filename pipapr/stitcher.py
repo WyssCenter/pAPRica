@@ -706,12 +706,12 @@ class baseStitcher():
             V[y1:y2, x1:x2] = np.maximum(V[y1:y2, x1:x2], v)
             H[y1:y2, x1:x2] = np.maximum(H[y1:y2, x1:x2], h)
 
-        H = rescale_intensity(gaussian(H, sigma=2), out_range=np.float64)*0.66
+        H = rescale_intensity(gaussian(H, sigma=2/downsample), out_range=np.float64)*0.66
         V = np.log(V + 200)
         vmin, vmax = np.percentile(V[V > np.log(100)], (1, 99.9))
         V = rescale_intensity(V, in_range=(vmin, vmax), out_range=np.float64)
-        S = S * V**1.5
-        rgb = hsv2rgb(np.dstack((H,S,V)))
+        S = rescale_intensity(V**1.5, out_range=np.float64)*0.66
+        rgb = hsv2rgb(np.dstack((H, S, V)))
         rescale_intensity(rgb, out_range='uint8')
 
         if plot:

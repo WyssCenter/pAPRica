@@ -2,7 +2,7 @@
 Submodule containing classes and functions relative to **converting** tiles to APR.
 
 The general workflow is first to parse tiles using a *parser* object and then convert using the tileConverter class.
-This class is essentially a wrapper to pylibapr which allows to facilitate batch conversions and batch reconstructions.
+This class is essentially a wrapper to pyapr which allows to facilitate batch conversions and batch reconstructions.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -90,7 +90,8 @@ class tileConverter():
                              dy=1,
                              dz=1,
                              path=None,
-                             lazy_loading=True):
+                             lazy_loading=True,
+                             tree_mode='mean'):
         """
         Convert all parsed tiles to APR using auto-parameters.
 
@@ -114,6 +115,8 @@ class tileConverter():
         lazy_loading: bool
             if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
             the APR. It will require about 1/7 more storage.
+        tree_mode: str ('mean' or 'max')
+            controls how downsampled particles are computed. Either the mean or the max is taken.
 
         Returns
         -------
@@ -122,6 +125,9 @@ class tileConverter():
 
         if self.tiles.type == 'apr':
             raise TypeError('Error: data already in APR format.')
+
+        if tree_mode not in ['mean', 'max']:
+            raise ValueError('Error: invalid tree_mode.')
 
         # Safely create folder to save apr data
         if path is None:
@@ -162,7 +168,10 @@ class tileConverter():
                 parts.set_background(self.bg)
 
             if lazy_loading:
-                tree_parts = pyapr.tree.fill_tree_mean(apr, parts)
+                if tree_mode == 'mean':
+                    tree_parts = pyapr.tree.fill_tree_mean(apr, parts)
+                elif tree_mode == 'max':
+                    tree_parts = pyapr.tree.fill_tree_max(apr, parts)
             else:
                 tree_parts = None
 

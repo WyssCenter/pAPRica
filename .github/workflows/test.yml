@@ -29,8 +29,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install markupsafe==2.0.1
           pip install numpy
-          pip install pyapr>=1.0.0rc1
           pip install -e .
+          pip install pyapr>=1.0.0rc1
 
       - name: Run tests
         run: python -m pytest --import-mode=append tests/

@@ -10,10 +10,11 @@ Welcome to APR-Pipelines (*pipapr*) documentation!
 convenient parser, a converter, a stitcher, an atlaser and a segmenter.
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Documentation
 
    documentation
+   tutorials
 
 .. toctree::
    :maxdepth: 3

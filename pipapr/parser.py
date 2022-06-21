@@ -26,6 +26,7 @@ import re
 from glob import glob
 import warnings
 
+import pyapr
 import numpy as np
 from skimage.io import imread, imsave
 from tqdm import tqdm
@@ -128,6 +129,25 @@ class baseParser():
                 n_pixels.append(np.prod(tile.apr.shape()))
 
         return np.sum(n_pixels)/np.sum(n_parts)
+
+    def make_lazy_loadable(self):
+        """
+        Loads all parsed APR tiles and compute and save the tree parts so that the data-set becomes lazy loadable.
+
+        Returns
+        -------
+        None
+        """
+
+        if self.type != 'apr':
+            raise TypeError('Only APR data can be made lazy loadable.')
+
+        for tile in tqdm(self, desc='Making tiles lazy loadable.'):
+            tile.load_tile()
+            # Compute tree parts
+            tree_parts = pyapr.tree.fill_tree_mean(tile.apr, tile.parts)
+            # Save tree parts
+            pyapr.io.write_particles(tile.path, tree_parts, parts_name='particles', tree=True, append=True)
 
     def _print_info(self):
         """

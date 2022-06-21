@@ -24,6 +24,7 @@ import copy
 import os
 import re
 from glob import glob
+import warnings
 
 import numpy as np
 from skimage.io import imread, imsave
@@ -109,7 +110,8 @@ class baseParser():
         """
 
         if self.type != 'apr':
-            raise TypeError('Error: data set must be of type APR.')
+            warnings.warn('Data-set should be of type APR to compute CR, returning 1.')
+            return 1
 
         n_parts = []
         n_pixels = []

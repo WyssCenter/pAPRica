@@ -63,93 +63,94 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 
-# Parameters
-path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'synthetic')
-length = 512
-cell_radius = 2
-dH = 4
-overlap_H = 25
-overlap_V = 25
-n_cells = 512
+def test_main():
+    # Parameters
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'synthetic')
+    length = 512
+    cell_radius = 2
+    dH = 4
+    overlap_H = 25
+    overlap_V = 25
+    n_cells = 512
 
-dV = dH
-Path(os.path.join(path, 'tif')).mkdir(parents=True, exist_ok=True)
+    dV = dH
+    Path(os.path.join(path, 'tif')).mkdir(parents=True, exist_ok=True)
 
-# Create synthetic dataset
-data = np.ones([length]*3, dtype='uint16')*100
-cell = ball(cell_radius)*500
-cell[cell==0] = 100
-cell_positions = (np.random.rand(n_cells, 3)*(length-cell.shape[0])).astype('uint16')
-label = np.ones_like(data, dtype='uint16')
-for i in range(n_cells):
-    data[
-    cell_positions[i, 0]: cell_positions[i, 0]+cell.shape[0],
-    cell_positions[i, 1]:cell_positions[i, 1]+cell.shape[0],
-    cell_positions[i, 2]:cell_positions[i, 2]+cell.shape[0]
-    ] =         data[
-    cell_positions[i, 0]: cell_positions[i, 0]+cell.shape[0],
-    cell_positions[i, 1]:cell_positions[i, 1]+cell.shape[0],
-    cell_positions[i, 2]:cell_positions[i, 2]+cell.shape[0]
-    ] + cell
+    # Create synthetic dataset
+    data = np.ones([length]*3, dtype='uint16')*100
+    cell = ball(cell_radius)*500
+    cell[cell==0] = 100
+    cell_positions = (np.random.rand(n_cells, 3)*(length-cell.shape[0])).astype('uint16')
+    label = np.ones_like(data, dtype='uint16')
+    for i in range(n_cells):
+        data[
+        cell_positions[i, 0]: cell_positions[i, 0]+cell.shape[0],
+        cell_positions[i, 1]:cell_positions[i, 1]+cell.shape[0],
+        cell_positions[i, 2]:cell_positions[i, 2]+cell.shape[0]
+        ] =         data[
+        cell_positions[i, 0]: cell_positions[i, 0]+cell.shape[0],
+        cell_positions[i, 1]:cell_positions[i, 1]+cell.shape[0],
+        cell_positions[i, 2]:cell_positions[i, 2]+cell.shape[0]
+        ] + cell
 
-    label[
-    cell_positions[i, 0]: cell_positions[i, 0] + cell.shape[0],
-    cell_positions[i, 1]:cell_positions[i, 1] + cell.shape[0],
-    cell_positions[i, 2]:cell_positions[i, 2] + cell.shape[0]
-    ] = 2
-
-
-noise = (np.random.randn(*data.shape)*np.sqrt(data)).astype('uint16')
-data += noise
-
-dv = int(data.shape[1] * (1 - overlap_V / 100) / dV)
-dh = int(data.shape[2] * (1 - overlap_H / 100) / dH)
+        label[
+        cell_positions[i, 0]: cell_positions[i, 0] + cell.shape[0],
+        cell_positions[i, 1]:cell_positions[i, 1] + cell.shape[0],
+        cell_positions[i, 2]:cell_positions[i, 2] + cell.shape[0]
+        ] = 2
 
 
-# Save data as separate tiles
-noise_coordinates = np.zeros((dH * dV, 4))
-for v in range(dV):
-    for h in range(dH):
-        (x, y, x_noise, y_noise) = get_coordinates(v, dv, h, dh)
-        noise_coordinates[v * dH + h, :] = [x_noise, y_noise, x_noise + int(data.shape[1] / dV),
-                                            y_noise + int(data.shape[2] / dH)]
+    noise = (np.random.randn(*data.shape)*np.sqrt(data)).astype('uint16')
+    data += noise
 
-        # Save data
-        imsave(os.path.join(path, 'tif', '{}_{}.tif'.format(v, h)),
-               data[:, x_noise:x_noise + int(data.shape[1] / dV), y_noise:y_noise + int(data.shape[1] / dV)],
-               check_contrast=False)
+    dv = int(data.shape[1] * (1 - overlap_V / 100) / dV)
+    dh = int(data.shape[2] * (1 - overlap_H / 100) / dH)
 
-        # Get labels for first tile
-        if (v == 0) and (h == 0):
-            label = label[:, x_noise:x_noise + int(data.shape[1] / dV), y_noise:y_noise + int(data.shape[1] / dV)]
 
-# Save coordinates
-np.savetxt(os.path.join(path, 'real_displacements.csv'), noise_coordinates, fmt='%1.d',
-           delimiter=',')
+    # Save data as separate tiles
+    noise_coordinates = np.zeros((dH * dV, 4))
+    for v in range(dV):
+        for h in range(dH):
+            (x, y, x_noise, y_noise) = get_coordinates(v, dv, h, dh)
+            noise_coordinates[v * dH + h, :] = [x_noise, y_noise, x_noise + int(data.shape[1] / dV),
+                                                y_noise + int(data.shape[2] / dH)]
 
-# Parse synthetic data
-tiles = pipapr.tileParser(os.path.join(path, 'tif'))
+            # Save data
+            imsave(os.path.join(path, 'tif', '{}_{}.tif'.format(v, h)),
+                   data[:, x_noise:x_noise + int(data.shape[1] / dV), y_noise:y_noise + int(data.shape[1] / dV)],
+                   check_contrast=False)
 
-# Convert them to APR
-converter = pipapr.converter.tileConverter(tiles)
-converter.batch_convert_to_apr(Ip_th=100, rel_error=0.4, path=os.path.join(path, 'APR'))
+            # Get labels for first tile
+            if (v == 0) and (h == 0):
+                label = label[:, x_noise:x_noise + int(data.shape[1] / dV), y_noise:y_noise + int(data.shape[1] / dV)]
 
-# Parse synthetic data
-tiles_apr = pipapr.tileParser(os.path.join(path, 'APR'), frame_size=int(length/dH))
+    # Save coordinates
+    np.savetxt(os.path.join(path, 'real_displacements.csv'), noise_coordinates, fmt='%1.d',
+               delimiter=',')
 
-# Stitch data-set
-stitcher = pipapr.tileStitcher(tiles_apr, overlap_h=overlap_H, overlap_v=overlap_V)
-stitcher.compute_registration()
+    # Parse synthetic data
+    tiles = pipapr.tileParser(os.path.join(path, 'tif'))
 
-# Simulate training of segmentation
-tile = tiles_apr[0]
-tile.load_tile()
-trainer = pipapr.tileTrainer(tile, func_to_get_cc=get_cc_from_features, func_to_compute_features=compute_features)
-trainer.labels_manual = sparse.COO.from_numpy(label[:100, :100, :100])
-trainer.pixel_list = trainer.labels_manual.coords.T
-trainer.labels = trainer.labels_manual.data
-trainer.train_classifier(n_estimators=100)
+    # Convert them to APR
+    converter = pipapr.converter.tileConverter(tiles)
+    converter.batch_convert_to_apr(Ip_th=100, rel_error=0.4, path=os.path.join(path, 'APR'))
 
-# Segment tiles
-segmenter = pipapr.multitileSegmenter.from_trainer(tiles_apr, database=stitcher.database, trainer=trainer)
-segmenter.compute_multitile_segmentation(save_cc=False)
+    # Parse synthetic data
+    tiles_apr = pipapr.tileParser(os.path.join(path, 'APR'), frame_size=int(length/dH))
+
+    # Stitch data-set
+    stitcher = pipapr.tileStitcher(tiles_apr, overlap_h=overlap_H, overlap_v=overlap_V)
+    stitcher.compute_registration()
+
+    # Simulate training of segmentation
+    tile = tiles_apr[0]
+    tile.load_tile()
+    trainer = pipapr.tileTrainer(tile, func_to_get_cc=get_cc_from_features, func_to_compute_features=compute_features)
+    trainer.labels_manual = sparse.COO.from_numpy(label[:100, :100, :100])
+    trainer.pixel_list = trainer.labels_manual.coords.T
+    trainer.labels = trainer.labels_manual.data
+    trainer.train_classifier(n_estimators=100)
+
+    # Segment tiles
+    segmenter = pipapr.multitileSegmenter.from_trainer(tiles_apr, database=stitcher.database, trainer=trainer)
+    segmenter.compute_multitile_segmentation(save_cc=False)

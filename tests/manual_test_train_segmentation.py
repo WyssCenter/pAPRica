@@ -56,23 +56,28 @@ def get_cc_from_features(apr, parts_pred):
     return cc
 
 
-# Parameters
-path = 'data/apr'
+def main():
+    # Parameters
+    path = 'data/apr'
 
-# We load a tile
-tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
-tile = tiles[2]
-tile.load_tile()
+    # We load a tile
+    tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
+    tile = tiles[2]
+    tile.load_tile()
 
-# We create the trainer object and then manually annotate the dataset
-trainer = pipapr.segmenter.tileTrainer(tile, compute_features)
-trainer.manually_annotate(use_sparse_labels=True)
-# trainer.save_labels()
-# trainer.load_labels()
+    # We create the trainer object and then manually annotate the dataset
+    trainer = pipapr.segmenter.tileTrainer(tile, compute_features)
+    trainer.manually_annotate(use_sparse_labels=True)
+    # trainer.save_labels()
+    # trainer.load_labels()
 
-# We then train the classifier and apply it to the whole training tile
-trainer.train_classifier()
-trainer.display_training_annotations(contrast_limits=[0, 10000])
-trainer.segment_training_tile(bg_label=2)
-# trainer.apply_on_tile(tiles[7], bg_label=2, func_to_get_cc=get_cc_from_features)
-# trainer.apply_on_tile(tiles[7], bg_label=2)
+    # We then train the classifier and apply it to the whole training tile
+    trainer.train_classifier()
+    trainer.display_training_annotations(contrast_limits=[0, 10000])
+    trainer.segment_training_tile(bg_label=2)
+    # trainer.apply_on_tile(tiles[7], bg_label=2, func_to_get_cc=get_cc_from_features)
+    # trainer.apply_on_tile(tiles[7], bg_label=2)
+
+
+if __name__ == '__main__':
+  main()

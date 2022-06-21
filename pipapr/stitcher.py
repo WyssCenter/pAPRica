@@ -219,7 +219,7 @@ def phase_cross_correlation_cv(reference_image, moving_image):
 
         d, e = cv.phaseCorrelate(reference_image.astype(np.float32), moving_image.astype(np.float32))
 
-        d_correct = [-np.round(d[1]).astype(np.int), -np.round(d[0]).astype(np.int)]
+        d_correct = [-np.round(d[1]).astype(int), -np.round(d[0]).astype(int)]
 
         return d_correct
 

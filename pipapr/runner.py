@@ -331,7 +331,7 @@ class clearscopeRunningPipeline():
         self.reg_y = reg_y
         self.reg_z = reg_z
 
-    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True):
+    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, progress_bar=True):
         """
         Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
         reconstruct a maximum intensity projection if `n_proj>0`.
@@ -362,15 +362,15 @@ class clearscopeRunningPipeline():
 
         if dim == 0:
             return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug,
-                                             plot=plot)
+                                             plot=plot, progress_bar=True)
         elif dim == 1:
             return self._reconstruct_y_slice(y=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug,
-                                             plot=plot)
+                                             plot=plot, progress_bar=True)
         elif dim == 2:
             return self._reconstruct_x_slice(x=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug,
-                                             plot=plot)
+                                             plot=plot, progress_bar=True)
 
-    def reconstruct_z_color(self, z=None, n_proj=0, downsample=1, debug=False, plot=True):
+    def reconstruct_z_color(self, z=None, n_proj=0, downsample=1, debug=False, plot=True, progress_bar=True):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -415,7 +415,7 @@ class clearscopeRunningPipeline():
         H_pos = (x_pos - x_pos.min()) / downsample
         V_pos = (y_pos - y_pos.min()) / downsample
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=not progress_bar)):
             tile.lazy_load_tile(level_delta=level_delta)
             zf = min(z + n_proj, tile.lazy_data.shape[0])
             data = tile.lazy_data[z:zf]
@@ -478,7 +478,7 @@ class clearscopeRunningPipeline():
         if self.expected_overlap_v > self.frame_size:
             self.expected_overlap_v = self.frame_size
 
-    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
+    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True, progress_bar=True):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -532,7 +532,7 @@ class clearscopeRunningPipeline():
         else:
             merged_data = np.zeros((ny, nx), dtype='uint16')
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=not progress_bar)):
 
             H_pos = self.database.query('row=={} & col=={}'.format(tile.row, tile.col))['ABS_H'] / downsample
             V_pos = self.database.query('row=={} & col=={}'.format(tile.row, tile.col))['ABS_V'] / downsample

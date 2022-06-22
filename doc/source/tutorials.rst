@@ -2,7 +2,9 @@ Tutorials
 =========
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
+   notebooks/parser_ne.ipynb
    notebooks/converter_ne.ipynb
    notebooks/stitcher.ipynb
+   notebooks/stitcher_advanced_ne.ipynb

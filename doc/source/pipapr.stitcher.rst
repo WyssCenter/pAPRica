@@ -1,5 +1,5 @@
-pipapr.stitcher module
-======================
+pipapr.stitcher
+===============
 
 .. automodule:: pipapr.stitcher
    :members:

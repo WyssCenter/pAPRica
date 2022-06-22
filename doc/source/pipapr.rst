@@ -1,9 +1,3 @@
-pipapr package
-==============
-
-Submodules
-----------
-
 .. toctree::
    :maxdepth: 4
 
@@ -14,11 +8,4 @@ Submodules
    pipapr.segmenter
    pipapr.stitcher
    pipapr.viewer
-
-Module contents
----------------
-
-.. automodule:: pipapr
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   pipapr.runner

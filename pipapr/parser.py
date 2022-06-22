@@ -100,7 +100,7 @@ class baseParser():
         if cnt == 0:
             print('All tiles are readable.')
 
-    def compute_average_CR(self):
+    def compute_average_CR(self, progress_bar=True):
         """
         Compute the average Computational Ratio (CR). Note: data must be of type APR.
 
@@ -117,13 +117,13 @@ class baseParser():
         n_parts = []
         n_pixels = []
         try:
-            for tile in tqdm(self, desc='Computing CR'):
+            for tile in tqdm(self, desc='Computing CR', disable=not progress_bar):
                 tile.lazy_load_tile()
                 n_parts.append(tile.lazy_data.parts.dataset_size())
                 n_pixels.append(np.prod(tile.lazy_data.shape))
 
         except: #Lazy loading not available
-            for tile in tqdm(self, desc='Computing CR'):
+            for tile in tqdm(self, desc='Computing CR', disable=not progress_bar):
                 tile.load_tile()
                 n_parts.append(len(tile.parts))
                 n_pixels.append(np.prod(tile.apr.shape()))

@@ -1,5 +1,5 @@
-pipapr.loader module
-====================
+pipapr.loader
+=============
 
 .. automodule:: pipapr.loader
    :members:

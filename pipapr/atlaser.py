@@ -374,7 +374,7 @@ class tileAtlaser():
 
         return heatmap
 
-    def get_cells_density(self, cells, kernel_size):
+    def get_cells_density(self, cells, kernel_size, progress_bar=True):
         """
         Retuns the cell density (local average number of cell per voxel). The local average is computed using a gaussian
         kernel.
@@ -393,7 +393,7 @@ class tileAtlaser():
         """
 
         heatmap = np.zeros((self.atlas.shape)).astype(int)
-        for i in tqdm(range(cells.shape[0]), desc='Building density map..'):
+        for i in tqdm(range(cells.shape[0]), desc='Building density map..', disable=not progress_bar):
             z = int(cells[i, 0]/self.z_downsample)
             y = int(cells[i, 1]/self.y_downsample)
             x = int(cells[i, 2]/self.x_downsample)

@@ -1,5 +1,5 @@
-pipapr.converter module
-=======================
+pipapr.converter
+================
 
 .. automodule:: pipapr.converter
    :members:

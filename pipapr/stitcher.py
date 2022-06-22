@@ -576,7 +576,7 @@ class baseStitcher():
 
         self.segment = False
 
-    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, seg=False):
+    def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, seg=False, **kwargs):
         """
         Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
         reconstruct a maximum intensity projection if `n_proj>0`.
@@ -608,11 +608,14 @@ class baseStitcher():
         """
 
         if dim == 0:
-            return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot, seg=seg)
+            return self._reconstruct_z_slice(z=loc, n_proj=n_proj, downsample=downsample, color=color,
+                                             debug=debug, plot=plot, seg=seg, **kwargs)
         elif dim == 1:
-            return self._reconstruct_y_slice(y=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+            return self._reconstruct_y_slice(y=loc, n_proj=n_proj, downsample=downsample, color=color,
+                                             debug=debug, plot=plot, **kwargs)
         elif dim == 2:
-            return self._reconstruct_x_slice(x=loc, n_proj=n_proj, downsample=downsample, color=color, debug=debug, plot=plot)
+            return self._reconstruct_x_slice(x=loc, n_proj=n_proj, downsample=downsample, color=color,
+                                             debug=debug, plot=plot, **kwargs)
         else:
             raise ValueError('dim should be in [1, 2, 3], got dim = {}'.format(dim))
 
@@ -641,7 +644,7 @@ class baseStitcher():
         self.reg_y = reg_y
         self.reg_z = reg_z
 
-    def reconstruct_z_color(self, z=None, n_proj=10, downsample=1, debug=False, plot=True):
+    def reconstruct_z_color(self, z=None, n_proj=10, downsample=1, debug=False, plot=True, progress_bar=True):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -684,7 +687,7 @@ class baseStitcher():
         H_pos = (x_pos - x_pos.min()) / downsample
         V_pos = (y_pos - y_pos.min()) / downsample
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=not progress_bar)):
             tile.lazy_load_tile(level_delta=level_delta)
             zf = min(z+n_proj, tile.lazy_data.shape[0])
             data = tile.lazy_data[z:zf]
@@ -716,14 +719,15 @@ class baseStitcher():
 
         if plot:
             fig, ax = plt.subplots(1, 1)
-            h = ax.imshow(rgb, cmap='turbo', vmin=0, vmax=n_proj*downsample*5)
+            h = ax.imshow(rgb, cmap='turbo', vmin=0, vmax=n_proj*downsample)
             divider = make_axes_locatable(ax)
             cax = divider.append_axes('right', size='5%', pad=0.05)
-            fig.colorbar(h, cax=cax, orientation='vertical', label='Depth [um]')
+            fig.colorbar(h, cax=cax, orientation='vertical', label='Depth [pixel]')
 
         return rgb
 
-    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True, seg=False):
+    def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False,
+                             debug=False, plot=True, seg=False, progress_bar=True):
         """
         Reconstruct and merge the sample at a given depth z.
 
@@ -782,7 +786,7 @@ class baseStitcher():
         H_pos = (x_pos - x_pos.min()) / downsample
         V_pos = (y_pos - y_pos.min()) / downsample
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=not progress_bar)):
             tile.lazy_load_tile(level_delta=level_delta)
             if seg:
                 tile.lazy_load_segmentation(level_delta=level_delta)
@@ -838,7 +842,8 @@ class baseStitcher():
 
         return merged_data
 
-    def _reconstruct_y_slice(self, y=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
+    def _reconstruct_y_slice(self, y=None, n_proj=0, downsample=1, color=False,
+                             debug=False, plot=True, progress_bar=True):
         """
         Reconstruct and merge the sample at a given position y.
 
@@ -900,7 +905,7 @@ class baseStitcher():
         else:
             merged_data = np.zeros((nz, nx), dtype='uint16')
 
-        for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging')):
+        for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging', disable=not progress_bar)):
             tile.lazy_load_tile(level_delta=level_delta)
             y_tile = int(y - tiles_pos[i, 1])
             yf = min(y_tile+n_proj, tiles_pos[i, 1]+tile.lazy_data.shape[1])
@@ -947,7 +952,8 @@ class baseStitcher():
 
         return merged_data
 
-    def _reconstruct_x_slice(self, x=None, n_proj=0, downsample=1, color=False, debug=False, plot=True):
+    def _reconstruct_x_slice(self, x=None, n_proj=0, downsample=1, color=False,
+                             debug=False, plot=True, progress_bar=True):
         """
         Reconstruct and merge the sample at a given position x.
 
@@ -1009,7 +1015,7 @@ class baseStitcher():
         else:
             merged_data = np.zeros((nz, ny), dtype='uint16')
 
-        for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging')):
+        for i, tile in enumerate(tqdm(tiles_to_load, desc='Merging', disable=not progress_bar)):
             tile.lazy_load_tile(level_delta=level_delta)
             x_tile = int(x - tiles_pos[i, 2])
             xf = min(x_tile+n_proj, tiles_pos[i, 2]+tile.lazy_data.shape[2])
@@ -1186,7 +1192,7 @@ class baseStitcher():
 
         return projs
 
-    def _precompute_max_projs(self):
+    def _precompute_max_projs(self, progress_bar=True):
         """
         Precompute max-projections for loading the data only once during the stitching.
 
@@ -1195,7 +1201,7 @@ class baseStitcher():
         None
         """
         projs = np.empty((self.nrow, self.ncol), dtype=object)
-        for tile in tqdm(self.tiles, desc='Computing max. proj.'):
+        for tile in tqdm(self.tiles, desc='Computing max. proj.', disable=not progress_bar):
             tile.load_tile()
             proj = {}
             if tile.col + 1 < self.tiles.ncol:
@@ -1371,7 +1377,7 @@ class tileStitcher(baseStitcher):
         self._build_database()
         self._print_info()
 
-    def compute_registration(self, on_disk=False):
+    def compute_registration(self, on_disk=False, progress_bar=True):
         """
         Compute the pair-wise registration for all tiles. This implementation loads the data once by precomputing
         the max-proj and is therefore efficient.
@@ -1380,13 +1386,13 @@ class tileStitcher(baseStitcher):
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
         if on_disk:
             # It makes more sens and it avoids loading the max-proj when it is computed.
-            self._precompute_max_projs()
+            self._precompute_max_projs(progress_bar=progress_bar)
             self._save_max_projs()
         else:
-            self._precompute_max_projs()
+            self._precompute_max_projs(progress_bar=progress_bar)
 
         # Then we loop again through the tiles but now we have access to the max-proj
-        for tile in tqdm(self.tiles, desc='Computing cross-correlations'):
+        for tile in tqdm(self.tiles, desc='Computing cross-correlations', disable=not progress_bar):
             proj1 = self.projs[tile.row, tile.col]
 
             for coords in tile.neighbors:
@@ -2108,7 +2114,7 @@ class channelStitcher(baseStitcher):
 
         self.patch = pyapr.ReconPatch()
 
-    def compute_rigid_registration(self):
+    def compute_rigid_registration(self, progress_bar=True):
         """
         Compute the rigid registration between each pair of tiles across different channels.
 
@@ -2117,7 +2123,8 @@ class channelStitcher(baseStitcher):
         None
         """
 
-        for tile1, tile2 in zip(tqdm(self.tiles_ref), self.tiles):
+        for tile1, tile2 in zip(tqdm(self.tiles_ref, desc='Computing rigid registration', disable=not progress_bar),
+                                self.tiles):
 
             tile1.load_tile()
             tile2.load_tile()
@@ -2236,7 +2243,7 @@ class tileMerger():
         self.level_delta = 0
         self.merged_data = None
 
-    def merge_additive(self, reconstruction_mode='constant', tree_mode='mean'):
+    def merge_additive(self, reconstruction_mode='constant', tree_mode='mean', progress_bar=True):
         """
         Perform merging with a mean algorithm for overlapping areas. Maximum merging should be preferred to
         avoid integer overflowing and higher signals on the overlapping areas.
@@ -2260,7 +2267,7 @@ class tileMerger():
         D_pos = self.database['ABS_D'].to_numpy()
         D_pos = (D_pos - D_pos.min())/self.downsample
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=not progress_bar)):
 
             if self.type == 'apr':
                 if self.lazy:
@@ -2285,7 +2292,7 @@ class tileMerger():
             self.merged_data[z1:z2, y1:y2, x1:x2] = self.merged_data[z1:z2, y1:y2, x1:x2] + data
             self.merged_data = self.merged_data.astype('uint16')
 
-    def merge_max(self, reconstruction_mode='constant', tree_mode='mean', debug=False):
+    def merge_max(self, reconstruction_mode='constant', tree_mode='mean', debug=False, progress_bar=True):
         """
         Perform merging with a maximum algorithm for overlapping areas.
 
@@ -2310,7 +2317,7 @@ class tileMerger():
         D_pos = self.database['ABS_D'].to_numpy()
         D_pos = (D_pos - D_pos.min())/self.downsample
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=progress_bar)):
 
             if self.type == 'apr':
                 if self.lazy:
@@ -2343,7 +2350,7 @@ class tileMerger():
 
             self.merged_data[z1:z2, y1:y2, x1:x2] = np.maximum(self.merged_data[z1:z2, y1:y2, x1:x2], data)
 
-    def merge_segmentation(self, reconstruction_mode='constant', tree_mode='mean', debug=False):
+    def merge_segmentation(self, reconstruction_mode='constant', tree_mode='mean', debug=False, progress_bar=True):
         """
         Perform merging with a maximum algorithm for overlapping areas.
 
@@ -2368,7 +2375,7 @@ class tileMerger():
         D_pos = self.database['ABS_D'].to_numpy()
         D_pos = (D_pos - D_pos.min())/self.downsample
 
-        for i, tile in enumerate(tqdm(self.tiles, desc='Merging')):
+        for i, tile in enumerate(tqdm(self.tiles, desc='Merging', disable=not progress_bar)):
 
             if self.type == 'apr':
                 if self.lazy:

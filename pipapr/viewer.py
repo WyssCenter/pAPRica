@@ -83,12 +83,11 @@ def apr_to_napari_Image(apr: pyapr.APR,
         Input APR data structure
     parts : pyapr.FloatParticles or pyapr.ShortParticles
         Input particle intensities
-    mode: str
+    mode: str (default: 'constant')
         Interpolation mode to reconstruct pixel values. Supported values are
             constant:   piecewise constant interpolation
             smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.
             level:      interpolate the particle levels to the pixels
-        (default: constant)
     level_delta: int
         Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.
         Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.
@@ -131,12 +130,11 @@ def apr_to_napari_Labels(apr: pyapr.APR,
         Input APR data structure
     parts : pyapr.FloatParticles or pyapr.ShortParticles
         Input particle intensities
-    mode: str
+    mode: str (default: 'constant')
         Interpolation mode to reconstruct pixel values. Supported values are
             constant:   piecewise constant interpolation
             smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.
             level:      interpolate the particle levels to the pixels
-        (default: constant)
     level_delta: int
         Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.
         Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.

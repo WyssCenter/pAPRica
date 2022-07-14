@@ -91,7 +91,8 @@ class tileConverter():
                              dz=1,
                              path=None,
                              lazy_loading=True,
-                             tree_mode='mean'):
+                             tree_mode='mean',
+                             progress_bar=True,):
         """
         Convert all parsed tiles to APR using auto-parameters.
 
@@ -140,7 +141,7 @@ class tileConverter():
             folder_apr = path
         Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
-        for tile in tqdm(self.tiles, desc='Converting tiles'):
+        for tile in tqdm(self.tiles, desc='Converting tiles', disable=not progress_bar):
             tile.load_tile()
 
             # Set parameters
@@ -194,7 +195,7 @@ class tileConverter():
                                                   frame_size=self.tiles.frame_size,
                                                   ftype='apr')
 
-    def batch_reconstruct_pixel(self, mode='constant'):
+    def batch_reconstruct_pixel(self, mode='constant', progress_bar=True):
         """
         Reconstruct all APR tiles to pixel data.
 
@@ -216,7 +217,7 @@ class tileConverter():
         folder_tiff = os.path.join(base_folder, 'TIFF')
         Path(folder_tiff).mkdir(parents=True, exist_ok=True)
 
-        for tile in tqdm(self.tiles, desc='Converting tiles'):
+        for tile in tqdm(self.tiles, desc='Converting tiles', disable=not progress_bar):
             tile.load_tile()
 
             if mode == 'constant':

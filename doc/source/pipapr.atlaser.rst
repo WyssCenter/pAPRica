@@ -1,5 +1,5 @@
-pipapr.atlaser module
-=====================
+pipapr.atlaser
+==============
 
 .. automodule:: pipapr.atlaser
    :members:

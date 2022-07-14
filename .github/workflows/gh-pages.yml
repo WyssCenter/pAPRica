@@ -27,7 +27,7 @@ jobs:
       #    dépendances et génération de la doc)
 
       - name: "Set up Python"
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: 3.8
 
@@ -37,6 +37,11 @@ jobs:
           pip3 install sphinx sphinx-rtd-theme
           pip3 install numpydoc
           pip3 install myst_nb
+          python -m pip install --upgrade pip
+          pip install markupsafe==2.0.1
+          pip install numpy
+          pip install -e .
+          pip install pyapr>=1.0.0rc1
 
       - name: "Build Sphinx Doc"
         run: |

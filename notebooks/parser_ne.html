@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Batch convert voxel data to APR. &mdash; pipapr 0.0.1 documentation</title>
+  <title>Parse and load data-sets &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../_static/mystnb.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Stitch single channel data" href="stitcher.html" />
-    <link rel="prev" title="Parse and load data-sets" href="parser_ne.html" /> 
+    <link rel="next" title="Batch convert voxel data to APR." href="converter_ne.html" />
+    <link rel="prev" title="Tutorials" href="../tutorials.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,8 +49,8 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../documentation.html">How to install</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../tutorials.html">Tutorials</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="parser_ne.html">Parse and load data-sets</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Batch convert voxel data to APR.</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Parse and load data-sets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="converter_ne.html">Batch convert voxel data to APR.</a></li>
 <li class="toctree-l2"><a class="reference internal" href="stitcher.html">Stitch single channel data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="stitcher_advanced_ne.html">Advanced stitching</a></li>
 </ul>
@@ -83,9 +83,9 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../tutorials.html">Tutorials</a> &raquo;</li>
-      <li>Batch convert voxel data to APR.</li>
+      <li>Parse and load data-sets</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/notebooks/converter_ne.ipynb.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/notebooks/parser_ne.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -93,49 +93,48 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section class="tex2jax_ignore mathjax_ignore" id="batch-convert-voxel-data-to-apr">
-<h1>Batch convert voxel data to APR.<a class="headerlink" href="#batch-convert-voxel-data-to-apr" title="Permalink to this heading"></a></h1>
+  <section class="tex2jax_ignore mathjax_ignore" id="parse-and-load-data-sets">
+<h1>Parse and load data-sets<a class="headerlink" href="#parse-and-load-data-sets" title="Permalink to this heading"></a></h1>
+<p>´APR-pipelines´ makes it easy to automatically load a data-set. Several parser method are provided:</p>
+<ol class="arabic simple">
+<li><p>A general parser where each tile is saved as ´row_col.tif´ (it can be 3D tiffs or 2D tiffs saved in a folder named ´row_col´)</p></li>
+<li><p>COLM (Clarity Optimised Lightsheet Microscope) data</p></li>
+<li><p>ClearScope data</p></li>
+</ol>
+<p>Note that it is very easy to support new data architecture, you can get in touch for a given implementation. For the first case we use the ´tileParser´ class:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pipapr</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pipapr</span>
+
+<span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the folder containing the data&#39;</span><span class="p">,</span>
+                          <span class="n">frame_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
+                          <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
-<p>First we define the path where the data is located, you can use the data used for testing or your own data.</p>
+<p>For the second case we use the ´colmParser´ class (less inputs are required since the sensor size and data type is fixed by the microscope):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;../../../data/synthetic/tif&#39;</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
-<p>We then parse this data using the parser:</p>
+<p>And finally for the third case we use the ´clearscopeParser´ class:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;tiff3D&#39;</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">clearscopeParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the ClearScope folder acquisition&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 </div>
-<p>Next, we batch convert the data. Please refer to the original paper to understand and set correctly the conversion parameters. The parameters that do not appear below are automatically determined but can also be set by the user:</p>
+<p>Note that each channel must be parsed independently (this implementation choice was made to give more flexibility to the user):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">converter</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileConverter</span><span class="p">(</span><span class="n">tiles</span><span class="p">)</span>
-<span class="n">converter</span><span class="o">.</span><span class="n">batch_convert_to_apr</span><span class="p">(</span><span class="n">Ip_th</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span>               <span class="c1"># Intensity thresholding parameter</span>
-                               <span class="n">rel_error</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>           <span class="c1"># Relative error parameter</span>
-                               <span class="n">gradient_smoothing</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>    <span class="c1"># Gradient smoothing parameters</span>
-                               <span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-<p>It is also possible to batch reconstruct data:</p>
-<div class="cell docutils container">
-<div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles_tiff</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path_to_tiff_data&#39;</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">)</span>
-<span class="n">converter</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileConverter</span><span class="p">(</span><span class="n">tiles_tiff</span><span class="p">)</span>
-<span class="n">converter</span><span class="o">.</span><span class="n">batch_reconstruct_pixel</span><span class="p">()</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles_ch0</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">tiles_ch1</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">tiles_ch2</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -146,8 +145,8 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="parser_ne.html" class="btn btn-neutral float-left" title="Parse and load data-sets" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="stitcher.html" class="btn btn-neutral float-right" title="Stitch single channel data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="../tutorials.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="converter_ne.html" class="btn btn-neutral float-right" title="Batch convert voxel data to APR." accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

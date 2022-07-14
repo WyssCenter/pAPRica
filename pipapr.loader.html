@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.loader module &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.loader &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pipapr.parser module" href="pipapr.parser.html" />
-    <link rel="prev" title="pipapr.converter module" href="pipapr.converter.html" /> 
+    <link rel="next" title="pipapr.parser" href="pipapr.parser.html" />
+    <link rel="prev" title="pipapr.converter" href="pipapr.converter.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,22 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="pipapr.html">pipapr package</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pipapr.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.converter.html">pipapr.converter module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">pipapr.loader module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.parser.html">pipapr.parser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer module</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pipapr.html#module-contents">Module contents</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.runner.html">pipapr.runner</a></li>
 </ul>
 
         </div>
@@ -82,8 +76,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">pipapr package</a> &raquo;</li>
-      <li>pipapr.loader module</li>
+          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>pipapr.loader</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.loader.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -93,16 +87,276 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pipapr-loader-module">
-<h1>pipapr.loader module<a class="headerlink" href="#pipapr-loader-module" title="Permalink to this heading"></a></h1>
+  <section id="module-pipapr.loader">
+<span id="pipapr-loader"></span><h1>pipapr.loader<a class="headerlink" href="#module-pipapr.loader" title="Permalink to this heading"></a></h1>
+<p>Submodule containing classes and functions relative to data <strong>loading</strong>.</p>
+<p>Usually, tileLoader objects are instantiated directly by iterating over the parser. Alternatively, they can be
+instantiated directly by the constructor by calling <em>tile = pipapr.loader.tileLoader()</em>.</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.loader.</span></span><span class="sig-name descname"><span class="pre">tileLoader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors_tot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.</p>
+<p>Tile post processing is done on APR data, so if the input data is tiff it is first converted.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors_tot</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighbors_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder_root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of tileLoader object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path to the tile (APR and tiff3D) or the folder containing the frames (tiff2D)</p></li>
+<li><p><strong>row</strong> (<em>int</em>) – vertical position of the tile (for multi-tile acquisition)</p></li>
+<li><p><strong>col</strong> (<em>int</em>) – horizontal position of the tile (for multi-tile acquisition)</p></li>
+<li><p><strong>ftype</strong> (<em>str</em>) – tile file type (‘apr’, ‘tiff3D’, ‘colm’, ‘clearscope’)</p></li>
+<li><p><strong>neighbors</strong> (<em>list</em>) – <p>neighbors list containing the neighbors position [row, col] of only the EAST and SOUTH
+neighbors to avoid the redundancy computation when stitching. For example, below the tile [0, 1] is
+represented by an ‘o’ while other tile are represented by an ‘x’:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">---</span> <span class="n">o</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+<span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>
+<span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+<span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>
+<span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+<span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>
+<span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p>in this case neighbors = [[0, 2], [1, 1]]</p>
+</p></li>
+<li><p><strong>neighbors_tot</strong> (<em>list</em>) – <p>neighbors list containing all the neighbors position [row, col]. For example, below the
+tile [0, 1] is represented by an ‘o’ while other tile are represented by an ‘x’:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">x</span> <span class="o">---</span> <span class="n">o</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+<span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>
+<span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+<span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>
+<span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+<span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>     <span class="o">|</span>
+<span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span> <span class="o">---</span> <span class="n">x</span>
+</pre></div>
+</div>
+<p>in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]</p>
+</p></li>
+<li><p><strong>neighbors_path</strong> (<em>list</em>) – path of the neighbors whose coordinates are stored in neighbors</p></li>
+<li><p><strong>frame_size</strong> (<em>int</em>) – camera frame size (only square sensors are supported for now).</p></li>
+<li><p><strong>folder_root</strong> (<em>str</em>) – root folder where everything should be saved.</p></li>
+<li><p><strong>channel</strong> (<em>int</em>) – fluorescence channel for multi-channel acquisition. This is used to load the right data in the
+case of COLM acquisition where all the channel are saved in the same folder as tiff2D.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader._load_clearscope">
+<span class="sig-name descname"><span class="pre">_load_clearscope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader._load_clearscope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader._load_clearscope" title="Permalink to this definition"></a></dt>
+<dd><p>Load a sequence of images in a folder and return it as a 3D array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to folder where the data should be loaded.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>v</strong> – numpy array containing the data.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader._load_colm">
+<span class="sig-name descname"><span class="pre">_load_colm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader._load_colm"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader._load_colm" title="Permalink to this definition"></a></dt>
+<dd><p>Load a sequence of images in a folder and return it as a 3D array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to folder where the data should be loaded.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>v</strong> – numpy array containing the data.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader._load_data">
+<span class="sig-name descname"><span class="pre">_load_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader._load_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader._load_data" title="Permalink to this definition"></a></dt>
+<dd><p>Load data at given path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to the data to be loaded.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>u</strong> – numpy array containing the data.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader._load_raw">
+<span class="sig-name descname"><span class="pre">_load_raw</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader._load_raw"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader._load_raw" title="Permalink to this definition"></a></dt>
+<dd><p>Load raw data at given path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to the data to be loaded.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>u</strong> – numpy array containing the data.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.lazy_load_segmentation">
+<span class="sig-name descname"><span class="pre">lazy_load_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level_delta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.lazy_load_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.lazy_load_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Load the parts_cc lazily at the given resolution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>level_delta</strong> (<em>int</em>) – parameter controlling the resolution at which the APR will be read lazily</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.lazy_load_tile">
+<span class="sig-name descname"><span class="pre">lazy_load_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level_delta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.lazy_load_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.lazy_load_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Load the tile lazily at the given resolution.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>level_delta</strong> (<em>int</em>) – parameter controlling the resolution at which the APR will be read lazily</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.load_neighbors">
+<span class="sig-name descname"><span class="pre">load_neighbors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.load_neighbors"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.load_neighbors" title="Permalink to this definition"></a></dt>
+<dd><p>Load the current tile neighbors if not already loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.load_neighbors_segmentation">
+<span class="sig-name descname"><span class="pre">load_neighbors_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">load_tree</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.load_neighbors_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.load_neighbors_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Load the current tile neighbors connected component (cc) if not already loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.load_segmentation">
+<span class="sig-name descname"><span class="pre">load_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">load_tree</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.load_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.load_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Load the current tile connected component (cc) if not already loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.load_tile">
+<span class="sig-name descname"><span class="pre">load_tile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.load_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.load_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Load the current tile if not already loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.plot_particles_size_distribution">
+<span class="sig-name descname"><span class="pre">plot_particles_size_distribution</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.plot_particles_size_distribution"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.plot_particles_size_distribution" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the particle size distribution of the tile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.loader.tileLoader.view_tile">
+<span class="sig-name descname"><span class="pre">view_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tileLoader.view_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tileLoader.view_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Display tile using napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.loader.tile_from_apr">
+<span class="sig-prename descclassname"><span class="pre">pipapr.loader.</span></span><span class="sig-name descname"><span class="pre">tile_from_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tile_from_apr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tile_from_apr" title="Permalink to this definition"></a></dt>
+<dd><p>Function to generate a <em>tile</em> object from an APR object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – APR to generate a tile from</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.ParticleData</em>) – ParticleData to generate a tile from</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>tile</strong> – <em>tile</em> containing the given APR</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader">tileLoader</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.loader.tile_from_path">
+<span class="sig-prename descclassname"><span class="pre">pipapr.loader.</span></span><span class="sig-name descname"><span class="pre">tile_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/loader.html#tile_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.loader.tile_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Function to generate a <em>tile</em> object from the path of an APR object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to the stored APR object</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>tile</strong> – <em>tile</em> containing the given APR</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader">tileLoader</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pipapr.converter.html" class="btn btn-neutral float-left" title="pipapr.converter module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pipapr.parser.html" class="btn btn-neutral float-right" title="pipapr.parser module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pipapr.converter.html" class="btn btn-neutral float-left" title="pipapr.converter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.parser.html" class="btn btn-neutral float-right" title="pipapr.parser" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

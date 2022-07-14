@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pipapr.segmenter &mdash; pipapr 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/mystnb.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> pipapr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">How to install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.runner.html">pipapr.runner</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pipapr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>pipapr.segmenter</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pipapr.segmenter</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module containing classes and functions relative to Segmentation.</span>
+
+
+<span class="sd">By using this code you agree to the terms of the software license agreement.</span>
+
+<span class="sd">© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+
+<span class="kn">import</span> <span class="nn">cv2</span> <span class="k">as</span> <span class="nn">cv</span>
+<span class="kn">import</span> <span class="nn">napari</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyapr</span>
+<span class="kn">import</span> <span class="nn">sparse</span>
+<span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">load</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">import</span> <span class="nn">pipapr</span>
+
+
+<div class="viewcode-block" id="_predict_on_APR_block"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter._predict_on_APR_block">[docs]</a><span class="k">def</span> <span class="nf">_predict_on_APR_block</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">clf</span><span class="p">,</span> <span class="n">n_parts</span><span class="o">=</span><span class="mf">1e7</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Predict particle class with the trained classifier clf on the precomputed features f using a</span>
+<span class="sd">    blocked strategy to avoid memory segfault.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: ndarray</span>
+<span class="sd">        features (n_particle, n_features) for particle prediction</span>
+<span class="sd">    n_parts: int</span>
+<span class="sd">        number of particles in the batch to predict</span>
+<span class="sd">    output: string</span>
+<span class="sd">        output type, can be &#39;class&#39; where each particle get assigned a class or &#39;proba&#39; where each</span>
+<span class="sd">        particle get assigned a probability of belonging to each class.</span>
+<span class="sd">    verbose: bool</span>
+<span class="sd">        control function verbosity</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    parts_pred: array_like</span>
+<span class="sd">        Class prediction for each particle.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Predict on numpy array by block to avoid memory issues</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+
+    <span class="n">n_block</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">n_parts</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_parts</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_parts</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: n_parts must be an int.&#39;</span><span class="p">)</span>
+    <span class="n">n_parts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_parts</span><span class="p">)</span>
+    <span class="n">clf</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_params</span><span class="p">(</span><span class="n">n_jobs</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">output</span> <span class="o">==</span> <span class="s1">&#39;class&#39;</span><span class="p">:</span>
+        <span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_block</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Predicting particle type&#39;</span><span class="p">):</span>
+            <span class="n">y_pred</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">:</span><span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">:</span><span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+        <span class="c1"># Transform numpy array to ParticleData</span>
+        <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">(</span><span class="n">y_pred</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint16&#39;</span><span class="p">))</span>
+
+    <span class="k">elif</span> <span class="n">output</span> <span class="o">==</span> <span class="s1">&#39;proba&#39;</span><span class="p">:</span>
+        <span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">len</span><span class="p">(</span><span class="n">clf</span><span class="o">.</span><span class="n">classes_</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_block</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Predicting particle type&#39;</span><span class="p">):</span>
+            <span class="n">y_pred</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">:</span><span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span>
+                <span class="n">x</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">:</span><span class="nb">min</span><span class="p">((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">n_parts</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])])</span>
+        <span class="c1"># Transform numpy array to ParticleData</span>
+        <span class="n">parts_pred</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">clf</span><span class="o">.</span><span class="n">classes_</span><span class="p">)):</span>
+            <span class="n">parts_pred</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">(</span>
+                                                   <span class="p">(</span><span class="n">y_pred</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="mi">2</span><span class="o">**</span><span class="mi">16</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span>
+                                                    <span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint16&#39;</span><span class="p">)))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Unknown output </span><span class="se">\&#39;</span><span class="si">{}</span><span class="se">\&#39;</span><span class="s1"> for APR block prediction.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">output</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Blocked prediction took </span><span class="si">{:0.3f}</span><span class="s1"> s.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+
+    <span class="k">return</span> <span class="n">parts_pred</span></div>
+
+
+<div class="viewcode-block" id="map_feature"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.map_feature">[docs]</a><span class="k">def</span> <span class="nf">map_feature</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_cc</span><span class="p">,</span> <span class="n">features</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Map feature values to segmented particle data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: pyapr.APR</span>
+<span class="sd">        apr object to map features to</span>
+<span class="sd">    parts_cc: pyapr.ParticleData</span>
+<span class="sd">        connected component particle array corresponding to apr</span>
+<span class="sd">    features: array_like</span>
+<span class="sd">        array containing the values to map</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Array of mapped values (each particle in the connected component now has the value present in features)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">objects_volume</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">measure</span><span class="o">.</span><span class="n">find_label_volume</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_cc</span><span class="p">)</span>
+    <span class="n">hash_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">objects_volume</span><span class="p">))</span>
+    <span class="c1"># Object with volume 0 are not in CC so we need to get rid of them</span>
+    <span class="n">hash_idx</span> <span class="o">=</span> <span class="n">hash_idx</span><span class="p">[</span><span class="n">objects_volume</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># We also need to get rid of the background</span>
+    <span class="n">hash_idx</span> <span class="o">=</span> <span class="n">hash_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hash_idx</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: features length (</span><span class="si">{}</span><span class="s1">) should be the same as the number of connected components (</span><span class="si">{}</span><span class="s1">).&#39;</span>
+                         <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">features</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">hash_idx</span><span class="p">)))</span>
+
+    <span class="c1"># Create hash dict</span>
+    <span class="n">hash_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">y</span> <span class="k">for</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">hash_idx</span><span class="p">,</span> <span class="n">features</span><span class="p">)}</span>
+    <span class="c1"># Replace 0 by 0</span>
+    <span class="n">hash_dict</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">mp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">parts_cc</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">mp</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">hash_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">hash_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">mp</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parts_cc</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)]</span></div>
+
+
+<div class="viewcode-block" id="compute_gradients"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.compute_gradients">[docs]</a><span class="k">def</span> <span class="nf">compute_gradients</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute gradient for each spatial direction directly on APR.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: (APR) APR object</span>
+<span class="sd">    parts: (ParticleData) particle data sampled on APR</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    (dx, dy, dz): (arrays) gradient for each direction</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+
+    <span class="n">dz</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dz</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span></div>
+
+
+<div class="viewcode-block" id="compute_laplacian"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.compute_laplacian">[docs]</a><span class="k">def</span> <span class="nf">compute_laplacian</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">grad</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute Laplacian for each spatial direction directly on APR.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: (APR) APR object</span>
+<span class="sd">    parts: (ParticleData) particle data sampled on APR</span>
+<span class="sd">    grad: (dz, dy, dx) gradient for each direction if precomputed (faster for Laplacian computation)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Laplacian of APR.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">grad</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">dz</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">compute_gradients</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">dz</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">grad</span>
+    <span class="n">dz2</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">dz</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="p">)</span>
+    <span class="n">dx2</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">dx</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="p">)</span>
+    <span class="n">dy2</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">dy</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">delta</span><span class="o">=</span><span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dz2</span> <span class="o">+</span> <span class="n">dx2</span> <span class="o">+</span> <span class="n">dy2</span></div>
+
+
+<div class="viewcode-block" id="compute_gradmag"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.compute_gradmag">[docs]</a><span class="k">def</span> <span class="nf">compute_gradmag</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute gradient magnitude directly on APR.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: (APR) APR object</span>
+<span class="sd">    parts: (ParticleData) particle data sampled on APR</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Gradient magnitude of APR.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+    <span class="n">gradmag</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">gradient_magnitude</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">deltas</span><span class="o">=</span><span class="p">(</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">gradmag</span></div>
+
+
+<div class="viewcode-block" id="gaussian_blur"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.gaussian_blur">[docs]</a><span class="k">def</span> <span class="nf">gaussian_blur</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">11</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute Gaussian blur directly on APR.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: (APR) APR object</span>
+<span class="sd">    parts: (ParticleData) particle data sampled on APR</span>
+<span class="sd">    sigma: (float) Gaussian blur standard deviation (kernel radius)</span>
+<span class="sd">    size: (int) kernel size (increase with caution, complexity is not linear)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Blurred APR.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">stencil</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">get_gaussian_stencil</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">ndims</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">normalize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">filter</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">stencil</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="particle_levels"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.particle_levels">[docs]</a><span class="k">def</span> <span class="nf">particle_levels</span><span class="p">(</span><span class="n">apr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns apr level: for each particle the lvl is defined as the size of the particle in pixel.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: (APR) APR object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Particle level.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">lvls</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">(</span><span class="n">apr</span><span class="o">.</span><span class="n">total_number_particles</span><span class="p">())</span>
+    <span class="n">lvls</span><span class="o">.</span><span class="n">fill_with_levels</span><span class="p">(</span><span class="n">apr</span><span class="p">)</span>
+    <span class="n">lvls</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">lvls</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">lvls</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">lvls</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="tileSegmenter"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileSegmenter">[docs]</a><span class="k">class</span> <span class="nc">tileSegmenter</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to segment tiles. It is instantiated with a tileLoader object, a previously trained classifier,</span>
+<span class="sd">    a function to compute features (the same features used to train the classifier and a function to get the</span>
+<span class="sd">    post processed connected component for the classifier output.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="tileSegmenter.__init__"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileSegmenter.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clf</span><span class="p">,</span> <span class="n">func_to_compute_features</span><span class="p">,</span> <span class="n">func_to_get_cc</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        clf: sklearn.classifier</span>
+<span class="sd">            pre-trained classifier</span>
+<span class="sd">        func_to_compute_features: func</span>
+<span class="sd">            function to compute the features on ParticleData. Must be the same set of</span>
+<span class="sd">            as the one used to train the classifier.</span>
+<span class="sd">        func_to_get_cc: func</span>
+<span class="sd">            function to post process the segmentation map into a connected component (each cell has</span>
+<span class="sd">                                        a unique id)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Store classifier</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">clf</span>
+        <span class="c1"># Store function to compute features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span> <span class="o">=</span> <span class="n">func_to_compute_features</span>
+        <span class="c1"># Store post processing steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span> <span class="o">=</span> <span class="n">func_to_get_cc</span>
+        <span class="c1"># Verbose</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span></div>
+
+<div class="viewcode-block" id="tileSegmenter.from_trainer"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileSegmenter.from_trainer">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_trainer</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                     <span class="n">trainer</span><span class="p">,</span>
+                     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate tileSegmenter object with a tileTrainer object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer: tileTrainer</span>
+<span class="sd">            trainer object previously trained for segmentation</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control function output</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tileSegmenter object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">clf</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span>
+                   <span class="n">func_to_compute_features</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">func_to_compute_features</span><span class="p">,</span>
+                   <span class="n">func_to_get_cc</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">func_to_get_cc</span><span class="p">,</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileSegmenter.from_classifier"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileSegmenter.from_classifier">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_classifier</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                        <span class="n">classifier</span><span class="p">,</span>
+                        <span class="n">func_to_compute_features</span><span class="p">,</span>
+                        <span class="n">func_to_get_cc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate tileSegmenter object with a classifier, function to compute the features and to get the</span>
+<span class="sd">        connected components.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        classifier</span>
+<span class="sd">        func_to_compute_features: func</span>
+<span class="sd">            function to compute features used by the classifier to perform the segmentation.</span>
+<span class="sd">        func_to_get_cc: func</span>
+<span class="sd">            function to compute the connected component from the classifier prediction.</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control function output.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tileSegmenter object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">classifier</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">classifier</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">clf</span><span class="o">=</span><span class="n">clf</span><span class="p">,</span>
+                   <span class="n">func_to_compute_features</span><span class="o">=</span><span class="n">func_to_compute_features</span><span class="p">,</span>
+                   <span class="n">func_to_get_cc</span><span class="o">=</span><span class="n">func_to_get_cc</span><span class="p">,</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileSegmenter.compute_segmentation"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileSegmenter.compute_segmentation">[docs]</a>    <span class="k">def</span> <span class="nf">compute_segmentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tile</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">tileLoader</span><span class="p">,</span>
+                             <span class="n">save_cc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lazy_loading</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the segmentation and stores the result as an independent APR.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control the verbosity of the function to print some info</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+
+        <span class="c1"># Compute features on APR</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Computing features on APR&#39;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+        <span class="c1"># self.filtered_APR = f</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Features computation took </span><span class="si">{:0.2f}</span><span class="s1"> s.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t</span><span class="p">))</span>
+
+        <span class="c1"># Predict particle class</span>
+        <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">_predict_on_APR_block</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="c1"># Display inference info</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">****** INFERENCE RESULTS ******&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="o">.</span><span class="n">classes_</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Class </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1"> particles (</span><span class="si">{:0.2f}</span><span class="s1">%)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">l</span><span class="p">),</span>
+                                                      <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">l</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts_pred</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*******************************&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Compute connected component from classification</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span> <span class="o">=</span> <span class="n">cc</span>
+
+        <span class="c1"># Save results</span>
+        <span class="k">if</span> <span class="n">save_mask</span><span class="p">:</span>
+            <span class="c1"># Write particles</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation mask&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lazy_loading</span><span class="p">:</span>
+                <span class="c1"># Compute tree parts)</span>
+                <span class="n">tree_parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">fill_tree_max</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span>
+                <span class="c1"># Save tree parts</span>
+                <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tree_parts</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation mask&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">save_cc</span><span class="p">:</span>
+            <span class="c1"># Write particles</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation cc&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lazy_loading</span><span class="p">:</span>
+                <span class="c1"># Compute tree parts</span>
+                <span class="n">tree_parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">fill_tree_max</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">cc</span><span class="p">)</span>
+                <span class="c1"># Save tree parts</span>
+                <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tree_parts</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation cc&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">tile</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">=</span> <span class="n">parts_pred</span></div></div>
+
+    <span class="c1"># def _save_segmentation(self, path, name, parts):</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Save segmentation particles by appending the original APR file.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     Parameters</span>
+    <span class="c1">#     ----------</span>
+    <span class="c1">#     parts: pyapr.ParticleData</span>
+    <span class="c1">#         particles to save. Note that the APR tree should be the same otherwise the data</span>
+    <span class="c1">#         will be inconsistent and not readable.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     Returns</span>
+    <span class="c1">#     -------</span>
+    <span class="c1">#     None</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     pyapr.io.write_particles(path, parts, parts_name=name, append=True)</span>
+    <span class="c1">#     pyapr.io.write_particles(path, tree_parts, parts_name=name, append=True, tree=True)</span>
+    <span class="c1">#     # aprfile = pyapr.io.APRFile()</span>
+    <span class="c1">#     # aprfile.set_read_write_tree(True)</span>
+    <span class="c1">#     # aprfile.open(path, &#39;READWRITE&#39;)</span>
+    <span class="c1">#     # aprfile.write_particles(name, parts, t=0)</span>
+    <span class="c1">#     # aprfile.close()</span>
+
+
+<div class="viewcode-block" id="multitileSegmenter"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter">[docs]</a><span class="k">class</span> <span class="nc">multitileSegmenter</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to segment multitiles acquisition.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="multitileSegmenter.__init__"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">tiles</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">tileParser</span><span class="p">,</span>
+                 <span class="n">database</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span>
+                 <span class="n">clf</span><span class="p">,</span>
+                 <span class="n">func_to_compute_features</span><span class="p">,</span>
+                 <span class="n">func_to_get_cc</span><span class="p">,</span>
+                 <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tiles: tileLoader</span>
+<span class="sd">            tile object for loading the tile (or containing the preloaded tile).</span>
+<span class="sd">        database: pd.DataFrame, string</span>
+<span class="sd">            dataframe (or path to the csv file) containing the registration parameters to correctly place each tile.</span>
+<span class="sd">        clf: sklearn.classifier</span>
+<span class="sd">            pre-trained classifier</span>
+<span class="sd">        func_to_compute_features: func</span>
+<span class="sd">            function to compute the features on ParticleData. Must be the same set of</span>
+<span class="sd">            as the one used to train the classifier.</span>
+<span class="sd">        func_to_get_cc: func</span>
+<span class="sd">            function to post process the segmentation map into a connected component (each cell has</span>
+<span class="sd">                                        a unique id)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Store classifier</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">clf</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">clf</span>
+        <span class="c1"># Store function to compute features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span> <span class="o">=</span> <span class="n">func_to_compute_features</span>
+        <span class="c1"># Store post processing steps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span> <span class="o">=</span> <span class="n">func_to_get_cc</span>
+
+        <span class="c1"># If database is a path then load database, if it&#39;s a DataFrame keep it as it is.</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">database</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: database of wrong type.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span> <span class="o">=</span> <span class="n">tiles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">tiles_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_tiles</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">n_tiles</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">ncol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">nrow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">neighbors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_edges</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">n_edges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_list</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">path_list</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">frame_size</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">frame_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atlas</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="multitileSegmenter.from_trainer"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter.from_trainer">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_trainer</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                     <span class="n">tiles</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">tileParser</span><span class="p">,</span>
+                     <span class="n">database</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span>
+                     <span class="n">trainer</span><span class="p">,</span>
+                     <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate tileSegmenter object with a tileTrainer object.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        trainer: tileTrainer</span>
+<span class="sd">            trainer object previously trained for segmentation</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control function output</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tileSegmenter object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">,</span>
+                   <span class="n">database</span><span class="o">=</span> <span class="n">database</span><span class="p">,</span>
+                   <span class="n">clf</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span>
+                   <span class="n">func_to_compute_features</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">func_to_compute_features</span><span class="p">,</span>
+                   <span class="n">func_to_get_cc</span><span class="o">=</span><span class="n">trainer</span><span class="o">.</span><span class="n">func_to_get_cc</span><span class="p">,</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter.from_classifier"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter.from_classifier">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_classifier</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                        <span class="n">tiles</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">tileParser</span><span class="p">,</span>
+                        <span class="n">database</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">),</span>
+                        <span class="n">classifier</span><span class="p">,</span>
+                        <span class="n">func_to_compute_features</span><span class="p">,</span>
+                        <span class="n">func_to_get_cc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Instantiate tileSegmenter object with a classifier, function to compute the features and to get the</span>
+<span class="sd">        connected components.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        classifier</span>
+<span class="sd">        func_to_compute_features: func</span>
+<span class="sd">            function to compute features used by the classifier to perform the segmentation.</span>
+<span class="sd">        func_to_get_cc: func</span>
+<span class="sd">            function to compute the connected component from the classifier prediction.</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control function output.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tileSegmenter object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">classifier</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">classifier</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">clf</span> <span class="o">=</span> <span class="n">classifier</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">tiles</span><span class="o">=</span><span class="n">tiles</span><span class="p">,</span>
+                   <span class="n">database</span><span class="o">=</span> <span class="n">database</span><span class="p">,</span>
+                   <span class="n">clf</span><span class="o">=</span><span class="n">clf</span><span class="p">,</span>
+                   <span class="n">func_to_compute_features</span><span class="o">=</span><span class="n">func_to_compute_features</span><span class="p">,</span>
+                   <span class="n">func_to_get_cc</span><span class="o">=</span><span class="n">func_to_get_cc</span><span class="p">,</span>
+                   <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="multitileSegmenter.compute_multitile_segmentation"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter.compute_multitile_segmentation">[docs]</a>    <span class="k">def</span> <span class="nf">compute_multitile_segmentation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save_cc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lowe_ratio</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">distance_max</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">lazy_loading</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the segmentation and stores the result as an independent APR.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control the verbosity of the function to print some info</span>
+<span class="sd">        save_cc: bool</span>
+<span class="sd">            option to save the connected component particle to file</span>
+<span class="sd">        save_mask: bool</span>
+<span class="sd">            option to save the prediction mask to file</span>
+<span class="sd">        lowe_ratio: float in ]0, 1[</span>
+<span class="sd">            ratio between the second nearest neighbor and the first nearest neighbor to be considered a good match</span>
+<span class="sd">        distance_max: float</span>
+<span class="sd">            maximum distance in pixel for two objects to be matched</span>
+<span class="sd">        lazy_loading: bool</span>
+<span class="sd">            option to save the tree particles to allow for lazy loading later on</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Extracting and merging cells..&#39;</span><span class="p">):</span>
+
+            <span class="c1"># Perform tile segmentation</span>
+            <span class="n">tile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_tile</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">save_cc</span><span class="o">=</span><span class="n">save_cc</span><span class="p">,</span> <span class="n">save_mask</span><span class="o">=</span><span class="n">save_mask</span><span class="p">,</span> <span class="n">lazy_loading</span><span class="o">=</span><span class="n">lazy_loading</span><span class="p">)</span>
+
+            <span class="c1"># Remove objects on the edge</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">morphology</span><span class="o">.</span><span class="n">remove_edge_objects</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">,</span> <span class="n">z_edges</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="c1"># Initialized merged cells for the first tile</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">measure</span><span class="o">.</span><span class="n">find_label_centers</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+            <span class="c1"># Then merge the rest on the first tile</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_merge_cells</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">lowe_ratio</span><span class="o">=</span><span class="n">lowe_ratio</span><span class="p">,</span> <span class="n">distance_max</span><span class="o">=</span><span class="n">distance_max</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save_cells</span><span class="p">(</span><span class="n">output_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;cells_backup.csv&#39;</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not back up cells.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter.extract_and_merge_cells"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter.extract_and_merge_cells">[docs]</a>    <span class="k">def</span> <span class="nf">extract_and_merge_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lowe_ratio</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">distance_max</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to extract cell positions in each tile and merging across all tiles.</span>
+<span class="sd">        Identical cells on overlapping area are automatically detected using Flann method.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        lowe_ratio: float</span>
+<span class="sd">            ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is</span>
+<span class="sd">            supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.</span>
+<span class="sd">        distance_max: float</span>
+<span class="sd">            maximum distance in pixel for two cells to be considered the same.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Extracting and merging cells..&#39;</span><span class="p">):</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">load_segmentation</span><span class="p">()</span>
+            
+            <span class="c1"># Remove objects on the edge</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">morphology</span><span class="o">.</span><span class="n">remove_edge_objects</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">)</span>
+
+            <span class="c1"># Initialized merged cells for the first tile</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">measure</span><span class="o">.</span><span class="n">find_label_centers</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+            <span class="c1"># Then merge the rest on the first tile</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_merge_cells</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">lowe_ratio</span><span class="o">=</span><span class="n">lowe_ratio</span><span class="p">,</span> <span class="n">distance_max</span><span class="o">=</span><span class="n">distance_max</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">save_cells</span><span class="p">(</span><span class="n">output_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;cells_backup.csv&#39;</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Could not back up cells.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter.save_cells"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter.save_cells">[docs]</a>    <span class="k">def</span> <span class="nf">save_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">output_path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save cells as a CSV file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_path: string</span>
+<span class="sd">            path for saving the CSV file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">)</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">output_path</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;z&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="s1">&#39;x&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter._segment_tile"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter._segment_tile">[docs]</a>    <span class="k">def</span> <span class="nf">_segment_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tile</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">tileLoader</span><span class="p">,</span>
+                             <span class="n">save_cc</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_mask</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">lazy_loading</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compute the segmentation and stores the result as an independent APR.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control the verbosity of the function to print some info</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+
+        <span class="c1"># Compute features on APR</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Computing features on APR&#39;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filtered_APR</span> <span class="o">=</span> <span class="n">f</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Features computation took </span><span class="si">{:0.2f}</span><span class="s1"> s.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="p">()</span><span class="o">-</span><span class="n">t</span><span class="p">))</span>
+
+        <span class="c1"># Predict particle class</span>
+        <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">_predict_on_APR_block</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="c1"># Display inference info</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">****** INFERENCE RESULTS ******&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="o">.</span><span class="n">classes_</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Class </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1"> particles (</span><span class="si">{:0.2f}</span><span class="s1">%)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">l</span><span class="p">),</span>
+                                                      <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">l</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts_pred</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;*******************************&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Compute connected component from classification</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">cc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span> <span class="o">=</span> <span class="n">cc</span>
+
+        <span class="c1"># Save results</span>
+        <span class="k">if</span> <span class="n">save_mask</span><span class="p">:</span>
+            <span class="c1"># Write particles</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation mask&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lazy_loading</span><span class="p">:</span>
+                <span class="c1"># Compute tree parts)</span>
+                <span class="n">tree_parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">fill_tree_max</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span>
+                <span class="c1"># Save tree parts</span>
+                <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tree_parts</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation mask&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">save_cc</span><span class="p">:</span>
+            <span class="c1"># Write particles</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation cc&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">lazy_loading</span><span class="p">:</span>
+                <span class="c1"># Compute tree parts</span>
+                <span class="n">tree_parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">fill_tree_max</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">cc</span><span class="p">)</span>
+                <span class="c1"># Save tree parts</span>
+                <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write_particles</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">tree_parts</span><span class="p">,</span> <span class="n">parts_name</span><span class="o">=</span><span class="s1">&#39;segmentation cc&#39;</span><span class="p">,</span> <span class="n">tree</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">append</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">tile</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">=</span> <span class="n">parts_pred</span>
+
+        <span class="k">return</span> <span class="n">tile</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter._merge_cells"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter._merge_cells">[docs]</a>    <span class="k">def</span> <span class="nf">_merge_cells</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tile</span><span class="p">,</span> <span class="n">lowe_ratio</span><span class="p">,</span> <span class="n">distance_max</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to merge cells on a tile to the final cells list and remove duplicate.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tile: tileLoader</span>
+<span class="sd">            tile from which to merge cells</span>
+<span class="sd">        lowe_ratio: float</span>
+<span class="sd">            ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is</span>
+<span class="sd">            supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.</span>
+<span class="sd">        distance_max: float</span>
+<span class="sd">            maximum distance in pixel for two cells to be considered the same.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+            <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">r1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">r2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+
+        <span class="n">v_size</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="o">.</span><span class="n">shape</span><span class="p">())</span>
+
+        <span class="c1"># Define the overlapping area</span>
+        <span class="n">overlap_i</span> <span class="o">=</span> <span class="n">r2</span>
+        <span class="n">overlap_f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">((</span><span class="n">r1</span> <span class="o">+</span> <span class="n">v_size</span><span class="p">,</span> <span class="n">r2</span> <span class="o">+</span> <span class="n">v_size</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Retrieve cell centers</span>
+        <span class="n">cells2</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">measure</span><span class="o">.</span><span class="n">find_label_centers</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+        <span class="n">cells2</span> <span class="o">+=</span> <span class="n">r2</span>
+
+        <span class="c1"># Filter cells to keep only those on the overlapping area</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">overlap_i</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ind</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">overlap_i</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ind</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">overlap_f</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]))</span>
+
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+
+        <span class="n">cells1_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">cells1_overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">,</span> <span class="n">ind</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cells2</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">overlap_i</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ind</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cells2</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">overlap_i</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">ind</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">cells2</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">overlap_f</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+
+        <span class="n">cells2_out</span> <span class="o">=</span> <span class="n">cells2</span><span class="p">[</span><span class="n">ind</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">cells2_overlap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">cells2</span><span class="p">,</span> <span class="n">ind</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Number of cells should be higher than the number of features for the KNN implementation to work.</span>
+        <span class="k">if</span> <span class="n">cells2_overlap</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">cells_filtered_overlap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_filter_cells_flann</span><span class="p">(</span><span class="n">cells1_overlap</span><span class="p">,</span>
+                                                              <span class="n">cells2_overlap</span><span class="p">,</span>
+                                                              <span class="n">lowe_ratio</span><span class="o">=</span><span class="n">lowe_ratio</span><span class="p">,</span>
+                                                              <span class="n">distance_max</span><span class="o">=</span><span class="n">distance_max</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">cells1_out</span><span class="p">,</span> <span class="n">cells2_out</span><span class="p">,</span> <span class="n">cells_filtered_overlap</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">cells1_out</span><span class="p">,</span> <span class="n">cells2_out</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter._get_tile_position"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter._get_tile_position">[docs]</a>    <span class="k">def</span> <span class="nf">_get_tile_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to get the absolute tile position defined by it&#39;s coordinate in the multitile set.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        row: int</span>
+<span class="sd">            row number</span>
+<span class="sd">        col: int</span>
+<span class="sd">            column number</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _: ndarray</span>
+<span class="sd">            tile absolute position</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span>
+        <span class="n">tile_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;row&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">row</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;col&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">col</span><span class="p">)]</span>
+        <span class="n">px</span> <span class="o">=</span> <span class="n">tile_df</span><span class="p">[</span><span class="s1">&#39;ABS_H&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">py</span> <span class="o">=</span> <span class="n">tile_df</span><span class="p">[</span><span class="s1">&#39;ABS_V&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pz</span> <span class="o">=</span> <span class="n">tile_df</span><span class="p">[</span><span class="s1">&#39;ABS_D&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">pz</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">px</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="multitileSegmenter._filter_cells_flann"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.multitileSegmenter._filter_cells_flann">[docs]</a>    <span class="k">def</span> <span class="nf">_filter_cells_flann</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">,</span> <span class="n">lowe_ratio</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">distance_max</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove cells duplicate using Flann criteria and distance threshold.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        c1: ndarray</span>
+<span class="sd">            array containing the first set cells coordinates</span>
+<span class="sd">        c2: ndarray</span>
+<span class="sd">            array containing the second set cells coordinates</span>
+<span class="sd">        lowe_ratio: float</span>
+<span class="sd">            ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is</span>
+<span class="sd">            supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.</span>
+<span class="sd">        distance_max: float</span>
+<span class="sd">            maximum distance in pixel for two cells to be considered the same.</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            control function verbosity</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _: ndarray</span>
+<span class="sd">            array containing the merged sets without the duplicates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">lowe_ratio</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">lowe_ratio</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Lowe ratio is </span><span class="si">{}</span><span class="s1">, expected between 0 and 1.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">lowe_ratio</span><span class="p">))</span>
+
+        <span class="c1"># Match cells descriptors by using Flann method</span>
+        <span class="n">FLANN_INDEX_KDTREE</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">index_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="n">FLANN_INDEX_KDTREE</span><span class="p">,</span> <span class="n">trees</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+        <span class="n">search_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">checks</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">flann</span> <span class="o">=</span> <span class="n">cv</span><span class="o">.</span><span class="n">FlannBasedMatcher</span><span class="p">(</span><span class="n">index_params</span><span class="p">,</span> <span class="n">search_params</span><span class="p">)</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="n">flann</span><span class="o">.</span><span class="n">knnMatch</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">c1</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">c2</span><span class="p">),</span> <span class="n">k</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># store all the good matches as per Lowe&#39;s ratio test.</span>
+        <span class="n">good</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">matches</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">distance</span> <span class="o">&lt;</span> <span class="n">lowe_ratio</span><span class="o">*</span><span class="n">n</span><span class="o">.</span><span class="n">distance</span> <span class="ow">and</span> <span class="n">m</span><span class="o">.</span><span class="n">distance</span> <span class="o">&lt;</span> <span class="n">distance_max</span><span class="p">:</span>
+                <span class="n">good</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+        <span class="c1"># Remove cells that are present in both volumes</span>
+        <span class="n">ind_c1</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">queryIdx</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">good</span><span class="p">]</span>
+        <span class="n">ind_c2</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">trainIdx</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">good</span><span class="p">]</span>
+
+        <span class="c1"># For now I just remove the cells in c2 but merging strategies can be better</span>
+        <span class="n">c2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">c2</span><span class="p">,</span> <span class="n">ind_c2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Display info</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:0.2f}% o</span><span class="s1">f cells were removed.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ind_c2</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">c2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">ind_c2</span><span class="p">))</span><span class="o">*</span><span class="mi">100</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ZeroDivisionError</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No cell removed.&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">c1</span><span class="p">,</span> <span class="n">c2</span><span class="p">))</span></div></div>
+
+    <span class="c1"># def _save_segmentation(self, path, name, parts, tree_parts):</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     Save segmentation particles by appending the original APR file.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     Parameters</span>
+    <span class="c1">#     ----------</span>
+    <span class="c1">#     parts: pyapr.ParticleData</span>
+    <span class="c1">#         particles to save. Note that the APR tree should be the same otherwise the data</span>
+    <span class="c1">#         will be inconsistent and not readable.</span>
+    <span class="c1">#     tree_parts: pyapr.ParticleData</span>
+    <span class="c1">#         tree particles necessary for lazy loading.</span>
+    <span class="c1">#</span>
+    <span class="c1">#     Returns</span>
+    <span class="c1">#     -------</span>
+    <span class="c1">#     None</span>
+    <span class="c1">#     &quot;&quot;&quot;</span>
+    <span class="c1">#     pyapr.io.write_particles(path, parts, parts_name=name, append=True)</span>
+    <span class="c1">#     pyapr.io.write_particles(path, tree_parts, parts_name=name, append=True, tree=True)</span>
+    <span class="c1">#     # aprfile = pyapr.io.APRFile()</span>
+    <span class="c1">#     # aprfile.set_read_write_tree(True)</span>
+    <span class="c1">#     # aprfile.open(path, &#39;READWRITE&#39;)</span>
+    <span class="c1">#     # aprfile.write_particles(name, parts, t=0, tree_parts=tree_parts)</span>
+    <span class="c1">#     # aprfile.close()</span>
+
+
+<div class="viewcode-block" id="tileTrainer"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer">[docs]</a><span class="k">class</span> <span class="nc">tileTrainer</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used to train a classifier that works directly on APR data. It uses Napari to manually add labels.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">tile</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">tileLoader</span><span class="p">,</span>
+                 <span class="n">func_to_compute_features</span><span class="p">,</span>
+                 <span class="n">func_to_get_cc</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tile</span> <span class="o">=</span> <span class="n">tile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apr</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">apr_it</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="o">.</span><span class="n">iterator</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span> <span class="o">=</span> <span class="n">func_to_compute_features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span> <span class="o">=</span> <span class="n">func_to_get_cc</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_sparse_labels</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts_cc</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="kc">None</span>
+
+<div class="viewcode-block" id="tileTrainer.manually_annotate"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.manually_annotate">[docs]</a>    <span class="k">def</span> <span class="nf">manually_annotate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_sparse_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Manually annotate dataset using Napari.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        use_sparse_labels: bool</span>
+<span class="sd">            use sparse array to store the labels (memory efficient but slower graphics)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sparse</span> <span class="o">=</span> <span class="n">use_sparse_labels</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sparse</span><span class="p">:</span>
+            <span class="c1"># We create a sparse array that supports inserting data (COO does not)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">DOK</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+
+        <span class="c1"># We call napari with the APRSlicer and the sparse array for storing the manual annotations</span>
+        <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+        <span class="n">image_layer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">image_layer</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># We extract labels and pixel coordinate from the sparse array</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sparse</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">to_coo</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">COO</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">data</span></div>
+
+<div class="viewcode-block" id="tileTrainer.add_annotations"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.add_annotations">[docs]</a>    <span class="k">def</span> <span class="nf">add_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_sparse_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Add annotations on previously annotated dataset.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        use_sparse_labels: bool</span>
+<span class="sd">            use sparse array to store the labels (memory efficient but slower graphics)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sparse</span> <span class="o">=</span> <span class="n">use_sparse_labels</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sparse</span><span class="p">:</span>
+            <span class="c1"># We create a sparse array that supports inserting data (COO does not)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">DOK</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">todense</span><span class="p">()</span>
+
+        <span class="c1"># We call napari with the APRSlicer and the sparse array for storing the manual annotations</span>
+        <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+        <span class="n">image_layer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">),</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">image_layer</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># We extract labels and pixel coordinate from the sparse array</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sparse</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">to_coo</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">COO</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">coords</span><span class="o">.</span><span class="n">T</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="o">.</span><span class="n">data</span></div>
+
+<div class="viewcode-block" id="tileTrainer.save_labels"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.save_labels">[docs]</a>    <span class="k">def</span> <span class="nf">save_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save labels as numpy array with columns corresponding to [z, y, x, label].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            path to save labels. By default it saves them in the data root folder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tile</span><span class="o">.</span><span class="n">folder_root</span><span class="p">,</span> <span class="s1">&#39;manual_labels.npy&#39;</span><span class="p">)</span>
+
+        <span class="n">to_be_saved</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">to_be_saved</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer.load_labels"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.load_labels">[docs]</a>    <span class="k">def</span> <span class="nf">load_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load previously saved labels as numpy array with columns corresponding to [z, y, x, label].</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            path to load the saved labels. By default it loads them in the data root folder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tile</span><span class="o">.</span><span class="n">folder_root</span><span class="p">,</span> <span class="s1">&#39;manual_labels.npy&#39;</span><span class="p">)</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="n">data</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span> <span class="o">=</span> <span class="n">sparse</span><span class="o">.</span><span class="n">COO</span><span class="p">(</span><span class="n">coords</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer.train_classifier"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.train_classifier">[docs]</a>    <span class="k">def</span> <span class="nf">train_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">n_estimators</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">class_weight</span><span class="o">=</span><span class="s1">&#39;balanced&#39;</span><span class="p">,</span>
+                         <span class="n">mean_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">std_norm</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Train the classifier for segmentation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            option to print out information.</span>
+<span class="sd">        n_estimators : int</span>
+<span class="sd">            The number of trees in the random forest.</span>
+<span class="sd">        class_weight : {&quot;balanced&quot;, &quot;balanced_subsample&quot;}, dict or list of dicts,</span>
+<span class="sd">            Weights associated with classes in the form ``{class_label: weight}``.</span>
+<span class="sd">            If not given, all classes are supposed to have weight one. For</span>
+<span class="sd">            multi-output problems, a list of dicts can be provided in the same</span>
+<span class="sd">            order as the columns of y.</span>
+
+<span class="sd">            Note that for multioutput (including multilabel) weights should be</span>
+<span class="sd">            defined for each class of every column in its own dict. For example,</span>
+<span class="sd">            for four-class multilabel classification weights should be</span>
+<span class="sd">            [{0: 1, 1: 1}, {0: 1, 1: 5}, {0: 1, 1: 1}, {0: 1, 1: 1}] instead of</span>
+<span class="sd">            [{1:1}, {2:5}, {3:1}, {4:1}].</span>
+
+<span class="sd">            The &quot;balanced&quot; mode uses the values of y to automatically adjust</span>
+<span class="sd">            weights inversely proportional to class frequencies in the input data</span>
+<span class="sd">            as ``n_samples / (n_classes * np.bincount(y))``</span>
+
+<span class="sd">            The &quot;balanced_subsample&quot; mode is the same as &quot;balanced&quot; except that</span>
+<span class="sd">            weights are computed based on the bootstrap sample for every tree</span>
+<span class="sd">            grown.</span>
+
+<span class="sd">            For multi-output, the weights of each column of y will be multiplied.</span>
+
+<span class="sd">            Note that these weights will be multiplied with sample_weight (passed</span>
+<span class="sd">            through the fit method) if sample_weight is specified.</span>
+<span class="sd">        mean_norm : bool</span>
+<span class="sd">            If True, center the data before scaling.</span>
+<span class="sd">        std_norm : bool</span>
+<span class="sd">            If True, scale the data to unit variance (or equivalently,</span>
+<span class="sd">            unit standard deviation).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: annotate dataset or load annotations before training classifier.&#39;</span><span class="p">)</span>
+
+        <span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">preprocessing</span>
+        <span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="kn">import</span> <span class="n">make_pipeline</span>
+        <span class="kn">from</span> <span class="nn">sklearn.ensemble</span> <span class="kn">import</span> <span class="n">RandomForestClassifier</span>
+
+        <span class="c1"># We sample pixel_list on APR grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sample_pixel_list_on_APR</span><span class="p">()</span>
+
+        <span class="c1"># We remove ambiguous case where a particle was labeled differently</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remove_ambiguities</span><span class="p">(</span><span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+
+        <span class="c1"># We compute features and train the classifier</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+
+        <span class="c1"># Fetch data that was manually labelled</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span>
+
+        <span class="c1"># Train random forest</span>
+        <span class="n">clf</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">preprocessing</span><span class="o">.</span><span class="n">StandardScaler</span><span class="p">(</span><span class="n">with_mean</span><span class="o">=</span><span class="n">mean_norm</span><span class="p">,</span> <span class="n">with_std</span><span class="o">=</span><span class="n">std_norm</span><span class="p">),</span>
+                            <span class="n">RandomForestClassifier</span><span class="p">(</span><span class="n">n_estimators</span><span class="o">=</span><span class="n">n_estimators</span><span class="p">,</span> <span class="n">class_weight</span><span class="o">=</span><span class="n">class_weight</span><span class="p">))</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">ravel</span><span class="p">())</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Training took </span><span class="si">{}</span><span class="s1"> s.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t</span><span class="p">))</span>
+
+        <span class="n">x_pred</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="c1"># Display training info</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">****** TRAINING RESULTS ******&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Total accuracy: </span><span class="si">{:0.2f}</span><span class="s1">%&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x_pred</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span> <span class="o">/</span> <span class="n">y</span><span class="o">.</span><span class="n">size</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_labels</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Class </span><span class="si">{}</span><span class="s1"> accuracy: </span><span class="si">{:0.2f}</span><span class="s1">% (</span><span class="si">{}</span><span class="s1"> cell particles)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">x_pred</span> <span class="o">==</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">l</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">l</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">y</span> <span class="o">==</span> <span class="n">l</span><span class="p">)))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;******************************</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">clf</span></div>
+
+<div class="viewcode-block" id="tileTrainer.segment_training_tile"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.segment_training_tile">[docs]</a>    <span class="k">def</span> <span class="nf">segment_training_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bg_label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">display_result</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply classifier to the whole tile and display segmentation results using Napari.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        display_result: bool</span>
+<span class="sd">            option to display segmentation results using Napari</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            option to print out information.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Apply on whole dataset</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">_predict_on_APR_block</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">=</span> <span class="n">parts_pred</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_cc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parts_cc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_get_cc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+
+        <span class="c1"># Display inference info</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">****** INFERENCE RESULTS ******&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_labels</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Class </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1"> cell particles (</span><span class="si">{:0.2f}</span><span class="s1">%)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">==</span> <span class="n">l</span><span class="p">),</span>
+                                                            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">==</span> <span class="n">l</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;******************************</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Display segmentation using Napari</span>
+        <span class="k">if</span> <span class="n">display_result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_cc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">pipapr</span><span class="o">.</span><span class="n">viewer</span><span class="o">.</span><span class="n">display_segmentation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">bg_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_mask</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
+                <span class="n">parts_pred</span><span class="p">[</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">bg_label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">(</span><span class="n">parts_pred</span><span class="p">)</span>
+                <span class="n">pipapr</span><span class="o">.</span><span class="n">viewer</span><span class="o">.</span><span class="n">display_segmentation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer.display_training_annotations"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.display_training_annotations">[docs]</a>    <span class="k">def</span> <span class="nf">display_training_annotations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display manual annotations and their sampling on APR grid (if available).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">image_nap</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">),</span>
+                                        <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">image_nap</span><span class="p">)</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">labels_manual</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Manual labels&#39;</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint16&#39;</span><span class="p">)</span>
+            <span class="n">mask</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span>
+            <span class="n">label_map</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Labels</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span>
+                                                                                 <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">(</span><span class="n">mask</span><span class="p">),</span>
+                                                                                 <span class="n">tree_mode</span><span class="o">=</span><span class="s1">&#39;max&#39;</span><span class="p">),</span>
+                                             <span class="n">name</span><span class="o">=</span><span class="s1">&#39;APR labels&#39;</span><span class="p">,</span>
+                                             <span class="n">opacity</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">label_map</span><span class="p">)</span>
+        <span class="n">napari</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="tileTrainer.apply_on_tile"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.apply_on_tile">[docs]</a>    <span class="k">def</span> <span class="nf">apply_on_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tile</span><span class="p">,</span> <span class="n">bg_label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">func_to_get_cc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">display_result</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Apply classifier to the whole tile and display segmentation results using Napari.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        display_result: bool</span>
+<span class="sd">            option to display segmentation results using Napari</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            option to print out information.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Apply on whole dataset</span>
+        <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">func_to_compute_features</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span><span class="p">)</span>
+        <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">_predict_on_APR_block</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">tile</span><span class="o">.</span><span class="n">parts_mask</span> <span class="o">=</span> <span class="n">parts_pred</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="c1"># Display inference info</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">****** INFERENCE RESULTS ******&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_labels</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Class </span><span class="si">{}</span><span class="s1">: </span><span class="si">{}</span><span class="s1"> cell particles (</span><span class="si">{:0.2f}</span><span class="s1">%)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">l</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">l</span><span class="p">),</span>
+                                                            <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">parts_pred</span> <span class="o">==</span> <span class="n">l</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts_pred</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;******************************</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="c1"># Display segmentation using Napari</span>
+        <span class="k">if</span> <span class="n">display_result</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">func_to_get_cc</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span> <span class="o">=</span> <span class="n">func_to_get_cc</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span>
+                <span class="n">pipapr</span><span class="o">.</span><span class="n">viewer</span><span class="o">.</span><span class="n">display_segmentation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">bg_label</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parts_pred</span><span class="p">)</span>
+                <span class="n">parts_pred</span><span class="p">[</span><span class="n">parts_pred</span><span class="o">==</span><span class="n">bg_label</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">parts_pred</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">(</span><span class="n">parts_pred</span><span class="p">)</span>
+                <span class="n">pipapr</span><span class="o">.</span><span class="n">viewer</span><span class="o">.</span><span class="n">display_segmentation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts</span><span class="p">,</span> <span class="n">parts_pred</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer.save_classifier"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.save_classifier">[docs]</a>    <span class="k">def</span> <span class="nf">save_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Save the trained classifier.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            path for saving the classifier. By default, it is saved in the data root folder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">dump</span>
+
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tile</span><span class="o">.</span><span class="n">folder_root</span><span class="p">,</span> <span class="s1">&#39;random_forest_n100.joblib&#39;</span><span class="p">)</span>
+
+        <span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clf</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer.load_classifier"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.load_classifier">[docs]</a>    <span class="k">def</span> <span class="nf">load_classifier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load a trained classifier.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            path for loading the classifier. By default, it is loaded from root folder.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">joblib</span> <span class="kn">import</span> <span class="n">load</span>
+
+        <span class="k">if</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tile</span><span class="o">.</span><span class="n">folder_root</span><span class="p">,</span> <span class="s1">&#39;random_forest_n100.joblib&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">clf</span> <span class="o">=</span> <span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer.display_features"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer.display_features">[docs]</a>    <span class="k">def</span> <span class="nf">display_features</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display the computed features.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: filters can&#39;&#39;t be displayed because they were not computed&#39;</span><span class="p">)</span>
+
+        <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">pipapr</span><span class="o">.</span><span class="n">viewer</span><span class="o">.</span><span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">FloatParticles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])))</span>
+        <span class="n">napari</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="tileTrainer._remove_ambiguities"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer._remove_ambiguities">[docs]</a>    <span class="k">def</span> <span class="nf">_remove_ambiguities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Remove particles that have been labelled with different labels.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        verbose: bool</span>
+<span class="sd">            option to print out information.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: train classifier before removing ambiguities.&#39;</span><span class="p">)</span>
+
+        <span class="n">idx_unique</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span><span class="p">)</span>
+
+        <span class="n">parts_train</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">parts_labels</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">cnt</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idx_unique</span><span class="p">:</span>
+            <span class="n">local_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span><span class="o">==</span><span class="n">idx</span><span class="p">]</span>
+            <span class="n">is_same</span><span class="p">,</span> <span class="n">l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_are_labels_the_same</span><span class="p">(</span><span class="n">local_labels</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_same</span><span class="p">:</span>
+                <span class="c1"># If labels are the same we assign it</span>
+                <span class="n">parts_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+                <span class="n">parts_train</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cnt</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parts_train</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">parts_labels</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">unique_labels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">********* ANNOTATIONS ***********&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> ambiguous particles were removed.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cnt</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> particles were labeled.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+            <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">unique_labels</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> particles (</span><span class="si">{:0.2f}</span><span class="s1">%) were labeled as </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span><span class="o">==</span><span class="n">l</span><span class="p">),</span>
+                                                                       <span class="mi">100</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span><span class="o">==</span><span class="n">l</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">parts_labels</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                                                        <span class="n">l</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;***********************************</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileTrainer._sample_pixel_list_on_APR"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer._sample_pixel_list_on_APR">[docs]</a>    <span class="k">def</span> <span class="nf">_sample_pixel_list_on_APR</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Convert manual annotations coordinates from pixel to APR.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint64&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Sampling labels on APR.&#39;</span><span class="p">):</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_particle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">parts_train_idx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span></div>
+
+<div class="viewcode-block" id="tileTrainer._find_particle"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer._find_particle">[docs]</a>    <span class="k">def</span> <span class="nf">_find_particle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find particle index corresponding to pixel location coords.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coords: array_like</span>
+<span class="sd">            pixel coordinate [z, y, x]</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        idx: (int) particle index</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: @JOEL PUT THIS IN C++ PLEASE</span>
+        <span class="k">for</span> <span class="n">level</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr_it</span><span class="o">.</span><span class="n">level_min</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">apr_it</span><span class="o">.</span><span class="n">level_max</span><span class="p">()</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">particle_size</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr</span><span class="o">.</span><span class="n">level_max</span><span class="p">()</span> <span class="o">-</span> <span class="n">level</span><span class="p">)</span>
+            <span class="n">z_l</span><span class="p">,</span> <span class="n">x_l</span><span class="p">,</span> <span class="n">y_l</span> <span class="o">=</span> <span class="n">coords</span> <span class="o">//</span> <span class="n">particle_size</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">apr_it</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">level</span><span class="p">,</span> <span class="n">z_l</span><span class="p">,</span> <span class="n">x_l</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">apr_it</span><span class="o">.</span><span class="n">end</span><span class="p">()):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">apr_it</span><span class="o">.</span><span class="n">y</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="o">==</span> <span class="n">y_l</span><span class="p">:</span>
+                    <span class="c1"># if np.sqrt(np.sum((coords-np.array([z_l, x_l, y_l])*particle_size)**2))/particle_size &gt; np.sqrt(3):</span>
+                    <span class="c1">#     print(&#39;ich&#39;)</span>
+                    <span class="k">return</span> <span class="n">idx</span></div>
+
+<div class="viewcode-block" id="tileTrainer._order_labels"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer._order_labels">[docs]</a>    <span class="k">def</span> <span class="nf">_order_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Order pixel_list in z increasing order, then y increasing order and finally x increasing order.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="p">[:,</span> <span class="n">d</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_list</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="tileTrainer._are_labels_the_same"><a class="viewcode-back" href="../../pipapr.segmenter.html#pipapr.segmenter.tileTrainer._are_labels_the_same">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">_are_labels_the_same</span><span class="p">(</span><span class="n">local_labels</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Determine if manual labels in particle are the same and return the labels</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        local_labels: ndarray</span>
+<span class="sd">            particle labels</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ((bool): True if labels are the same, (int) corresponding label)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">((</span><span class="n">local_labels</span> <span class="o">==</span> <span class="n">local_labels</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">all</span><span class="p">(),</span> <span class="n">local_labels</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

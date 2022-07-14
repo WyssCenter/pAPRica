@@ -1,5 +1,5 @@
-pipapr.viewer module
-====================
+pipapr.viewer
+=============
 
 .. automodule:: pipapr.viewer
    :members:

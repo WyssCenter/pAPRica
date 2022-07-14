@@ -1,5 +1,5 @@
-pipapr.segmenter module
-=======================
+pipapr.segmenter
+================
 
 .. automodule:: pipapr.segmenter
    :members:

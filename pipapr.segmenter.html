@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.segmenter module &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.segmenter &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pipapr.stitcher module" href="pipapr.stitcher.html" />
-    <link rel="prev" title="pipapr.parser module" href="pipapr.parser.html" /> 
+    <link rel="next" title="pipapr.stitcher" href="pipapr.stitcher.html" />
+    <link rel="prev" title="pipapr.parser" href="pipapr.parser.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,22 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="pipapr.html">pipapr package</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pipapr.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.converter.html">pipapr.converter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.loader.html">pipapr.loader module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.parser.html">pipapr.parser module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">pipapr.segmenter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer module</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pipapr.html#module-contents">Module contents</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.runner.html">pipapr.runner</a></li>
 </ul>
 
         </div>
@@ -82,8 +76,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">pipapr package</a> &raquo;</li>
-      <li>pipapr.segmenter module</li>
+          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>pipapr.segmenter</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.segmenter.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -93,16 +87,672 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pipapr-segmenter-module">
-<h1>pipapr.segmenter module<a class="headerlink" href="#pipapr-segmenter-module" title="Permalink to this heading"></a></h1>
+  <section id="module-pipapr.segmenter">
+<span id="pipapr-segmenter"></span><h1>pipapr.segmenter<a class="headerlink" href="#module-pipapr.segmenter" title="Permalink to this heading"></a></h1>
+<p>Module containing classes and functions relative to Segmentation.</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter._predict_on_APR_block">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">_predict_on_APR_block</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_parts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10000000.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'class'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#_predict_on_APR_block"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter._predict_on_APR_block" title="Permalink to this definition"></a></dt>
+<dd><p>Predict particle class with the trained classifier clf on the precomputed features f using a
+blocked strategy to avoid memory segfault.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>ndarray</em>) – features (n_particle, n_features) for particle prediction</p></li>
+<li><p><strong>n_parts</strong> (<em>int</em>) – number of particles in the batch to predict</p></li>
+<li><p><strong>output</strong> (<em>string</em>) – output type, can be ‘class’ where each particle get assigned a class or ‘proba’ where each
+particle get assigned a probability of belonging to each class.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – control function verbosity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>parts_pred</strong> – Class prediction for each particle.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter.compute_gradients">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">compute_gradients</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#compute_gradients"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.compute_gradients" title="Permalink to this definition"></a></dt>
+<dd><p>Compute gradient for each spatial direction directly on APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>(</em><em>APR</em><em>) </em><em>APR object</em>) – </p></li>
+<li><p><strong>parts</strong> (<em>(</em><em>ParticleData</em><em>) </em><em>particle data sampled on APR</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>(dx, dy, dz)</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(arrays) gradient for each direction</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter.compute_gradmag">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">compute_gradmag</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#compute_gradmag"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.compute_gradmag" title="Permalink to this definition"></a></dt>
+<dd><p>Compute gradient magnitude directly on APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>(</em><em>APR</em><em>) </em><em>APR object</em>) – </p></li>
+<li><p><strong>parts</strong> (<em>(</em><em>ParticleData</em><em>) </em><em>particle data sampled on APR</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Gradient magnitude of APR.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter.compute_laplacian">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">compute_laplacian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grad</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#compute_laplacian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.compute_laplacian" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Laplacian for each spatial direction directly on APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>(</em><em>APR</em><em>) </em><em>APR object</em>) – </p></li>
+<li><p><strong>parts</strong> (<em>(</em><em>ParticleData</em><em>) </em><em>particle data sampled on APR</em>) – </p></li>
+<li><p><strong>grad</strong> (<em>(</em><em>dz</em><em>, </em><em>dy</em><em>, </em><em>dx</em><em>) </em><em>gradient for each direction if precomputed</em><em> (</em><em>faster for Laplacian computation</em><em>)</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Laplacian of APR.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter.gaussian_blur">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">gaussian_blur</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#gaussian_blur"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.gaussian_blur" title="Permalink to this definition"></a></dt>
+<dd><p>Compute Gaussian blur directly on APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>(</em><em>APR</em><em>) </em><em>APR object</em>) – </p></li>
+<li><p><strong>parts</strong> (<em>(</em><em>ParticleData</em><em>) </em><em>particle data sampled on APR</em>) – </p></li>
+<li><p><strong>sigma</strong> (<em>(</em><em>float</em><em>) </em><em>Gaussian blur standard deviation</em><em> (</em><em>kernel radius</em><em>)</em>) – </p></li>
+<li><p><strong>size</strong> (<em>(</em><em>int</em><em>) </em><em>kernel size</em><em> (</em><em>increase with caution</em><em>, </em><em>complexity is not linear</em><em>)</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Blurred APR.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter.map_feature">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">map_feature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts_cc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#map_feature"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.map_feature" title="Permalink to this definition"></a></dt>
+<dd><p>Map feature values to segmented particle data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – apr object to map features to</p></li>
+<li><p><strong>parts_cc</strong> (<em>pyapr.ParticleData</em>) – connected component particle array corresponding to apr</p></li>
+<li><p><strong>features</strong> (<em>array_like</em>) – array containing the values to map</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Array of mapped values (each particle in the connected component now has the value present in features)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">multitileSegmenter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles:</span> <span class="pre">~pipapr.parser.tileParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose=True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to segment multitiles acquisition.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles:</span> <span class="pre">~pipapr.parser.tileParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose=True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter.__init__" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tiles</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>tileLoader</em></a>) – tile object for loading the tile (or containing the preloaded tile).</p></li>
+<li><p><strong>database</strong> (<em>pd.DataFrame</em><em>, </em><em>string</em>) – dataframe (or path to the csv file) containing the registration parameters to correctly place each tile.</p></li>
+<li><p><strong>clf</strong> (<em>sklearn.classifier</em>) – pre-trained classifier</p></li>
+<li><p><strong>func_to_compute_features</strong> (<em>func</em>) – function to compute the features on ParticleData. Must be the same set of
+as the one used to train the classifier.</p></li>
+<li><p><strong>func_to_get_cc</strong> (<em>func</em>) – <dl class="simple">
+<dt>function to post process the segmentation map into a connected component (each cell has</dt><dd><p>a unique id)</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter._filter_cells_flann">
+<span class="sig-name descname"><span class="pre">_filter_cells_flann</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">c1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lowe_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter._filter_cells_flann"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter._filter_cells_flann" title="Permalink to this definition"></a></dt>
+<dd><p>Remove cells duplicate using Flann criteria and distance threshold.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>c1</strong> (<em>ndarray</em>) – array containing the first set cells coordinates</p></li>
+<li><p><strong>c2</strong> (<em>ndarray</em>) – array containing the second set cells coordinates</p></li>
+<li><p><strong>lowe_ratio</strong> (<em>float</em>) – ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is
+supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.</p></li>
+<li><p><strong>distance_max</strong> (<em>float</em>) – maximum distance in pixel for two cells to be considered the same.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – control function verbosity</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – array containing the merged sets without the duplicates.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter._get_tile_position">
+<span class="sig-name descname"><span class="pre">_get_tile_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter._get_tile_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter._get_tile_position" title="Permalink to this definition"></a></dt>
+<dd><p>Function to get the absolute tile position defined by it’s coordinate in the multitile set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> (<em>int</em>) – row number</p></li>
+<li><p><strong>col</strong> (<em>int</em>) – column number</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – tile absolute position</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter._merge_cells">
+<span class="sig-name descname"><span class="pre">_merge_cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lowe_ratio</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_max</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter._merge_cells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter._merge_cells" title="Permalink to this definition"></a></dt>
+<dd><p>Function to merge cells on a tile to the final cells list and remove duplicate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>tileLoader</em></a>) – tile from which to merge cells</p></li>
+<li><p><strong>lowe_ratio</strong> (<em>float</em>) – ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is
+supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.</p></li>
+<li><p><strong>distance_max</strong> (<em>float</em>) – maximum distance in pixel for two cells to be considered the same.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter._segment_tile">
+<span class="sig-name descname"><span class="pre">_segment_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><span class="pre">tileLoader</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_loading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter._segment_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter._segment_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the segmentation and stores the result as an independent APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>verbose</strong> (<em>bool</em>) – control the verbosity of the function to print some info</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter.compute_multitile_segmentation">
+<span class="sig-name descname"><span class="pre">compute_multitile_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">save_cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lowe_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_loading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter.compute_multitile_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter.compute_multitile_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the segmentation and stores the result as an independent APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>verbose</strong> (<em>bool</em>) – control the verbosity of the function to print some info</p></li>
+<li><p><strong>save_cc</strong> (<em>bool</em>) – option to save the connected component particle to file</p></li>
+<li><p><strong>save_mask</strong> (<em>bool</em>) – option to save the prediction mask to file</p></li>
+<li><p><strong>lowe_ratio</strong> (<em>float in</em><em> ]</em><em>0</em><em>, </em><em>1</em><em>[</em>) – ratio between the second nearest neighbor and the first nearest neighbor to be considered a good match</p></li>
+<li><p><strong>distance_max</strong> (<em>float</em>) – maximum distance in pixel for two objects to be matched</p></li>
+<li><p><strong>lazy_loading</strong> (<em>bool</em>) – option to save the tree particles to allow for lazy loading later on</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter.extract_and_merge_cells">
+<span class="sig-name descname"><span class="pre">extract_and_merge_cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lowe_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distance_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter.extract_and_merge_cells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter.extract_and_merge_cells" title="Permalink to this definition"></a></dt>
+<dd><p>Function to extract cell positions in each tile and merging across all tiles.
+Identical cells on overlapping area are automatically detected using Flann method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lowe_ratio</strong> (<em>float</em>) – ratio of the second nearest neighbor distance / nearest neighbor distance above lowe_ratio, the cell is
+supposed to be unique. Below lowe_ratio, it might have a second detection on the neighboring tile.</p></li>
+<li><p><strong>distance_max</strong> (<em>float</em>) – maximum distance in pixel for two cells to be considered the same.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter.from_classifier">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_classifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles:</span> <span class="pre">~pipapr.parser.tileParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">classifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose=True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter.from_classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter.from_classifier" title="Permalink to this definition"></a></dt>
+<dd><p>Instantiate tileSegmenter object with a classifier, function to compute the features and to get the
+connected components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classifier</strong> – </p></li>
+<li><p><strong>func_to_compute_features</strong> (<em>func</em>) – function to compute features used by the classifier to perform the segmentation.</p></li>
+<li><p><strong>func_to_get_cc</strong> (<em>func</em>) – function to compute the connected component from the classifier prediction.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – control function output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tileSegmenter object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter.from_trainer">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles:</span> <span class="pre">~pipapr.parser.tileParser</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose=True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter.from_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter.from_trainer" title="Permalink to this definition"></a></dt>
+<dd><p>Instantiate tileSegmenter object with a tileTrainer object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="#pipapr.segmenter.tileTrainer" title="pipapr.segmenter.tileTrainer"><em>tileTrainer</em></a>) – trainer object previously trained for segmentation</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – control function output</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tileSegmenter object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.multitileSegmenter.save_cells">
+<span class="sig-name descname"><span class="pre">save_cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#multitileSegmenter.save_cells"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.multitileSegmenter.save_cells" title="Permalink to this definition"></a></dt>
+<dd><p>Save cells as a CSV file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>output_path</strong> (<em>string</em>) – path for saving the CSV file.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.segmenter.particle_levels">
+<span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">particle_levels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#particle_levels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.particle_levels" title="Permalink to this definition"></a></dt>
+<dd><p>Returns apr level: for each particle the lvl is defined as the size of the particle in pixel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>apr</strong> (<em>(</em><em>APR</em><em>) </em><em>APR object</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>Particle level.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileSegmenter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">tileSegmenter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileSegmenter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileSegmenter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to segment tiles. It is instantiated with a tileLoader object, a previously trained classifier,
+a function to compute features (the same features used to train the classifier and a function to get the
+post processed connected component for the classifier output.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileSegmenter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clf</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileSegmenter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileSegmenter.__init__" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>clf</strong> (<em>sklearn.classifier</em>) – pre-trained classifier</p></li>
+<li><p><strong>func_to_compute_features</strong> (<em>func</em>) – function to compute the features on ParticleData. Must be the same set of
+as the one used to train the classifier.</p></li>
+<li><p><strong>func_to_get_cc</strong> (<em>func</em>) – <dl class="simple">
+<dt>function to post process the segmentation map into a connected component (each cell has</dt><dd><p>a unique id)</p>
+</dd>
+</dl>
+</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileSegmenter.compute_segmentation">
+<span class="sig-name descname"><span class="pre">compute_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><span class="pre">tileLoader</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_loading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileSegmenter.compute_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileSegmenter.compute_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the segmentation and stores the result as an independent APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>verbose</strong> (<em>bool</em>) – control the verbosity of the function to print some info</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileSegmenter.from_classifier">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_classifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">classifier</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileSegmenter.from_classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileSegmenter.from_classifier" title="Permalink to this definition"></a></dt>
+<dd><p>Instantiate tileSegmenter object with a classifier, function to compute the features and to get the
+connected components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>classifier</strong> – </p></li>
+<li><p><strong>func_to_compute_features</strong> (<em>func</em>) – function to compute features used by the classifier to perform the segmentation.</p></li>
+<li><p><strong>func_to_get_cc</strong> (<em>func</em>) – function to compute the connected component from the classifier prediction.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – control function output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tileSegmenter object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileSegmenter.from_trainer">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_trainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trainer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileSegmenter.from_trainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileSegmenter.from_trainer" title="Permalink to this definition"></a></dt>
+<dd><p>Instantiate tileSegmenter object with a tileTrainer object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trainer</strong> (<a class="reference internal" href="#pipapr.segmenter.tileTrainer" title="pipapr.segmenter.tileTrainer"><em>tileTrainer</em></a>) – trainer object previously trained for segmentation</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – control function output</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tileSegmenter object</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.segmenter.</span></span><span class="sig-name descname"><span class="pre">tileTrainer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><span class="pre">tileLoader</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_compute_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to train a classifier that works directly on APR data. It uses Napari to manually add labels.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer._are_labels_the_same">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_are_labels_the_same</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_labels</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer._are_labels_the_same"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer._are_labels_the_same" title="Permalink to this definition"></a></dt>
+<dd><p>Determine if manual labels in particle are the same and return the labels</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>local_labels</strong> (<em>ndarray</em>) – particle labels</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>((bool)</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>True if labels are the same, (int) corresponding label)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer._find_particle">
+<span class="sig-name descname"><span class="pre">_find_particle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer._find_particle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer._find_particle" title="Permalink to this definition"></a></dt>
+<dd><p>Find particle index corresponding to pixel location coords.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>coords</strong> (<em>array_like</em>) – pixel coordinate [z, y, x]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>idx</strong></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(int) particle index</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer._order_labels">
+<span class="sig-name descname"><span class="pre">_order_labels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer._order_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer._order_labels" title="Permalink to this definition"></a></dt>
+<dd><p>Order pixel_list in z increasing order, then y increasing order and finally x increasing order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer._remove_ambiguities">
+<span class="sig-name descname"><span class="pre">_remove_ambiguities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer._remove_ambiguities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer._remove_ambiguities" title="Permalink to this definition"></a></dt>
+<dd><p>Remove particles that have been labelled with different labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>verbose</strong> (<em>bool</em>) – option to print out information.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer._sample_pixel_list_on_APR">
+<span class="sig-name descname"><span class="pre">_sample_pixel_list_on_APR</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer._sample_pixel_list_on_APR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer._sample_pixel_list_on_APR" title="Permalink to this definition"></a></dt>
+<dd><p>Convert manual annotations coordinates from pixel to APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.add_annotations">
+<span class="sig-name descname"><span class="pre">add_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_sparse_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.add_annotations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.add_annotations" title="Permalink to this definition"></a></dt>
+<dd><p>Add annotations on previously annotated dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>use_sparse_labels</strong> (<em>bool</em>) – use sparse array to store the labels (memory efficient but slower graphics)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.apply_on_tile">
+<span class="sig-name descname"><span class="pre">apply_on_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func_to_get_cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.apply_on_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.apply_on_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Apply classifier to the whole tile and display segmentation results using Napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>display_result</strong> (<em>bool</em>) – option to display segmentation results using Napari</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – option to print out information.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.display_features">
+<span class="sig-name descname"><span class="pre">display_features</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.display_features"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.display_features" title="Permalink to this definition"></a></dt>
+<dd><p>Display the computed features.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.display_training_annotations">
+<span class="sig-name descname"><span class="pre">display_training_annotations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.display_training_annotations"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.display_training_annotations" title="Permalink to this definition"></a></dt>
+<dd><p>Display manual annotations and their sampling on APR grid (if available).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.load_classifier">
+<span class="sig-name descname"><span class="pre">load_classifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.load_classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.load_classifier" title="Permalink to this definition"></a></dt>
+<dd><p>Load a trained classifier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path for loading the classifier. By default, it is loaded from root folder.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.load_labels">
+<span class="sig-name descname"><span class="pre">load_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.load_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.load_labels" title="Permalink to this definition"></a></dt>
+<dd><p>Load previously saved labels as numpy array with columns corresponding to [z, y, x, label].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to load the saved labels. By default it loads them in the data root folder.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.manually_annotate">
+<span class="sig-name descname"><span class="pre">manually_annotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_sparse_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.manually_annotate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.manually_annotate" title="Permalink to this definition"></a></dt>
+<dd><p>Manually annotate dataset using Napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>use_sparse_labels</strong> (<em>bool</em>) – use sparse array to store the labels (memory efficient but slower graphics)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.save_classifier">
+<span class="sig-name descname"><span class="pre">save_classifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.save_classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.save_classifier" title="Permalink to this definition"></a></dt>
+<dd><p>Save the trained classifier.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path for saving the classifier. By default, it is saved in the data root folder.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.save_labels">
+<span class="sig-name descname"><span class="pre">save_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.save_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.save_labels" title="Permalink to this definition"></a></dt>
+<dd><p>Save labels as numpy array with columns corresponding to [z, y, x, label].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to save labels. By default it saves them in the data root folder.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.segment_training_tile">
+<span class="sig-name descname"><span class="pre">segment_training_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bg_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.segment_training_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.segment_training_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Apply classifier to the whole tile and display segmentation results using Napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>display_result</strong> (<em>bool</em>) – option to display segmentation results using Napari</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – option to print out information.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.segmenter.tileTrainer.train_classifier">
+<span class="sig-name descname"><span class="pre">train_classifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_estimators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">class_weight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'balanced'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/segmenter.html#tileTrainer.train_classifier"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.segmenter.tileTrainer.train_classifier" title="Permalink to this definition"></a></dt>
+<dd><p>Train the classifier for segmentation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>verbose</strong> (<em>bool</em>) – option to print out information.</p></li>
+<li><p><strong>n_estimators</strong> (<em>int</em>) – The number of trees in the random forest.</p></li>
+<li><p><strong>class_weight</strong> (<em>{&quot;balanced&quot;</em><em>, </em><em>&quot;balanced_subsample&quot;}</em><em>, </em><em>dict</em><em> or </em><em>list of dicts</em><em>,</em>) – <p>Weights associated with classes in the form <code class="docutils literal notranslate"><span class="pre">{class_label:</span> <span class="pre">weight}</span></code>.
+If not given, all classes are supposed to have weight one. For
+multi-output problems, a list of dicts can be provided in the same
+order as the columns of y.</p>
+<p>Note that for multioutput (including multilabel) weights should be
+defined for each class of every column in its own dict. For example,
+for four-class multilabel classification weights should be
+[{0: 1, 1: 1}, {0: 1, 1: 5}, {0: 1, 1: 1}, {0: 1, 1: 1}] instead of
+[{1:1}, {2:5}, {3:1}, {4:1}].</p>
+<p>The “balanced” mode uses the values of y to automatically adjust
+weights inversely proportional to class frequencies in the input data
+as <code class="docutils literal notranslate"><span class="pre">n_samples</span> <span class="pre">/</span> <span class="pre">(n_classes</span> <span class="pre">*</span> <span class="pre">np.bincount(y))</span></code></p>
+<p>The “balanced_subsample” mode is the same as “balanced” except that
+weights are computed based on the bootstrap sample for every tree
+grown.</p>
+<p>For multi-output, the weights of each column of y will be multiplied.</p>
+<p>Note that these weights will be multiplied with sample_weight (passed
+through the fit method) if sample_weight is specified.</p>
+</p></li>
+<li><p><strong>mean_norm</strong> (<em>bool</em>) – If True, center the data before scaling.</p></li>
+<li><p><strong>std_norm</strong> (<em>bool</em>) – If True, scale the data to unit variance (or equivalently,
+unit standard deviation).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pipapr.parser.html" class="btn btn-neutral float-left" title="pipapr.parser module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pipapr.stitcher.html" class="btn btn-neutral float-right" title="pipapr.stitcher module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pipapr.parser.html" class="btn btn-neutral float-left" title="pipapr.parser" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.stitcher.html" class="btn btn-neutral float-right" title="pipapr.stitcher" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

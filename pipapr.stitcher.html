@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.stitcher module &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.stitcher &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pipapr.viewer module" href="pipapr.viewer.html" />
-    <link rel="prev" title="pipapr.segmenter module" href="pipapr.segmenter.html" /> 
+    <link rel="next" title="pipapr.viewer" href="pipapr.viewer.html" />
+    <link rel="prev" title="pipapr.segmenter" href="pipapr.segmenter.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,22 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="pipapr.html">pipapr package</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pipapr.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.converter.html">pipapr.converter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.loader.html">pipapr.loader module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.parser.html">pipapr.parser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">pipapr.stitcher module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer module</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pipapr.html#module-contents">Module contents</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.runner.html">pipapr.runner</a></li>
 </ul>
 
         </div>
@@ -82,8 +76,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">pipapr package</a> &raquo;</li>
-      <li>pipapr.stitcher module</li>
+          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>pipapr.stitcher</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.stitcher.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -93,16 +87,1069 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pipapr-stitcher-module">
-<h1>pipapr.stitcher module<a class="headerlink" href="#pipapr-stitcher-module" title="Permalink to this heading"></a></h1>
+  <section id="module-pipapr.stitcher">
+<span id="pipapr-stitcher"></span><h1>pipapr.stitcher<a class="headerlink" href="#module-pipapr.stitcher" title="Permalink to this heading"></a></h1>
+<p>Submodule containing classes and functions relative to <strong>stitching</strong>.</p>
+<p>With this submodule the user can stitch a previously parsed dataset, typically the autofluorescence channel:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pipapr</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tiles_autofluo</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path_to_autofluo</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stitcher</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">stitcher</span><span class="o">.</span><span class="n">tileStitcher</span><span class="p">(</span><span class="n">tiles_autofluo</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stitcher</span><span class="o">.</span><span class="n">compute_registration_fast</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Others channel can then easily stitched using the previous one as reference:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tiles_signal</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path_to_data</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">overlap</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stitcher_channel</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">stitcher</span><span class="o">.</span><span class="n">channelStitcher</span><span class="p">(</span><span class="n">stitcher</span><span class="p">,</span> <span class="n">tiles_autofluo</span><span class="p">,</span> <span class="n">tiles_signal</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">stitcher_channel</span><span class="o">.</span><span class="n">compute_rigid_registration</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Doing that each tile in the second data set will be registered to the corresponding autofluorescence tile and
+then their spatial position will be adjusted.</p>
+<p>WARNING: when stitching, the expected overlap must be HIGHER than the real one. To enforce this, a margin of 20% is
+automatically taken (this margin can be set lower by the user for speed improvement). In order to get the best stitching
+quality it requires to have a good estimate of the overlap, hence why the full volume is not considered.</p>
+<p>This submodule also contains a class for merging and reconstructing the data. It was intended to be used at lower
+resolution for atlasing. The generated data can quickly become out of hands, use with caution!</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher._compute_shift">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">_compute_shift</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#_compute_shift"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher._compute_shift" title="Permalink to this definition"></a></dt>
+<dd><p>Backbone function to compute the registration and the registration error used for the global optimisation.
+This function can be replaced by experienced user to use their own registration and error estimation functions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>array</em>) – Reference image.</p></li>
+<li><p><strong>moving_image</strong> (<em>array</em>) – Image to register. Must be same dimensionality as
+<code class="docutils literal notranslate"><span class="pre">reference_image</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>d</strong> (<em>array_like</em>) – registration parameters found</p></li>
+<li><p><strong>e</strong> (<em>float</em>) – error estimation for the registration (the higher the error the higher the registration uncertainty)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher._get_masked_proj_shifts">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">_get_masked_proj_shifts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsample_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#_get_masked_proj_shifts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher._get_masked_proj_shifts" title="Permalink to this definition"></a></dt>
+<dd><p>This function computes shifts from max-projections on overlapping areas with mask on brightest area.
+It uses the phase cross-correlation to compute the shifts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proj1</strong> (<em>list</em><em>[</em><em>ndarray</em><em>]</em>) – max-projections for tile 1</p></li>
+<li><p><strong>proj2</strong> (<em>list</em><em>[</em><em>ndarray</em><em>]</em>) – max-projections for tile 2</p></li>
+<li><p><strong>upsample_factor</strong> (<em>float</em>) – upsampling_factor for estimating the maximum phase cross-correlation position</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher._get_max_proj_apr">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">_get_max_proj_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_yx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#_get_max_proj_apr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher._get_max_proj_apr" title="Permalink to this definition"></a></dt>
+<dd><p>Compute maximum projection on 3D APR data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – apr tree</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.ParticlData</em>) – apr particle</p></li>
+<li><p><strong>patch</strong> (<em>pyapr.ReconPatch</em>) – patch for computing the projection only on the overlapping area.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em>) – control data plotting</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – maximum intensity projection in each 3 dimension.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list[ndarray]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher._get_proj_shifts">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">_get_proj_shifts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proj1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proj2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#_get_proj_shifts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher._get_proj_shifts" title="Permalink to this definition"></a></dt>
+<dd><p>This function computes shifts from max-projections on overlapping areas. It uses the phase cross-correlation
+to compute the shifts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proj1</strong> (<em>list</em><em>[</em><em>ndarray</em><em>]</em>) – max-projections for tile 1</p></li>
+<li><p><strong>proj2</strong> (<em>list</em><em>[</em><em>ndarray</em><em>]</em>) – max-projections for tile 2</p></li>
+<li><p><strong>upsample_factor</strong> (<em>float</em>) – upsampling_factor for estimating the maximum phase cross-correlation position</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – shifts in (x, y, z) and error measure (0=reliable, 1=not reliable)</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>array_like</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">baseStitcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_h:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_v:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Base class for stitching multi-tile data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_h:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_v:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor for the baseStitcher class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tiles</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><em>tileParser</em></a>) – tileParser object containing the dataset to stitch.</p></li>
+<li><p><strong>overlap_h</strong> (<em>float</em>) – expected horizontal overlap in %</p></li>
+<li><p><strong>overlap_v</strong> (<em>float</em>) – expected vertical overlap in %</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._load_max_projs">
+<span class="sig-name descname"><span class="pre">_load_max_projs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._load_max_projs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._load_max_projs" title="Permalink to this definition"></a></dt>
+<dd><p>Load the maximum intensity projection previously stored.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._precompute_max_projs">
+<span class="sig-name descname"><span class="pre">_precompute_max_projs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._precompute_max_projs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._precompute_max_projs" title="Permalink to this definition"></a></dt>
+<dd><p>Precompute max-projections for loading the data only once during the stitching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._process_GRAY_for_display">
+<span class="sig-name descname"><span class="pre">_process_GRAY_for_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._process_GRAY_for_display"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._process_GRAY_for_display" title="Permalink to this definition"></a></dt>
+<dd><p>Process RGB data for correctly displaying it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>u</strong> (<em>ndarray</em>) – RGB data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>data_to_display</strong> – RGB data displayable with correct contrast and colors.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._process_RGB_for_display">
+<span class="sig-name descname"><span class="pre">_process_RGB_for_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._process_RGB_for_display"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._process_RGB_for_display" title="Permalink to this definition"></a></dt>
+<dd><p>Process RGB data for correctly displaying it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>u</strong> (<em>ndarray</em>) – RGB data</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>data_to_display</strong> – RGB data displayable with correct contrast and colors.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._reconstruct_x_slice">
+<span class="sig-name descname"><span class="pre">_reconstruct_x_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._reconstruct_x_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._reconstruct_x_slice" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct and merge the sample at a given position x.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<em>int</em>) – reconstruction location in x</p></li>
+<li><p><strong>n_proj</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Number of planes to perform the maximum intensity projection.</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).</p></li>
+<li><p><strong>downsample</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].</p></li>
+<li><p><strong>color</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to add a white square for each tile, making it easy to see overlapping areas.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Define if the function plots the results with Matplotlib or just returns an array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>merged_data</strong> – Merged frame at position x.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._reconstruct_y_slice">
+<span class="sig-name descname"><span class="pre">_reconstruct_y_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._reconstruct_y_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._reconstruct_y_slice" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct and merge the sample at a given position y.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>y</strong> (<em>int</em>) – reconstruction location in y</p></li>
+<li><p><strong>n_proj</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Number of planes to perform the maximum intensity projection.</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).</p></li>
+<li><p><strong>downsample</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].</p></li>
+<li><p><strong>color</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to add a white square for each tile, making it easy to see overlapping areas.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Define if the function plots the results with Matplotlib or just returns an array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>merged_data</strong> – Merged frame at position y.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._reconstruct_z_slice">
+<span class="sig-name descname"><span class="pre">_reconstruct_z_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._reconstruct_z_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._reconstruct_z_slice" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct and merge the sample at a given depth z.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>z</strong> (<em>int</em>) – reconstruction depth (vary with downsample)</p></li>
+<li><p><strong>n_proj</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Number of planes to perform the maximum intensity projection.</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).</p></li>
+<li><p><strong>downsample</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].</p></li>
+<li><p><strong>color</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to add a white square for each tile, making it easy to see overlapping areas.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Define if the function plots the results with Matplotlib or just returns an array.</p></li>
+<li><p><strong>seg</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to also reconstruct the segmentation. Only works with <cite>dim=0</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>merged_data</strong> – Merged frame at depth z.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._regularize">
+<span class="sig-name descname"><span class="pre">_regularize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._regularize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._regularize" title="Permalink to this definition"></a></dt>
+<dd><p>Remove too large displacement and replace them with expected one with a large uncertainty.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher._save_max_projs">
+<span class="sig-name descname"><span class="pre">_save_max_projs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher._save_max_projs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher._save_max_projs" title="Permalink to this definition"></a></dt>
+<dd><p>Save the computed maximum intensity projection on persistent memory. This is useful to recompute the
+registration directly from the max. proj. but only works if the overlaps are kept the same.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.activate_mask">
+<span class="sig-name descname"><span class="pre">activate_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.activate_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.activate_mask" title="Permalink to this definition"></a></dt>
+<dd><p>Activate the masked cross-correlation for the displacement estimation. Pixels above threshold are
+not taken into account.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>threshold</strong> (<em>int</em>) – threshold for the cross-correlation mask as a percentage of pixel to keep (e.g. 95 will create a mask
+removing the 5% brightest pixels).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.activate_segmentation">
+<span class="sig-name descname"><span class="pre">activate_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">segmenter</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.activate_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.activate_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Activate the segmentation. When a tile is loaded it is segmented before the stitching is done.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>segmenter</strong> (<a class="reference internal" href="pipapr.segmenter.html#pipapr.segmenter.tileSegmenter" title="pipapr.segmenter.tileSegmenter"><em>tileSegmenter</em></a>) – segmenter object for segmenting each tile.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.deactivate_mask">
+<span class="sig-name descname"><span class="pre">deactivate_mask</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.deactivate_mask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.deactivate_mask" title="Permalink to this definition"></a></dt>
+<dd><p>Deactivate the masked cross-correlation and uses a classical cross correlation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.deactivate_segmentation">
+<span class="sig-name descname"><span class="pre">deactivate_segmentation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.deactivate_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.deactivate_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Deactivate tile segmentation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.reconstruct_slice">
+<span class="sig-name descname"><span class="pre">reconstruct_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.reconstruct_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.reconstruct_slice" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
+reconstruct a maximum intensity projection if <cite>n_proj&gt;0</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>loc</strong> (<em>int</em><em> (</em><em>default: middle of the sample</em><em>)</em>) – Position of the plane where the reconstruction should be done. The location varies depending on the
+downsample parameter and should be adapted.</p></li>
+<li><p><strong>n_proj</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Number of planes to perform the maximum intensity projection.</p></li>
+<li><p><strong>dim</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).</p></li>
+<li><p><strong>downsample</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].</p></li>
+<li><p><strong>color</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to add a white square for each tile, making it easy to see overlapping areas.</p></li>
+<li><p><strong>plot</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Define if the function plots the results with Matplotlib or just returns an array.</p></li>
+<li><p><strong>seg</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to also reconstruct the segmentation. Only works with <cite>dim=0</cite></p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – Array containing the reconstructed data.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.reconstruct_z_color">
+<span class="sig-name descname"><span class="pre">reconstruct_z_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.reconstruct_z_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.reconstruct_z_color" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct and merge the sample at a given depth z.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>z</strong> (<em>int</em>) – reconstruction depth</p></li>
+<li><p><strong>downsample</strong> (<em>int</em>) – downsample for reconstruction (must be a power of 2)</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – if true the border of each tile will be highlighted</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>merged_data</strong> – Merged frame at depth z.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.save_database">
+<span class="sig-name descname"><span class="pre">save_database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.save_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.save_database" title="Permalink to this definition"></a></dt>
+<dd><p>Save database at the given path. The database must be built before calling this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to save the database.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.baseStitcher.set_regularization">
+<span class="sig-name descname"><span class="pre">set_regularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reg_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#baseStitcher.set_regularization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.baseStitcher.set_regularization" title="Permalink to this definition"></a></dt>
+<dd><p>Set the regularization for the stitching to prevent aberrant displacements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reg_x</strong> (<em>int</em>) – if the horizontal displacement computed in the pairwise registration for any tile is greater than
+reg_x (in pixel unit) then the expected displacement (from motor position) is taken.</p></li>
+<li><p><strong>reg_y</strong> (<em>int</em>) – if the horizontal displacement computed in the pairwise registration for any tile is greater than
+reg_z (in pixel unit) then the expected displacement (from motor position) is taken.</p></li>
+<li><p><strong>reg_z</strong> (<em>int</em>) – if the horizontal displacement computed in the pairwise registration for any tile is greater than
+reg_z (in pixel unit) then the expected displacement (from motor position) is taken.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.stitcher.channelStitcher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">channelStitcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stitcher</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#channelStitcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.channelStitcher" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pipapr.stitcher.baseStitcher" title="pipapr.stitcher.baseStitcher"><code class="xref py py-class docutils literal notranslate"><span class="pre">baseStitcher</span></code></a></p>
+<p>Class used to perform the stitching between different channels. The registration must be performed first a single
+channel (typically auto-fluorescence)</p>
+<p>The stitching is performed between each corresponding tile and the relative displacement is added to the previously
+determined stitching parameters.</p>
+<p>The number and position of tile should matched for bot dataset.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.channelStitcher.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stitcher</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#channelStitcher.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.channelStitcher.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor for the channelStitcher class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stitcher</strong> (<a class="reference internal" href="#pipapr.stitcher.tileStitcher" title="pipapr.stitcher.tileStitcher"><em>tileStitcher</em></a>) – tileStitcher object with the multitile registration parameters</p></li>
+<li><p><strong>tiles_stitched</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><em>tileParser</em></a>) – tiles corresponding to the stitcher</p></li>
+<li><p><strong>tiles_channel</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><em>tileParser</em></a>) – tiles to be registered to tiles_stitched</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.channelStitcher._update_database">
+<span class="sig-name descname"><span class="pre">_update_database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#channelStitcher._update_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.channelStitcher._update_database" title="Permalink to this definition"></a></dt>
+<dd><p>Update database after the registration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>row</strong> (<em>int</em>) – row number</p></li>
+<li><p><strong>col</strong> (<em>int</em>) – col number</p></li>
+<li><p><strong>d</strong> (<em>int</em>) – computed displacement</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.channelStitcher.compute_rigid_registration">
+<span class="sig-name descname"><span class="pre">compute_rigid_registration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#channelStitcher.compute_rigid_registration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.channelStitcher.compute_rigid_registration" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the rigid registration between each pair of tiles across different channels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.channelStitcher.set_lim">
+<span class="sig-name descname"><span class="pre">set_lim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x_begin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_begin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_begin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#channelStitcher.set_lim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.channelStitcher.set_lim" title="Permalink to this definition"></a></dt>
+<dd><p>Define spatial limits to compute the maximum intensity projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x_begin</strong> (<em>int</em>) – </p></li>
+<li><p><strong>x_end</strong> (<em>int</em>) – </p></li>
+<li><p><strong>y_begin</strong> (<em>int</em>) – </p></li>
+<li><p><strong>y_end</strong> (<em>int</em>) – </p></li>
+<li><p><strong>z_begin</strong> (<em>int</em>) – </p></li>
+<li><p><strong>z_end</strong> (<em>int</em>) – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher.max_sum_over_single_max">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">max_sum_over_single_max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#max_sum_over_single_max"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.max_sum_over_single_max" title="Permalink to this definition"></a></dt>
+<dd><p>This function is a reliability metric which works well for sparse data. It computes the 99 percentile of the sum
+of reference and shifted image divided by twice the 99 percentile of the reference image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>ndarray</em>) – 2D array of the reference image</p></li>
+<li><p><strong>moving_image</strong> (<em>ndarray</em>) – 2D array of the moving image image</p></li>
+<li><p><strong>d</strong> (<em>array_like</em>) – registration parameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>e</strong> – error estimation of the registration. The lower e, the more reliable the registration.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher.mse">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">mse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#mse"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.mse" title="Permalink to this definition"></a></dt>
+<dd><p>Normalized root mean square error.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>ndarray</em>) – 2D array of the reference image</p></li>
+<li><p><strong>moving_image</strong> (<em>ndarray</em>) – 2D array of the moving image image</p></li>
+<li><p><strong>d</strong> (<em>array_like</em>) – registration parameters</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>_</strong> – error estimation of the registration. The lower e, the more reliable the registration.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher.phase_cross_correlation">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">phase_cross_correlation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upsample_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#phase_cross_correlation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.phase_cross_correlation" title="Permalink to this definition"></a></dt>
+<dd><p>Phase cross correlation. Because skimage function compute the NORMAL cross correlation to estimate the shift I
+modified it to compute the TRUE phase cross correlation, as per the standard definition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>array</em>) – Reference image.</p></li>
+<li><p><strong>moving_image</strong> (<em>array</em>) – Image to register. Must be same dimensionality as
+<code class="docutils literal notranslate"><span class="pre">reference_image</span></code>.</p></li>
+<li><p><strong>upsample_factor</strong> (<em>int</em><em>, </em><em>optional</em>) – Upsampling factor. Images will be registered to within
+<code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">/</span> <span class="pre">upsample_factor</span></code> of a pixel. For example
+<code class="docutils literal notranslate"><span class="pre">upsample_factor</span> <span class="pre">==</span> <span class="pre">20</span></code> means the images will be registered
+within 1/20th of a pixel. Default is 1 (no upsampling).
+Not used if any of <code class="docutils literal notranslate"><span class="pre">reference_mask</span></code> or <code class="docutils literal notranslate"><span class="pre">moving_mask</span></code> is not None.</p></li>
+<li><p><strong>return_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – Returns error and phase difference if on, otherwise only
+shifts are returned. Has noeffect if any of <code class="docutils literal notranslate"><span class="pre">reference_mask</span></code> or
+<code class="docutils literal notranslate"><span class="pre">moving_mask</span></code> is not None. In this case only shifts is returned.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>shifts</strong> (<em>ndarray</em>) – Shift vector (in pixels) required to register <code class="docutils literal notranslate"><span class="pre">moving_image</span></code>
+with <code class="docutils literal notranslate"><span class="pre">reference_image</span></code>. Axis ordering is consistent with
+numpy (e.g. Z, Y, X)</p></li>
+<li><p><strong>error</strong> (<em>float</em>) – Translation invariant normalized RMS error between
+<code class="docutils literal notranslate"><span class="pre">reference_image</span></code> and <code class="docutils literal notranslate"><span class="pre">moving_image</span></code>.</p></li>
+<li><p><strong>phasediff</strong> (<em>float</em>) – Global phase difference between the two images (should be
+zero if images are non-negative).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.stitcher.phase_cross_correlation_cv">
+<span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">phase_cross_correlation_cv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reference_image</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moving_image</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#phase_cross_correlation_cv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.phase_cross_correlation_cv" title="Permalink to this definition"></a></dt>
+<dd><p>Compute openCV to compute the phase cross correlation. It is around 16 times faster than the implementation using
+numpy FFT (same as skimage).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>reference_image</strong> (<em>array</em>) – Reference image.</p></li>
+<li><p><strong>moving_image</strong> (<em>array</em>) – Image to register. Must be same dimensionality as
+<code class="docutils literal notranslate"><span class="pre">reference_image</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>shifts</strong> (<em>ndarray</em>) – Shift vector (in pixels) required to register <code class="docutils literal notranslate"><span class="pre">moving_image</span></code>
+with <code class="docutils literal notranslate"><span class="pre">reference_image</span></code>. Axis ordering is consistent with
+numpy (e.g. Z, Y, X)</p></li>
+<li><p><strong>error</strong> (<em>float</em>) – Peak response (see opencv description here:
+<a class="reference external" href="https://docs.opencv.org/4.5.3/d7/df3/group__imgproc__motion.html#ga552420a2ace9ef3fb053cd630fdb4952">https://docs.opencv.org/4.5.3/d7/df3/group__imgproc__motion.html#ga552420a2ace9ef3fb053cd630fdb4952</a>)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">tileMerger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to merge tiles and create a stitched volume. Typically used at a lower resolution for registering
+the sample to an Atlas.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor for the tileMerger class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tiles</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><em>tileParser</em></a>) – tileParser object containing the dataset to merge.</p></li>
+<li><p><strong>database</strong> (<em>(</em><em>pd.DataFrame</em><em>, </em><em>string</em><em>)</em>) – database or path to the database containing the registered tile position</p></li>
+<li><p><strong>n_planes</strong> (<em>int</em>) – number of planes per files.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._find_if_lazy">
+<span class="sig-name descname"><span class="pre">_find_if_lazy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._find_if_lazy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._find_if_lazy" title="Permalink to this definition"></a></dt>
+<dd><p>Function to test if all tile can be lazy loaded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>_</strong> – True if the tile can be lazy loaded, false if not.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._get_n_planes">
+<span class="sig-name descname"><span class="pre">_get_n_planes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._get_n_planes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._get_n_planes" title="Permalink to this definition"></a></dt>
+<dd><p>Load a tile and check the number of planes per tile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>_</strong> – Number of planes per tile;</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._get_nx">
+<span class="sig-name descname"><span class="pre">_get_nx</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._get_nx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._get_nx" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the merged array size for x dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>_</strong> – x size for merged array</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._get_ny">
+<span class="sig-name descname"><span class="pre">_get_ny</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._get_ny"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._get_ny" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the merged array size for y dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>_</strong> – y size for merged array</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._get_nz">
+<span class="sig-name descname"><span class="pre">_get_nz</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._get_nz"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._get_nz" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the merged array size for y dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>_</strong> – y size for merged array</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._initialize_merged_array">
+<span class="sig-name descname"><span class="pre">_initialize_merged_array</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._initialize_merged_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._initialize_merged_array" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the merged array in accordance with the asked downsampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger._initialize_merged_segmentation">
+<span class="sig-name descname"><span class="pre">_initialize_merged_segmentation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger._initialize_merged_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger._initialize_merged_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Initialize the merged array in accordance with the asked downsampling.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.crop">
+<span class="sig-name descname"><span class="pre">crop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ylim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zlim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.crop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.crop" title="Permalink to this definition"></a></dt>
+<dd><p>Add a black mask around the brain (rather than really cropping which makes the overlays complicated in
+a later stage).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>background</strong> (<em>int</em>) – constant value to replace the cropped area with.</p></li>
+<li><p><strong>xlim</strong> (<em>array_like</em>) – x limits for cropping</p></li>
+<li><p><strong>ylim</strong> (<em>array_like</em>) – y limits for cropping</p></li>
+<li><p><strong>zlim</strong> (<em>array_like</em>) – z limits for cropping</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.equalize_hist">
+<span class="sig-name descname"><span class="pre">equalize_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'opencv'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.equalize_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.equalize_hist" title="Permalink to this definition"></a></dt>
+<dd><p>Perform histogram equalization to improve the contrast on merged data.
+Both OpenCV (only 2D) and Skimage (3D but 10 times slower) are available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>method</strong> (<em>string</em>) – method for performing histogram equalization among ‘skimage’ and ‘opencv’.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.merge_additive">
+<span class="sig-name descname"><span class="pre">merge_additive</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reconstruction_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.merge_additive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.merge_additive" title="Permalink to this definition"></a></dt>
+<dd><p>Perform merging with a mean algorithm for overlapping areas. Maximum merging should be preferred to
+avoid integer overflowing and higher signals on the overlapping areas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>string</em>) – APR reconstruction type among (‘constant’, ‘smooth’, ‘level’)</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.merge_max">
+<span class="sig-name descname"><span class="pre">merge_max</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reconstruction_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.merge_max"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.merge_max" title="Permalink to this definition"></a></dt>
+<dd><p>Perform merging with a maximum algorithm for overlapping areas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>string</em>) – APR reconstruction type among (‘constant’, ‘smooth’, ‘level’)</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – add white border on the edge of each tile to see where it was overlapping.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.merge_segmentation">
+<span class="sig-name descname"><span class="pre">merge_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reconstruction_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'max'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.merge_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.merge_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>Perform merging with a maximum algorithm for overlapping areas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mode</strong> (<em>string</em>) – APR reconstruction type among (‘constant’, ‘smooth’, ‘level’)</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – add white border on the edge of each tile to see where it was overlapping.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileMerger.set_downsample">
+<span class="sig-name descname"><span class="pre">set_downsample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">downsample</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileMerger.set_downsample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileMerger.set_downsample" title="Permalink to this definition"></a></dt>
+<dd><p>Set the downsampling value for the merging reconstruction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>downsample</strong> (<em>int</em>) – downsample factor</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.stitcher.</span></span><span class="sig-name descname"><span class="pre">tileStitcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_h:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_v:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pipapr.stitcher.baseStitcher" title="pipapr.stitcher.baseStitcher"><code class="xref py py-class docutils literal notranslate"><span class="pre">baseStitcher</span></code></a></p>
+<p>Class used to perform the stitching. The stitching is performed in 4 steps:</p>
+<ol class="arabic simple">
+<li><p>The pairwise registration parameters of each neighboring tile is computed on the max-projection</p></li>
+<li><p>A sparse graph (edges = tiles and vertex = registration between neighboring tiles) is constructed to store
+the registration parameters (displacements and reliability)</p></li>
+<li><p>The sparse graph is optimized to satisfy the constraints (every loop in the graph should sum to 0) using the
+maximum spanning tree on the reliability estimation.</p></li>
+<li><p>The maximum spanning tree is parsed to extract optimal tile positions solution.</p></li>
+</ol>
+<p>The beauty of this method is that it scales well with increasing dataset sizes and because the final optimization
+is very fast and does not require to reload the data.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_h:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overlap_v:</span> <span class="pre">(&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor for the tileStitcher class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tiles</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><em>tileParser</em></a>) – tileParser object containing the dataset to stitch.</p></li>
+<li><p><strong>overlap_h</strong> (<em>float</em>) – expected horizontal overlap in %</p></li>
+<li><p><strong>overlap_v</strong> (<em>float</em>) – expected vertical overlap in %</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._build_database">
+<span class="sig-name descname"><span class="pre">_build_database</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._build_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._build_database" title="Permalink to this definition"></a></dt>
+<dd><p>Build the database for storing the registration parameters. This method needs to be called after
+the registration map has been produced.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._build_sparse_graphs">
+<span class="sig-name descname"><span class="pre">_build_sparse_graphs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._build_sparse_graphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._build_sparse_graphs" title="Permalink to this definition"></a></dt>
+<dd><p>Build the sparse graph from the reliability and (row, col). This method needs to be called after the
+pair-wise registration has been performed for all neighbors pair.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._compute_east_registration">
+<span class="sig-name descname"><span class="pre">_compute_east_registration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apr_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._compute_east_registration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._compute_east_registration" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the registration between the current tile and its eastern neighbor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u</strong> (<em>list</em>) – current tile</p></li>
+<li><p><strong>v</strong> (<em>list</em>) – neighboring tile</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._compute_registration_old">
+<span class="sig-name descname"><span class="pre">_compute_registration_old</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._compute_registration_old"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._compute_registration_old" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the pair-wise registration for all tiles. This implementation loads the data twice and is therefore
+not efficient.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._compute_south_registration">
+<span class="sig-name descname"><span class="pre">_compute_south_registration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts_1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apr_2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts_2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._compute_south_registration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._compute_south_registration" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the registration between the current tile and its southern neighbor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>u</strong> (<em>list</em>) – current tile</p></li>
+<li><p><strong>v</strong> (<em>list</em>) – neighboring tile</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._get_ind">
+<span class="sig-name descname"><span class="pre">_get_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind_from</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind_to</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._get_ind"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._get_ind" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the ind in the original graph which corresponds to (ind_from, ind_to) in the minimum spanning tree.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ind_from</strong> (<em>int</em>) – starting node in the directed graph</p></li>
+<li><p><strong>ind_to</strong> (<em>int</em>) – ending node in the directed graph</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ind</strong> – corresponding ind in the original graph</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._optimize_sparse_graphs">
+<span class="sig-name descname"><span class="pre">_optimize_sparse_graphs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._optimize_sparse_graphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._optimize_sparse_graphs" title="Permalink to this definition"></a></dt>
+<dd><p>Optimize the sparse graph by computing the minimum spanning tree for each direction (H, D, V). This
+method needs to be called after the sparse graphs have been built.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._print_info">
+<span class="sig-name descname"><span class="pre">_print_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._print_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._print_info" title="Permalink to this definition"></a></dt>
+<dd><p>Display stitching result information.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher._produce_registration_map">
+<span class="sig-name descname"><span class="pre">_produce_registration_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher._produce_registration_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher._produce_registration_map" title="Permalink to this definition"></a></dt>
+<dd><p>Produce the registration map where reg_rel_map[d, row, col] (d = H,V,D) is the relative tile
+position in pixel from the expected one. This method needs to be called after the optimization has been done.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.compute_expected_registration">
+<span class="sig-name descname"><span class="pre">compute_expected_registration</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.compute_expected_registration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.compute_expected_registration" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the expected registration if the expected overlap are correct.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.compute_registration">
+<span class="sig-name descname"><span class="pre">compute_registration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">on_disk</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.compute_registration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.compute_registration" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the pair-wise registration for all tiles. This implementation loads the data once by precomputing
+the max-proj and is therefore efficient.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.compute_registration_from_max_projs">
+<span class="sig-name descname"><span class="pre">compute_registration_from_max_projs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.compute_registration_from_max_projs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.compute_registration_from_max_projs" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the registration directly from the max-projections. Max-projections must have been computed before.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.dump_stitcher">
+<span class="sig-name descname"><span class="pre">dump_stitcher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.dump_stitcher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.dump_stitcher" title="Permalink to this definition"></a></dt>
+<dd><p>Use dill to store a tgraph object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to save the database.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.plot_graph">
+<span class="sig-name descname"><span class="pre">plot_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.plot_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.plot_graph" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the graph for each direction (H, D, V). This method needs to be called after the graph
+optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>annotate</strong> (<em>bool</em>) – control if annotation are drawn on the graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.plot_min_trees">
+<span class="sig-name descname"><span class="pre">plot_min_trees</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annotate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.plot_min_trees"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.plot_min_trees" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the minimum spanning tree for each direction (H, D, V). This method needs to be called after the graph
+optimization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>annotate</strong> (<em>bool</em>) – control if annotation are drawn on the graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.plot_registration_map">
+<span class="sig-name descname"><span class="pre">plot_registration_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.plot_registration_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.plot_registration_map" title="Permalink to this definition"></a></dt>
+<dd><p>Display the registration map using matplotlib.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.plot_stitching_info">
+<span class="sig-name descname"><span class="pre">plot_stitching_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.plot_stitching_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.plot_stitching_info" title="Permalink to this definition"></a></dt>
+<dd><p>Plot pair-wise registration error for each axis [H, V, D].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>rel_map</strong> (<em>array</em>) – error matrix</p></li>
+<li><p><strong>d_map</strong> (<em>array</em>) – shift matrix</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.set_overlap_margin">
+<span class="sig-name descname"><span class="pre">set_overlap_margin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">margin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.set_overlap_margin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.set_overlap_margin" title="Permalink to this definition"></a></dt>
+<dd><p>Modify the overlaping area size. If the overlaping area is smaller than the true one, the stitching can’t
+be performed properly. If the overlaping area area is more than twice the size of the true one it will also
+fail (due to the circular FFT in the phase cross correlation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>margin</strong> (<em>float</em>) – safety margin in % to take the overlaping area.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.stitcher.tileStitcher.set_z_range">
+<span class="sig-name descname"><span class="pre">set_z_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z_begin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_end</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/stitcher.html#tileStitcher.set_z_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.stitcher.tileStitcher.set_z_range" title="Permalink to this definition"></a></dt>
+<dd><p>Set a range of depth fo computing the stitching.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>z_begin</strong> (<em>int</em>) – first depth to be included in the max-proj</p></li>
+<li><p><strong>z_end</strong> (<em>int</em>) – last depth to be included in the max-proj</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pipapr.segmenter.html" class="btn btn-neutral float-left" title="pipapr.segmenter module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pipapr.viewer.html" class="btn btn-neutral float-right" title="pipapr.viewer module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pipapr.segmenter.html" class="btn btn-neutral float-left" title="pipapr.segmenter" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.viewer.html" class="btn btn-neutral float-right" title="pipapr.viewer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

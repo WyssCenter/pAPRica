@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.converter module &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.converter &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pipapr.loader module" href="pipapr.loader.html" />
-    <link rel="prev" title="pipapr.atlaser module" href="pipapr.atlaser.html" /> 
+    <link rel="next" title="pipapr.loader" href="pipapr.loader.html" />
+    <link rel="prev" title="pipapr.atlaser" href="pipapr.atlaser.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,22 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="pipapr.html">pipapr package</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pipapr.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">pipapr.converter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.loader.html">pipapr.loader module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.parser.html">pipapr.parser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer module</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pipapr.html#module-contents">Module contents</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.runner.html">pipapr.runner</a></li>
 </ul>
 
         </div>
@@ -82,8 +76,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">pipapr package</a> &raquo;</li>
-      <li>pipapr.converter module</li>
+          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>pipapr.converter</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.converter.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -93,16 +87,108 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pipapr-converter-module">
-<h1>pipapr.converter module<a class="headerlink" href="#pipapr-converter-module" title="Permalink to this heading"></a></h1>
+  <section id="module-pipapr.converter">
+<span id="pipapr-converter"></span><h1>pipapr.converter<a class="headerlink" href="#module-pipapr.converter" title="Permalink to this heading"></a></h1>
+<p>Submodule containing classes and functions relative to <strong>converting</strong> tiles to APR.</p>
+<p>The general workflow is first to parse tiles using a <em>parser</em> object and then convert using the tileConverter class.
+This class is essentially a wrapper to pyapr which allows to facilitate batch conversions and batch reconstructions.</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.converter.tileConverter">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.converter.</span></span><span class="sig-name descname"><span class="pre">tileConverter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pipapr.parser.html#pipapr.parser.baseParser" title="pipapr.parser.baseParser"><span class="pre">baseParser</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/converter.html#tileConverter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.converter.tileConverter" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to convert tiles to APR or to tiff.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.converter.tileConverter.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pipapr.parser.html#pipapr.parser.baseParser" title="pipapr.parser.baseParser"><span class="pre">baseParser</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/converter.html#tileConverter.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.converter.tileConverter.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor for the tileConverter class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>tiles</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.baseParser" title="pipapr.parser.baseParser"><em>baseParser</em></a>) – parser object referencing tiles to be converted.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.converter.tileConverter.batch_convert_to_apr">
+<span class="sig-name descname"><span class="pre">batch_convert_to_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Ip_th</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">108</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_loading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/converter.html#tileConverter.batch_convert_to_apr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.converter.tileConverter.batch_convert_to_apr" title="Permalink to this definition"></a></dt>
+<dd><p>Convert all parsed tiles to APR using auto-parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Ip_th</strong> (<em>int</em>) – Intensity threshold</p></li>
+<li><p><strong>rel_error</strong> (<em>float in</em><em> [</em><em>0</em><em>, </em><em>1</em><em>[</em>) – relative error bound</p></li>
+<li><p><strong>gradient_smoothing</strong> (<em>(</em><em>float</em><em>)</em>) – B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of smoothing)</p></li>
+<li><p><strong>dx</strong> (<em>float</em>) – PSF size in x, used to compute the gradient</p></li>
+<li><p><strong>dy</strong> (<em>float</em>) – PSF size in y, used to compute the gradient</p></li>
+<li><p><strong>dz</strong> (<em>float</em>) – PSF size in z, used to compute the gradient</p></li>
+<li><p><strong>path</strong> (<em>str</em>) – path to save the converted APR data (defaut is creating a folder named <cite>APR</cite> in the raw
+data directory.</p></li>
+<li><p><strong>lazy_loading</strong> (<em>bool</em>) – if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
+the APR. It will require about 1/7 more storage.</p></li>
+<li><p><strong>tree_mode</strong> (<em>str</em><em> (</em><em>'mean'</em><em> or </em><em>'max'</em><em>)</em>) – controls how downsampled particles are computed. Either the mean or the max is taken.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.converter.tileConverter.batch_reconstruct_pixel">
+<span class="sig-name descname"><span class="pre">batch_reconstruct_pixel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/converter.html#tileConverter.batch_reconstruct_pixel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.converter.tileConverter.batch_reconstruct_pixel" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct all APR tiles to pixel data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>mode</strong> (<em>string</em>) – reconstruction mode, can be ‘constant’, ‘smooth’ or ‘level’</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.converter.tileConverter.deactivate_compression">
+<span class="sig-name descname"><span class="pre">deactivate_compression</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/converter.html#tileConverter.deactivate_compression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.converter.tileConverter.deactivate_compression" title="Permalink to this definition"></a></dt>
+<dd><p>Deactivate B3D compression when saving particles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.converter.tileConverter.set_compression">
+<span class="sig-name descname"><span class="pre">set_compression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantization_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">108</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/converter.html#tileConverter.set_compression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.converter.tileConverter.set_compression" title="Permalink to this definition"></a></dt>
+<dd><p>Activate B3D compression for saving tiles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>quantization_factor</strong> (<em>int</em>) – quantization factor: the higher, the more compressed (refer to B3D paper for more detail).</p></li>
+<li><p><strong>bg</strong> (<em>int</em>) – background value: any value below this threshold will be set to the background value. This helps
+save up space by having the same value for the background (refer to B3D paper for more details).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pipapr.atlaser.html" class="btn btn-neutral float-left" title="pipapr.atlaser module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pipapr.loader.html" class="btn btn-neutral float-right" title="pipapr.loader module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pipapr.atlaser.html" class="btn btn-neutral float-left" title="pipapr.atlaser" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.loader.html" class="btn btn-neutral float-right" title="pipapr.loader" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

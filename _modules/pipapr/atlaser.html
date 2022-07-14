@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pipapr.atlaser &mdash; pipapr 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/mystnb.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/togglebutton.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script>let toggleHintShow = 'Click to show';</script>
+        <script>let toggleHintHide = 'Click to hide';</script>
+        <script>let toggleOpenOnPrint = 'true';</script>
+        <script src="../../_static/togglebutton.js"></script>
+        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> pipapr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">How to install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pipapr.runner.html">pipapr.runner</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pipapr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      <li>pipapr.atlaser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for pipapr.atlaser</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Submodule containing classes and functions relative to **atlasing**.</span>
+
+<span class="sd">This submodule is essentially a wrapper to Brainreg (https://github.com/brainglobe/brainreg) for atlasing and</span>
+<span class="sd">Allen Brain Atlas for ontology analysis. It contains many convenience method for manipulating data</span>
+<span class="sd">(per region, per superpixel, etc.).</span>
+
+<span class="sd">By using this code you agree to the terms of the software license agreement.</span>
+
+<span class="sd">© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">allensdk.core.reference_space_cache</span> <span class="kn">import</span> <span class="n">ReferenceSpaceCache</span>
+<span class="kn">from</span> <span class="nn">skimage.filters</span> <span class="kn">import</span> <span class="n">gaussian</span>
+<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+
+<span class="kn">import</span> <span class="nn">pipapr</span>
+
+
+<div class="viewcode-block" id="tileAtlaser"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser">[docs]</a><span class="k">class</span> <span class="nc">tileAtlaser</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class used for registering a dataset to the Atlas and do some post processing using the Atlas (e.g count cells</span>
+<span class="sd">    per region).</span>
+
+<span class="sd">    It can be instantiated using a tileMerger object (for registration using Brainreg) or directly with a</span>
+<span class="sd">    previously registered Atlas.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="tileAtlaser.__init__"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">original_pixel_size</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="nb">list</span><span class="p">),</span>
+                 <span class="n">downsample</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+                 <span class="n">atlas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">merged_data</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        original_pixel_size: array_like</span>
+<span class="sd">            pixel size in µm on the original data</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsampling used by APRSlicer to reconstruct the lower resolution pixel data used</span>
+<span class="sd">            for registration to the Atlas.</span>
+<span class="sd">        atlas: ndarray, string</span>
+<span class="sd">            atlas data or path for loading the atlas data</span>
+<span class="sd">        merger: tileMerger</span>
+<span class="sd">            tileMerger object</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">downsample</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_registered_atlas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="mi">25</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">original_pixel_size</span><span class="p">)</span> <span class="c1"># Z Y X</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">merged_data</span> <span class="o">=</span> <span class="n">merged_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">z_downsample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_registered_atlas</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y_downsample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_registered_atlas</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x_downsample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_registered_atlas</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">atlas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atlas</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load_atlas</span><span class="p">(</span><span class="n">atlas</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">atlas</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atlas</span> <span class="o">=</span> <span class="n">atlas</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: atlas must be a path or a numpy array.&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.from_merger"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.from_merger">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_merger</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                   <span class="n">merger</span><span class="p">:</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">stitcher</span><span class="o">.</span><span class="n">tileMerger</span><span class="p">,</span>
+                   <span class="n">original_pixel_size</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor from a tileMerger object. Typically to perform the registration to the Atlas on</span>
+<span class="sd">        autofluorescence data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        merger: tileMerger</span>
+<span class="sd">            tileMerger object</span>
+<span class="sd">        original_pixel_size: array_like</span>
+<span class="sd">            pixel size in µm on the original data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tileAtlaser object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">original_pixel_size</span><span class="o">=</span><span class="n">original_pixel_size</span><span class="p">,</span>
+                   <span class="n">downsample</span><span class="o">=</span><span class="n">merger</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span>
+                   <span class="n">atlas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                   <span class="n">merged_data</span><span class="o">=</span><span class="n">merger</span><span class="o">.</span><span class="n">merged_data</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.from_atlas"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.from_atlas">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">from_atlas</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span>
+                  <span class="n">atlas</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="nb">str</span><span class="p">),</span>
+                  <span class="n">downsample</span><span class="p">,</span>
+                  <span class="n">original_pixel_size</span><span class="p">:</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor from a previously computed Atlas. Typically to perform postprocessing using an Atlas (e.g.</span>
+<span class="sd">        count cells per brain region).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        atlas: ndarray, string</span>
+<span class="sd">            atlas data or path for loading the atlas data</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsampling used by APRSlicer to reconstruct the lower resolution pixel data used</span>
+<span class="sd">            for registration to the Atlas.</span>
+<span class="sd">        original_pixel_size: array_like</span>
+<span class="sd">            pixel size in µm on the original data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tileAtlaser object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">original_pixel_size</span><span class="o">=</span><span class="n">original_pixel_size</span><span class="p">,</span>
+                   <span class="n">downsample</span><span class="o">=</span><span class="n">downsample</span><span class="p">,</span>
+                   <span class="n">atlas</span><span class="o">=</span><span class="n">atlas</span><span class="p">,</span>
+                   <span class="n">merged_data</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.load_atlas"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.load_atlas">[docs]</a>    <span class="k">def</span> <span class="nf">load_atlas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to load a previously computed atlas.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: string</span>
+<span class="sd">            path to the registered atlas file.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">atlas</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">path</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.register_to_atlas"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.register_to_atlas">[docs]</a>    <span class="k">def</span> <span class="nf">register_to_atlas</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                          <span class="n">output_dir</span><span class="o">=</span><span class="s1">&#39;./&#39;</span><span class="p">,</span>
+                          <span class="n">orientation</span><span class="o">=</span><span class="s1">&#39;spr&#39;</span><span class="p">,</span>
+                          <span class="n">merged_data_filename</span><span class="o">=</span><span class="s1">&#39;merged_data.tif&#39;</span><span class="p">,</span>
+                          <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                          <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to compute the registration to the Atlas. It is just a wrapper to call brainreg.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_dir: string</span>
+<span class="sd">            output directory to save atlas</span>
+<span class="sd">        orientation: string</span>
+<span class="sd">            orientation of the input data with respect to the origin in Z,Y,X order. E.g. &#39;spr&#39; means</span>
+<span class="sd">            superior (so going from origin to z = zlim we go from superior to inferior), posterior</span>
+<span class="sd">            (so going from origin to y = ylim we go from posterior to anterior part) and right (so going</span>
+<span class="sd">            from origin to x = xlim we go from right to left part)</span>
+<span class="sd">        merged_data_filename: string</span>
+<span class="sd">            named of the merged array (Brainreg reads data from files so we need to save</span>
+<span class="sd">            the merged volume beforehand.</span>
+<span class="sd">        debug: bool</span>
+<span class="sd">            add debug option for brainreg which will save intermediate steps.</span>
+<span class="sd">        params: dict</span>
+<span class="sd">            dictionary with keys as brainreg options and values as parameters (see here:</span>
+<span class="sd">            https://docs.brainglobe.info/brainreg/user-guide/parameters)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Create directories if they do not exist</span>
+        <span class="n">atlas_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="s1">&#39;atlas&#39;</span><span class="p">)</span>
+        <span class="n">Path</span><span class="p">(</span><span class="n">atlas_dir</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="c1"># If merged_data is a path we ask brainreg to work on this file</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">merged_data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">path_merged_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_data</span>
+        <span class="c1"># Else it means it&#39;s an array so we have to save it first</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">path_merged_data</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">output_dir</span><span class="p">,</span> <span class="n">merged_data_filename</span><span class="p">)</span>
+            <span class="n">imsave</span><span class="p">(</span><span class="n">path_merged_data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">merged_data</span><span class="p">)</span>
+
+        <span class="n">command</span> <span class="o">=</span> <span class="s1">&#39;brainreg </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> -v </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1"> --orientation </span><span class="si">{}</span><span class="s1"> --save-original-orientation&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">path_merged_data</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">,</span>
+                                                            <span class="s1">&#39;&quot;&#39;</span> <span class="o">+</span> <span class="n">atlas_dir</span> <span class="o">+</span> <span class="s1">&#39;&quot;&#39;</span><span class="p">,</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span>
+                                                            <span class="bp">self</span><span class="o">.</span><span class="n">pixel_size_data</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">downsample</span><span class="p">,</span>
+                                                            <span class="n">orientation</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">command</span> <span class="o">+=</span> <span class="s1">&#39; --</span><span class="si">{}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">debug</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">+=</span> <span class="s1">&#39; --debug&#39;</span>
+
+        <span class="c1"># Execute brainreg</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_atlas</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">atlas_dir</span><span class="p">,</span> <span class="s1">&#39;registered_atlas.tiff&#39;</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_cells_id"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_cells_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_cells_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the Allen Brain Atlas region ID for each cell.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cells: ndarray</span>
+<span class="sd">            cell positions</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        labels: ndarray</span>
+<span class="sd">            containing the cell region ID.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">cells_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">cells</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">z_downsample</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint64&#39;</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">cells</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">y_downsample</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint64&#39;</span><span class="p">),</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">cells</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x_downsample</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;uint64&#39;</span><span class="p">)]</span>
+
+        <span class="k">return</span> <span class="n">cells_id</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_loc_id"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_loc_id">[docs]</a>    <span class="k">def</span> <span class="nf">get_loc_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the ID (brain region) of a given position (typically to retrieve cell position in the brain).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x: int</span>
+<span class="sd">            x position</span>
+<span class="sd">        y: int</span>
+<span class="sd">            y position</span>
+<span class="sd">        z: int</span>
+<span class="sd">            z position</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _: list</span>
+<span class="sd">            ID at the queried position.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">z_downsample</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">y</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">y_downsample</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_downsample</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_ontology_mapping"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_ontology_mapping">[docs]</a>    <span class="k">def</span> <span class="nf">get_ontology_mapping</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the mapping between area ID and name with Allen SDK.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        labels: ndarray</span>
+<span class="sd">            array of labels to group by ID and fetch area name.</span>
+<span class="sd">        n: int</span>
+<span class="sd">            number of parent area to group for.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        area_count: dict</span>
+<span class="sd">            area names with the counts.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rspc</span> <span class="o">=</span> <span class="n">ReferenceSpaceCache</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="s1">&#39;annotation/ccf_2017&#39;</span><span class="p">,</span> <span class="n">manifest</span><span class="o">=</span><span class="s1">&#39;manifest.json&#39;</span><span class="p">)</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">rspc</span><span class="o">.</span><span class="n">get_structure_tree</span><span class="p">(</span><span class="n">structure_graph_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">name_map</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">get_name_map</span><span class="p">()</span>
+        <span class="n">ancestor_map</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">get_ancestor_id_map</span><span class="p">()</span>
+        <span class="n">area_count</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">n_not_found</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">area_unknown</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">:</span>
+            <span class="c1"># Fetch the ancestor map of the label.</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ids</span> <span class="o">=</span> <span class="n">ancestor_map</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">)]</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="n">n_not_found</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="s1">&#39;unknown&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">area_count</span><span class="p">:</span>
+                    <span class="n">area_count</span><span class="p">[</span><span class="s1">&#39;unknown&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">area_count</span><span class="p">[</span><span class="s1">&#39;unknown&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">area_unknown</span><span class="p">:</span>
+                    <span class="n">area_unknown</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">area_unknown</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">l</span><span class="p">)]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># At the bottom of the tree each regions has 10 ancestors, with &#39;root&#39; being the higher</span>
+            <span class="n">n_ancestors</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
+            <span class="n">n_start</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">-</span> <span class="n">n_ancestors</span>
+            <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;=</span> <span class="n">n_start</span><span class="p">:</span>
+                <span class="nb">id</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="n">n_start</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">n_ancestors</span> <span class="o">&gt;</span> <span class="n">n</span> <span class="o">-</span> <span class="n">n_start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">id</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="n">n</span> <span class="o">-</span> <span class="n">n_start</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">id</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="c1"># Get the name and store it</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">name_map</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">area_count</span><span class="p">:</span>
+                <span class="n">area_count</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">area_count</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c1"># Display summary</span>
+        <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">n_not_found</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Unknown ontology ID found for </span><span class="si">{}</span><span class="s1"> objects (</span><span class="si">{:0.2f}</span><span class="s1">%).&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">n_not_found</span><span class="p">,</span>
+                                                                                      <span class="mi">100</span> <span class="o">*</span> <span class="n">n_not_found</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">)))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Unknown ontology IDs and occurrences:</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">area_unknown</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">All objects were assigned to an atlas ontology category.</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">area_count</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_cells_number_per_region"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_cells_number_per_region">[docs]</a>    <span class="k">def</span> <span class="nf">get_cells_number_per_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retuns the number of cell per region.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cells_id: ndarray</span>
+<span class="sd">            cells ID (typically computed by self.get_cells_id())</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        heatmap: ndarray</span>
+<span class="sd">            3D array where each brain region value is the number of cells contained in this region.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Remove 0s</span>
+        <span class="n">cells_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">cells_id</span><span class="p">,</span> <span class="n">cells_id</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">id_count</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">cells_id</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">id_count</span><span class="p">:</span>
+                <span class="n">id_count</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">id_count</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">heatmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="p">)</span>
+        <span class="k">for</span> <span class="nb">id</span><span class="p">,</span> <span class="n">counts</span> <span class="ow">in</span> <span class="n">id_count</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">heatmap</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="o">==</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span>
+
+        <span class="k">return</span> <span class="n">heatmap</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_cells_density_per_region"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_cells_density_per_region">[docs]</a>    <span class="k">def</span> <span class="nf">get_cells_density_per_region</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells_id</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retuns the cell density (number of cell per voxel) per region.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cells_id: ndarray</span>
+<span class="sd">            cells ID (typically computed by self.get_cells_id())</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        heatmap: ndarray</span>
+<span class="sd">            3D array where each brain region value is the cell density in this region.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Remove 0s</span>
+        <span class="n">cells_id</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">cells_id</span><span class="p">,</span> <span class="n">cells_id</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">id_count</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">cells_id</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">id_count</span><span class="p">:</span>
+                <span class="n">id_count</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">id_count</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">heatmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="nb">id</span><span class="p">,</span> <span class="n">counts</span> <span class="ow">in</span> <span class="n">id_count</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atlas</span> <span class="o">==</span> <span class="nb">id</span><span class="p">)</span>
+            <span class="n">heatmap</span><span class="p">[</span><span class="n">tmp</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">heatmap</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_cells_density"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_cells_density">[docs]</a>    <span class="k">def</span> <span class="nf">get_cells_density</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cells</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">progress_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retuns the cell density (local average number of cell per voxel). The local average is computed using a gaussian</span>
+<span class="sd">        kernel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        cells: ndarray</span>
+<span class="sd">            cell positions</span>
+<span class="sd">        kernel_size: int</span>
+<span class="sd">            radius of the gaussian for local cell density estimation</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        _: ndarray</span>
+<span class="sd">            estimated cell density</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">heatmap</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">cells</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Building density map..&#39;</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">progress_bar</span><span class="p">):</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">z_downsample</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">y_downsample</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">cells</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">x_downsample</span><span class="p">)</span>
+            <span class="n">heatmap</span><span class="p">[</span><span class="n">z</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="k">return</span> <span class="n">gaussian</span><span class="p">(</span><span class="n">heatmap</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_cell_number_by_acronym"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_cell_number_by_acronym">[docs]</a>    <span class="k">def</span> <span class="nf">get_cell_number_by_acronym</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acronym_list</span><span class="p">,</span> <span class="n">cells_ids</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the total number of segmented cell in different regions referenced by their acronyms.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        acronym_list: list</span>
+<span class="sd">            list of acronyms (ABA)</span>
+<span class="sd">        cells_ids: ndarray</span>
+<span class="sd">            cells ID (typically computed by self.get_cells_id())</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        cell_number: arraylike</span>
+<span class="sd">            list containing the total number of cells for each asked region.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">acronym_list</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">acronym_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">acronym_list</span><span class="p">]</span>
+
+        <span class="n">rspc</span> <span class="o">=</span> <span class="n">ReferenceSpaceCache</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="s1">&#39;annotation/ccf_2017&#39;</span><span class="p">,</span> <span class="n">manifest</span><span class="o">=</span><span class="s1">&#39;manifest.json&#39;</span><span class="p">)</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">rspc</span><span class="o">.</span><span class="n">get_structure_tree</span><span class="p">(</span><span class="n">structure_graph_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">structures</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">get_structures_by_acronym</span><span class="p">(</span><span class="n">acronym_list</span><span class="p">)</span>
+
+        <span class="n">cell_number</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">structure</span> <span class="ow">in</span> <span class="n">structures</span><span class="p">:</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">descendant_ids</span><span class="p">([</span><span class="n">structure</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]])</span>
+            <span class="n">cell_number</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">element</span><span class="o">=</span><span class="n">cells_ids</span><span class="p">,</span> <span class="n">test_elements</span><span class="o">=</span><span class="n">ids</span><span class="p">)))</span>
+
+        <span class="k">return</span> <span class="n">cell_number</span></div>
+
+<div class="viewcode-block" id="tileAtlaser.get_area_mask_by_acronym"><a class="viewcode-back" href="../../pipapr.atlaser.html#pipapr.atlaser.tileAtlaser.get_area_mask_by_acronym">[docs]</a>    <span class="k">def</span> <span class="nf">get_area_mask_by_acronym</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">acronym_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the mask corresponding to brain regions given in `acronym_list`, brain regions referred by their</span>
+<span class="sd">        Allen brain acronym.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        acronym_list: list</span>
+<span class="sd">            list of Allen Brain region acronyms to count the mapped cells.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mask: ndarray</span>
+<span class="sd">            mask containing `1` for the region in `acronym_list` ans `0` elsewhere.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="n">rspc</span> <span class="o">=</span> <span class="n">ReferenceSpaceCache</span><span class="p">(</span><span class="mi">25</span><span class="p">,</span> <span class="s1">&#39;annotation/ccf_2017&#39;</span><span class="p">,</span> <span class="n">manifest</span><span class="o">=</span><span class="s1">&#39;manifest.json&#39;</span><span class="p">)</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">rspc</span><span class="o">.</span><span class="n">get_structure_tree</span><span class="p">(</span><span class="n">structure_graph_id</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">structures</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">get_structures_by_acronym</span><span class="p">(</span><span class="n">acronym_list</span><span class="p">)</span>
+
+        <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">structure</span> <span class="ow">in</span> <span class="n">structures</span><span class="p">:</span>
+            <span class="n">ids</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">descendant_ids</span><span class="p">([</span><span class="n">structure</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]]))</span>
+
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">element</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">atlas</span><span class="p">,</span> <span class="n">test_elements</span><span class="o">=</span><span class="n">ids</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">mask</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.parser module &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.parser &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pipapr.segmenter module" href="pipapr.segmenter.html" />
-    <link rel="prev" title="pipapr.loader module" href="pipapr.loader.html" /> 
+    <link rel="next" title="pipapr.segmenter" href="pipapr.segmenter.html" />
+    <link rel="prev" title="pipapr.loader" href="pipapr.loader.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,22 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="pipapr.html">pipapr package</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pipapr.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.converter.html">pipapr.converter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.loader.html">pipapr.loader module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">pipapr.parser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer module</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pipapr.html#module-contents">Module contents</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.viewer.html">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.runner.html">pipapr.runner</a></li>
 </ul>
 
         </div>
@@ -82,8 +76,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">pipapr package</a> &raquo;</li>
-      <li>pipapr.parser module</li>
+          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>pipapr.parser</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.parser.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -93,16 +87,347 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pipapr-parser-module">
-<h1>pipapr.parser module<a class="headerlink" href="#pipapr-parser-module" title="Permalink to this heading"></a></h1>
+  <section id="module-pipapr.parser">
+<span id="pipapr-parser"></span><h1>pipapr.parser<a class="headerlink" href="#module-pipapr.parser" title="Permalink to this heading"></a></h1>
+<p>Submodule containing classes and functions relative to Parsing.</p>
+<p>The general idea of this submodule is to parse the data to be processed later on. This submodule was developed for
+our particular folder layout and was particularly adapted for COLM, mesoSPIM and ClearScope.</p>
+<p>Note that each channel is parsed separately so as to give maximum flexibility for stitching and visualization.</p>
+<p>There are two general way of parsing the data:
+- <strong>multitile</strong> parsing (tileParser class), where each tile has a given position on a 2D grid and can therefore be stitched
+- <strong>independant</strong> parsing (baseParser class), where each tile is independent</p>
+<p>We also provide a few classes to parse data from given microscopes:
+- COLM
+- MesoSpim
+- ClearScope</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.parser.</span></span><span class="sig-name descname"><span class="pre">baseParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to parse several independent tiles (not multitile).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.__getitem__" title="Permalink to this definition"></a></dt>
+<dd><p>Return tiles, add neighbors information before returning.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the baseParser object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data.</p></li>
+<li><p><strong>frame_size</strong> (<em>int</em>) – size of each frame (camera resolution).</p></li>
+<li><p><strong>ftype</strong> (<em>string</em>) – input data type in ‘apr’, ‘tiff2D’ or ‘tiff3D’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.__iter__" title="Permalink to this definition"></a></dt>
+<dd><p>Method called under the hood when iterating on tiles. Because it is a generator, the memory is released at
+each iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator containing the tileLoader object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.__len__" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of tiles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_neighbors_map">
+<span class="sig-name descname"><span class="pre">_get_neighbors_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_neighbors_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_neighbors_map" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the non-redundant neighbors map: neighbors[row, col] gives a list of neighbors and the total
+number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_path_list">
+<span class="sig-name descname"><span class="pre">_get_path_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_path_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_path_list" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing the path to each tile.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_tile_list">
+<span class="sig-name descname"><span class="pre">_get_tile_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_tile_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_tile_list" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of tiles as a dictionary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Create a list of dictionnary for each tile containing it’s path and coordinate on the grid.
+Coordinates are set to None for the baseParser which only parse independant tiles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_tiles_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_tiles_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_tiles_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing file paths (for tiff3D and APR) or folder paths (for tiff2).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_tiles_pattern">
+<span class="sig-name descname"><span class="pre">_get_tiles_pattern</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_tiles_pattern"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_tiles_pattern" title="Permalink to this definition"></a></dt>
+<dd><p>Return the tile pattern (0 = no tile, 1 = tile)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._get_total_neighbors_map">
+<span class="sig-name descname"><span class="pre">_get_total_neighbors_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._get_total_neighbors_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._get_total_neighbors_map" title="Permalink to this definition"></a></dt>
+<dd><p>Return the total neighbors maps (with redundancy in the case of undirected graph).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._print_info">
+<span class="sig-name descname"><span class="pre">_print_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._print_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._print_info" title="Permalink to this definition"></a></dt>
+<dd><p>Display parsing summary in the terminal.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser._sort_tiles">
+<span class="sig-name descname"><span class="pre">_sort_tiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser._sort_tiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser._sort_tiles" title="Permalink to this definition"></a></dt>
+<dd><p>Sort tiles so that they are arranged in columns and rows (read from left to right and top to bottom).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.check_files_integrity">
+<span class="sig-name descname"><span class="pre">check_files_integrity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.check_files_integrity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.check_files_integrity" title="Permalink to this definition"></a></dt>
+<dd><p>Check that all tiles are readable and not corrupted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.compute_average_CR">
+<span class="sig-name descname"><span class="pre">compute_average_CR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.compute_average_CR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.compute_average_CR" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the average Computational Ratio (CR). Note: data must be of type APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>cr</strong> – average CR for the dataset</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.baseParser.make_lazy_loadable">
+<span class="sig-name descname"><span class="pre">make_lazy_loadable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#baseParser.make_lazy_loadable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.baseParser.make_lazy_loadable" title="Permalink to this definition"></a></dt>
+<dd><p>Loads all parsed APR tiles and compute and save the tree parts so that the data-set becomes lazy loadable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.parser.clearscopeParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.parser.</span></span><span class="sig-name descname"><span class="pre">clearscopeParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#clearscopeParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.clearscopeParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">tileParser</span></code></a></p>
+<p>Class used to parse multi-tile colm data where each tile position in space matters. Tile parsed this way are usually
+stitched later on.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.clearscopeParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#clearscopeParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.clearscopeParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the tileParser object for COLM acquisition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data.</p></li>
+<li><p><strong>nrow</strong> (<em>int</em>) – number of row for parsing COLM LOCXXX data</p></li>
+<li><p><strong>ncol</strong> (<em>int</em>) – number of col for parsing COLM LOCXXX data</p></li>
+<li><p><strong>channel</strong> (<em>int</em>) – fluorescence channel for parsing COLM LOCXXX data</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.clearscopeParser._get_row_col">
+<span class="sig-name descname"><span class="pre">_get_row_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#clearscopeParser._get_row_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.clearscopeParser._get_row_col" title="Permalink to this definition"></a></dt>
+<dd><p>Get ClearScope tile row and col position given the tile number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – ClearScope tile number</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>row</strong> (<em>int</em>) – row number</p></li>
+<li><p><strong>col</strong> (<em>int</em>) – col number</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.clearscopeParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#clearscopeParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.clearscopeParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of tiles as a dictionary for ClearScope data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.clearscopeParser._get_tiles_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#clearscopeParser._get_tiles_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.clearscopeParser._get_tiles_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing ClearScope folders which contains individual tiff.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.clearscopeParser.interpolate_missing_frames">
+<span class="sig-name descname"><span class="pre">interpolate_missing_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#clearscopeParser.interpolate_missing_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.clearscopeParser.interpolate_missing_frames" title="Permalink to this definition"></a></dt>
+<dd><p>Interpolate missing frames and save them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.parser.colmParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.parser.</span></span><span class="sig-name descname"><span class="pre">colmParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#colmParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.colmParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">tileParser</span></code></a></p>
+<p>Class used to parse multi-tile colm data where each tile position in space matters. Tile parsed this way are usually
+stitched later on.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.colmParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#colmParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.colmParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the tileParser object for COLM acquisition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data. More specifically it should be the folder that contains the acquisition.</p></li>
+<li><p><strong>nrow</strong> (<em>int</em>) – number of row for parsing COLM LOCXXX data</p></li>
+<li><p><strong>ncol</strong> (<em>int</em>) – number of col for parsing COLM LOCXXX data</p></li>
+<li><p><strong>channel</strong> (<em>int</em>) – fluorescence channel for parsing COLM LOCXXX data</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.colmParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#colmParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.colmParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of tiles as a dictionary for data saved as LOC00X.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.colmParser._get_tiles_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#colmParser._get_tiles_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.colmParser._get_tiles_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing COLM folders which contains individual tiff.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.parser.</span></span><span class="sig-name descname"><span class="pre">tileParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pipapr.parser.baseParser" title="pipapr.parser.baseParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">baseParser</span></code></a></p>
+<p>Class used to parse multi-tile data where each tile position in space matters. Tile parsed this way are usually
+stitched later on.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser.__getitem__" title="Permalink to this definition"></a></dt>
+<dd><p>If item is an int, then returns the corresponding tileLoader object.</p>
+<p>If item is a tuple, then returns the corresponding (row, col) tileLoader object.</p>
+<p>If item is a slice, then it creates a generator so the tileLoader object is garbage collected at each iteration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the tileParser object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data.</p></li>
+<li><p><strong>frame_size</strong> (<em>int</em>) – size of each frame (camera resolution).</p></li>
+<li><p><strong>ftype</strong> (<em>string</em>) – input data type in ‘apr’, ‘tiff2D’ or ‘tiff3D’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser.__iter__" title="Permalink to this definition"></a></dt>
+<dd><p>Method called under the hood when iterating on tiles. Because it is a generator, the memory is released at
+each iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator containing the tileLoader object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser._correct_offset">
+<span class="sig-name descname"><span class="pre">_correct_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser._correct_offset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser._correct_offset" title="Permalink to this definition"></a></dt>
+<dd><p>If the row or column do not start at 0, then we subtract the min_row and min_col so that it starts at 0.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser._get_ncol">
+<span class="sig-name descname"><span class="pre">_get_ncol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser._get_ncol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser._get_ncol" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of columns (H) to be stitched.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser._get_nrow">
+<span class="sig-name descname"><span class="pre">_get_nrow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser._get_nrow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser._get_nrow" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of rows (V) to be stitched.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Create a list of dictionnary for each tile containing it’s path and coordinate on the grid.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser._get_type">
+<span class="sig-name descname"><span class="pre">_get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser._get_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser._get_type" title="Permalink to this definition"></a></dt>
+<dd><p>Automatically determine file type based on what’s inside ‘path’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.parser.tileParser._print_info">
+<span class="sig-name descname"><span class="pre">_print_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/parser.html#tileParser._print_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.parser.tileParser._print_info" title="Permalink to this definition"></a></dt>
+<dd><p>Display parsing summary in the terminal.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pipapr.loader.html" class="btn btn-neutral float-left" title="pipapr.loader module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pipapr.segmenter.html" class="btn btn-neutral float-right" title="pipapr.segmenter module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pipapr.loader.html" class="btn btn-neutral float-left" title="pipapr.loader" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.segmenter.html" class="btn btn-neutral float-right" title="pipapr.segmenter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

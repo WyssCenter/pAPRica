@@ -1,5 +1,5 @@
-pipapr.parser module
-====================
+pipapr.parser
+=============
 
 .. automodule:: pipapr.parser
    :members:

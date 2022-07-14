@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.viewer module &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.viewer &mdash; pipapr 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
@@ -26,7 +26,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="pipapr.stitcher module" href="pipapr.stitcher.html" /> 
+    <link rel="next" title="pipapr.runner" href="pipapr.runner.html" />
+    <link rel="prev" title="pipapr.stitcher" href="pipapr.stitcher.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -49,22 +50,16 @@
 <li class="toctree-l1"><a class="reference internal" href="documentation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
 </ul>
-<p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="reference internal" href="pipapr.html">pipapr package</a><ul class="current">
-<li class="toctree-l2 current"><a class="reference internal" href="pipapr.html#submodules">Submodules</a><ul class="current">
-<li class="toctree-l3"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.converter.html">pipapr.converter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.loader.html">pipapr.loader module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.parser.html">pipapr.parser module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher module</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">pipapr.viewer module</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="pipapr.html#module-contents">Module contents</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.segmenter.html">pipapr.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.stitcher.html">pipapr.stitcher</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.runner.html">pipapr.runner</a></li>
 </ul>
 
         </div>
@@ -81,8 +76,8 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">pipapr package</a> &raquo;</li>
-      <li>pipapr.viewer module</li>
+          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
+      <li>pipapr.viewer</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.viewer.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -92,15 +87,353 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="pipapr-viewer-module">
-<h1>pipapr.viewer module<a class="headerlink" href="#pipapr-viewer-module" title="Permalink to this heading"></a></h1>
+  <section id="module-pipapr.viewer">
+<span id="pipapr-viewer"></span><h1>pipapr.viewer<a class="headerlink" href="#module-pipapr.viewer" title="Permalink to this heading"></a></h1>
+<p>Module containing classes and functions relative to Viewing.</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.apr_to_napari_Image">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">apr_to_napari_Image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr:</span> <span class="pre">~_pyaprwrapper.data_containers.APR</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts:</span> <span class="pre">(&lt;class</span> <span class="pre">'_pyaprwrapper.data_containers.ShortParticles'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'_pyaprwrapper.data_containers.FloatParticles'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_delta:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">**kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#apr_to_napari_Image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.apr_to_napari_Image" title="Permalink to this definition"></a></dt>
+<dd><p>Construct a napari ‘Image’ layer from an APR. Pixel values are reconstructed on the fly via the APRSlicer class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – Input APR data structure</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.FloatParticles</em><em> or </em><em>pyapr.ShortParticles</em>) – Input particle intensities</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em> (</em><em>default: 'constant'</em><em>)</em>) – <dl class="simple">
+<dt>Interpolation mode to reconstruct pixel values. Supported values are</dt><dd><p>constant:   piecewise constant interpolation
+smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.
+level:      interpolate the particle levels to the pixels</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>level_delta</strong> (<em>int</em>) – Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.
+Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.
+(default: 0)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out</strong> – An Image layer of the APR that can be viewed in napari.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>napari.layers.Image</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.apr_to_napari_Labels">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">apr_to_napari_Labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">APR</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ShortParticles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'constant'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_delta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#apr_to_napari_Labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.apr_to_napari_Labels" title="Permalink to this definition"></a></dt>
+<dd><p>Construct a napari ‘Layers’ layer from an APR. Pixel values are reconstructed on the fly via the APRSlicer class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – Input APR data structure</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.FloatParticles</em><em> or </em><em>pyapr.ShortParticles</em>) – Input particle intensities</p></li>
+<li><p><strong>mode</strong> (<em>str</em><em> (</em><em>default: 'constant'</em><em>)</em>) – <dl class="simple">
+<dt>Interpolation mode to reconstruct pixel values. Supported values are</dt><dd><p>constant:   piecewise constant interpolation
+smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.
+level:      interpolate the particle levels to the pixels</p>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>level_delta</strong> (<em>int</em>) – Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.
+Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.
+(default: 0)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>out</strong> – A Labels layer of the APR that can be viewed in napari.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>napari.layers.Image</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.compare_stitching">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">compare_stitching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stitcher1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stitcher2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#compare_stitching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.compare_stitching" title="Permalink to this definition"></a></dt>
+<dd><p>Compare two stitching at a given position <cite>loc</cite> for a given dimension <cite>dim</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stitcher1</strong> (<a class="reference internal" href="pipapr.stitcher.html#pipapr.stitcher.tileStitcher" title="pipapr.stitcher.tileStitcher"><em>tileStitcher</em></a>) – stitcher object 1</p></li>
+<li><p><strong>stitcher2</strong> (<a class="reference internal" href="pipapr.stitcher.html#pipapr.stitcher.tileStitcher" title="pipapr.stitcher.tileStitcher"><em>tileStitcher</em></a>) – stitcher object 2</p></li>
+<li><p><strong>loc</strong> (<em>int</em>) – position in the given dimension</p></li>
+<li><p><strong>dim</strong> (<em>int</em>) – dimension to use for comparison</p></li>
+<li><p><strong>n_proj</strong> (<em>int</em>) – number of plane to perform the max-projection</p></li>
+<li><p><strong>downsample</strong> (<em>int</em>) – downsampling factor for the reconstruction</p></li>
+<li><p><strong>color</strong> (<em>bool</em>) – option to display in color</p></li>
+<li><p><strong>rel_map</strong> (<em>bool</em>) – overlay reliability map on the reconstructed data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.display_apr">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">display_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#display_apr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.display_apr" title="Permalink to this definition"></a></dt>
+<dd><p>Display an APR using Napari from previously loaded data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – Input APR data structure</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.FloatParticles</em><em>, </em><em>pyapr.ShortParticles</em>) – Input particle intensities</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – optional parameters for Napari</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.display_apr_from_path">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">display_apr_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#display_apr_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.display_apr_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Display an APR using Napari from a filepath.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path to APR to be displayed</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – optional parameters for Napari</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.display_heatmap">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">display_heatmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">heatmap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atlas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#display_heatmap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.display_heatmap" title="Permalink to this definition"></a></dt>
+<dd><p>Display a heatmap (e.g. cell density) that can be overlaid on intensity data and atlas.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>heatmap</strong> (<em>ndarray</em>) – array containing the heatmap to be displayed</p></li>
+<li><p><strong>atlas</strong> (<em>ndarray</em>) – array containing the atlas which will be automatically scaled to the heatmap</p></li>
+<li><p><strong>data</strong> (<em>ndarray</em>) – array containing the data.</p></li>
+<li><p><strong>log</strong> (<em>bool</em>) – plot in logscale (only used for 2D).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.display_layers">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">display_layers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#display_layers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.display_layers" title="Permalink to this definition"></a></dt>
+<dd><p>Display a list of layers using Napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em><em>[</em><em>napari.Layer</em><em>]</em>) – list of layers to display</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>viewer</strong> – napari viewer.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>napari.Viewer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.display_layers_pyramidal">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">display_layers_pyramidal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">layers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_delta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#display_layers_pyramidal"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.display_layers_pyramidal" title="Permalink to this definition"></a></dt>
+<dd><p>Display a list of layers using Napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>layers</strong> (<em>list</em><em>[</em><em>napari.Layer</em><em>]</em>) – list of layers to display</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>viewer</strong> – napari viewer.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>napari.Viewer</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.display_segmentation">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">display_segmentation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pyramidal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#display_segmentation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.display_segmentation" title="Permalink to this definition"></a></dt>
+<dd><p>This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel
+data from APR on the fly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – apr object</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.ParticleData</em>) – particle object representing the image</p></li>
+<li><p><strong>mask</strong> (<em>pyapr.ParticleData</em>) – particle object representing the segmentation mask/connected component</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.reconstruct_colored_projection">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">reconstruct_colored_projection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">apr</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">threshold</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#reconstruct_colored_projection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.reconstruct_colored_projection" title="Permalink to this definition"></a></dt>
+<dd><p>Compare two stitching at a given position <cite>loc</cite> for a given dimension <cite>dim</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>apr</strong> (<em>pyapr.APR</em>) – apr tree object</p></li>
+<li><p><strong>parts</strong> (<em>pyapr.ParticleData</em>) – apr particles</p></li>
+<li><p><strong>loc</strong> (<em>int</em>) – position in the given dimension</p></li>
+<li><p><strong>dim</strong> (<em>int</em>) – dimension to use for comparison</p></li>
+<li><p><strong>n_proj</strong> (<em>int</em>) – number of plane to perform the max-projection</p></li>
+<li><p><strong>downsample</strong> (<em>int</em>) – downsampling factor for the reconstruction</p></li>
+<li><p><strong>color</strong> (<em>bool</em>) – option to display in color</p></li>
+<li><p><strong>rel_map</strong> (<em>bool</em>) – overlay reliability map on the reconstructed data</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pipapr.viewer.resolution_callback">
+<span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">resolution_callback</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">viewer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#resolution_callback"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.resolution_callback" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.viewer.</span></span><span class="sig-name descname"><span class="pre">tileViewer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atlaser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to display the registration and segmentation using Napari.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">segmentation</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atlaser</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer.__init__" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tiles</strong> (<a class="reference internal" href="pipapr.parser.html#pipapr.parser.tileParser" title="pipapr.parser.tileParser"><em>tileParser</em></a>) – tileParser object containing the dataset to be displayed.</p></li>
+<li><p><strong>database</strong> (<em>(</em><em>pd.Dataframe</em><em>, </em><em>string</em><em>, </em><a class="reference internal" href="pipapr.stitcher.html#pipapr.stitcher.tileStitcher" title="pipapr.stitcher.tileStitcher"><em>tileStitcher</em></a><em>)</em>) – database containing the tile positions.</p></li>
+<li><p><strong>segmentation</strong> (<em>bool</em>) – option to also display the segmentation (connected component) data.</p></li>
+<li><p><strong>cells</strong> (<em>ndarray</em>) – cells center to be displayed.</p></li>
+<li><p><strong>atlaser</strong> (<a class="reference internal" href="pipapr.atlaser.html#pipapr.atlaser.tileAtlaser" title="pipapr.atlaser.tileAtlaser"><em>tileAtlaser</em></a>) – tileAtlaser object containing the Atlas to be displayed.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer._get_tile_position">
+<span class="sig-name descname"><span class="pre">_get_tile_position</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer._get_tile_position"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer._get_tile_position" title="Permalink to this definition"></a></dt>
+<dd><p>Parse tile position in the database.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer._is_tile_loaded">
+<span class="sig-name descname"><span class="pre">_is_tile_loaded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer._is_tile_loaded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer._is_tile_loaded" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True is tile is loaded, False otherwise.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer._load_tile">
+<span class="sig-name descname"><span class="pre">_load_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">row</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">col</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer._load_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer._load_tile" title="Permalink to this definition"></a></dt>
+<dd><p>Load the tile at position [row, col].</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer.check_stitching">
+<span class="sig-name descname"><span class="pre">check_stitching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer.check_stitching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer.check_stitching" title="Permalink to this definition"></a></dt>
+<dd><p>Function to display the stitched dataset using napari.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>downsample</strong> (<em>int</em>) – downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</p></li>
+<li><p><strong>color</strong> (<em>bool</em>) – option to display in color</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – dictionary passed to Napari for custom option</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer.display_all_tiles">
+<span class="sig-name descname"><span class="pre">display_all_tiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pyramidal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer.display_all_tiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer.display_all_tiles" title="Permalink to this definition"></a></dt>
+<dd><p>Display all parsed tiles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pyramidal</strong> (<em>bool</em>) – option to have a slider that controls the displayed resolution</p></li>
+<li><p><strong>downsample</strong> (<em>int</em>) – downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – dictionary passed to Napari for custom option</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer.display_tiles">
+<span class="sig-name descname"><span class="pre">display_tiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pyramidal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer.display_tiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer.display_tiles" title="Permalink to this definition"></a></dt>
+<dd><p>Display tiles at position coords.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords</strong> (<em>list</em>) – list of tuples (row, col) containing the tile coordinate to display.</p></li>
+<li><p><strong>downsample</strong> (<em>int</em>) – downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – dictionary passed to Napari for custom option</p></li>
+<li><p><strong>color</strong> (<em>bool</em>) – option to display in color</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pipapr.viewer.tileViewer.get_layers_all_tiles">
+<span class="sig-name descname"><span class="pre">get_layers_all_tiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/viewer.html#tileViewer.get_layers_all_tiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.viewer.tileViewer.get_layers_all_tiles" title="Permalink to this definition"></a></dt>
+<dd><p>Display all parsed tiles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>downsample</strong> (<em>int</em>) – downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</p></li>
+<li><p><strong>kwargs</strong> (<em>dict</em>) – dictionary passed to Napari for custom option</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>layers</strong> – list of layers to be displayed by Napari</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list[napari.Layer]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="pipapr.stitcher.html" class="btn btn-neutral float-left" title="pipapr.stitcher module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.stitcher.html" class="btn btn-neutral float-left" title="pipapr.stitcher" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="pipapr.runner.html" class="btn btn-neutral float-right" title="pipapr.runner" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -11,13 +11,13 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter, runner
+from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter, runner, batcher
 from .atlaser import tileAtlaser
 from .converter import tileConverter
-from .parser import tileParser, baseParser
+from .parser import tileParser, baseParser, autoParser
 from .runner import clearscopeRunningPipeline
 from .segmenter import tileSegmenter, multitileSegmenter, tileTrainer
 from .stitcher import tileStitcher, channelStitcher
 from .viewer import tileViewer
 
-__all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter', 'runner']
+__all__ = ['loader', 'parser', 'stitcher', 'viewer', 'segmenter', 'atlaser', 'converter', 'runner', 'batcher']

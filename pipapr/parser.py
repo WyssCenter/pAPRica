@@ -21,6 +21,7 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 import copy
+import inspect
 import os
 import re
 from glob import glob
@@ -33,13 +34,72 @@ from tqdm import tqdm
 
 import pipapr
 
+def get_microscope_list():
+    """
+    This function builds up a dict containing microscopes supported by the pipeline (refer to the documentation to add yours).
+    By default, this list should be equivalent to:
+
+    >>> microscope_list = {'colm': colmParser,
+    >>>                   'clearscope': clearscopeParser,
+    >>>                   'default': tileParser
+    >>>                    }
+
+    The list is built by looking at the class that inherits from the base parser class and that are not the base parser class.
+
+    Returns
+    -------
+    microscope_list: dict
+        dictionnary containing all supported microscopes.
+    """
+    microscope_list = {}
+    for name, obj in inspect.getmembers(pipapr.parser):
+        if inspect.isclass(obj):
+            if issubclass(obj, pipapr.parser.baseParser) and (obj != pipapr.parser.baseParser):
+                microscope_list[name] = obj
+    return microscope_list
+
+def autoParser(path, **kwargs):
+    """
+    This function allows to parse a data-set automatically by guessing the folder architecture.
+    This function uses the microscope_list that is automatically infered from this submodule.
+    For each microscope it will call the __is_valid_acquisition() method and return the according parser object.
+
+    Parameters
+    ----------
+    path: str
+        path containing the data
+
+    Returns
+    -------
+    tileParser object
+    """
+    for acq_type, parser in get_microscope_list().items():
+        if parser._is_valid_acquisition(path):
+            return parser(path, **kwargs)
+
+def get_channel_number(path):
+    """
+    This functions returns the number of channels acquired in an acquisition located in ´path´ folder.
+    Parameters
+    ----------
+    path: str
+        path to the folder to check the number of channels
+
+    Returns
+    -------
+    Number of acquired channels
+    """
+    for acq_type, parser in get_microscope_list().items():
+        if parser._is_valid_acquisition(path):
+            return parser._get_n_channels(path)
+
 
 class baseParser():
     """
     Class used to parse several independent tiles (not multitile).
 
     """
-    def __init__(self, path, frame_size, ftype):
+    def __init__(self, path, frame_size, ftype, verbose=True):
         """
         Constructor of the baseParser object.
 
@@ -66,7 +126,8 @@ class baseParser():
         self.neighbors_tot = None
         self.neighbors_path = None
         self.path_list = self._get_path_list()
-        self._print_info()
+        if verbose:
+            self._print_info()
 
         # Define some folders
         base, _ = os.path.split(self.path)
@@ -158,6 +219,25 @@ class baseParser():
         print('Tiles are of type {}.'.format(self.type))
         print('{} tiles were detected.'.format(self.n_tiles))
         print('***********************************\n')
+
+    def _correct_offset(self):
+        """
+        If the row or column do not start at 0, then we subtract the min_row and min_col so that it starts at 0.
+
+        """
+
+        for i, tile in enumerate(self.tiles_list):
+            if i == 0:
+                row_min = tile['row']
+                col_min = tile['col']
+
+            row_min = min(row_min, tile['row'])
+            col_min = min(col_min, tile['col'])
+
+        if (row_min > 0) or (col_min > 0):
+            for tile in self.tiles_list:
+                tile['row'] -= row_min
+                tile['col'] -= col_min
 
     def _get_tile_list(self):
         """
@@ -367,7 +447,7 @@ class tileParser(baseParser):
     stitched later on.
 
     """
-    def __init__(self, path, frame_size=2048, ftype=None):
+    def __init__(self, path, frame_size=2048, ftype=None, verbose=True):
         """
         Constructor of the tileParser object.
 
@@ -403,31 +483,13 @@ class tileParser(baseParser):
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.neighbors_tot = self._get_total_neighbors_map()
         self.path_list = self._get_path_list()
-        self._print_info()
+        if verbose:
+            self._print_info()
 
         # Define some folders
         base, _ = os.path.split(self.path)
         self.folder_root = base
         self.folder_max_projs = os.path.join(base, 'max_projs')
-
-    def _correct_offset(self):
-        """
-        If the row or column do not start at 0, then we subtract the min_row and min_col so that it starts at 0.
-
-        """
-
-        for i, tile in enumerate(self.tiles_list):
-            if i == 0:
-                row_min = tile['row']
-                col_min = tile['col']
-
-            row_min = min(row_min, tile['row'])
-            col_min = min(col_min, tile['col'])
-
-        if (row_min > 0) or (col_min > 0):
-            for tile in self.tiles_list:
-                tile['row'] -= row_min
-                tile['col'] -= col_min
 
     def _print_info(self):
         """
@@ -469,7 +531,7 @@ class tileParser(baseParser):
         tiles = []
         for f in files:
             _, fname = os.path.split(f)
-            pattern_search = re.search('(\d+)_(\d+).', fname)
+            pattern_search = re.search(r'(\d+)_(\d+).', fname)
             if pattern_search:
                 row = int(pattern_search.group(1))
                 col = int(pattern_search.group(2))
@@ -607,6 +669,23 @@ class tileParser(baseParser):
                                               folder_root=self.folder_root,
                                               channel=self.channel)
 
+    @staticmethod
+    def _is_valid_acquisition(path):
+        for f in os.listdir(path):
+            if f.endswith('.apr'):
+                return True
+        else:
+            return False
+
+    @staticmethod
+    def _get_n_channels(path):
+        """
+        Returns the number of channel of the CLEARSCOPE acquisition. This is based on a regex that checks
+        the highest n in the path: some_path/X_Y___nx/
+        """
+        folders = glob(os.path.basename(path))
+        return np.max([int(re.findall(r'ch(\d)', x)[0])+1 for x in folders])
+
 
 class colmParser(tileParser):
     """
@@ -614,7 +693,7 @@ class colmParser(tileParser):
     stitched later on.
 
     """
-    def __init__(self, path, channel=0):
+    def __init__(self, path, channel=0, verbose=True):
         """
         Constructor of the tileParser object for COLM acquisition.
 
@@ -635,7 +714,7 @@ class colmParser(tileParser):
         self.ncol = u.shape[1]
         self.nrow = u.shape[0]
         path = os.path.join(path, 'VW0')
-        super().__init__(path, frame_size=2048, ftype='colm')
+        super().__init__(path, frame_size=2048, ftype='colm', verbose=verbose)
 
         self.channel = channel
 
@@ -653,7 +732,7 @@ class colmParser(tileParser):
         """
         tiles = []
         for f in files:
-            pattern_search = re.findall('[\\\/]LOC(\d+)', f)
+            pattern_search = re.findall(r'[\\\/]LOC(\d+)', f)
             if pattern_search != []:
                 n = int(pattern_search[-1])
                 row = n // self.ncol
@@ -668,6 +747,67 @@ class colmParser(tileParser):
             tiles.append(tile)
         return tiles
 
+    def get_overlap(self):
+        """
+        Extract overlap from COLM Experiment.ini file.
+
+        """
+
+        with open(os.path.join(self.path[:-4], 'Experiment.ini')) as f:
+            lines = f.readlines()
+
+        acq_param = {}
+        for l in lines:
+            pattern_matched = re.match(r'(.*) = "(.*)"$', l)
+            if pattern_matched is not None:
+                if self._is_number(pattern_matched.group(2)):
+                    acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
+                elif pattern_matched.group(2) == 'True':
+                    acq_param[pattern_matched.group(1)] = True
+                elif pattern_matched.group(2) == 'False':
+                    acq_param[pattern_matched.group(1)] = False
+                else:
+                    acq_param[pattern_matched.group(1)] = pattern_matched.group(2)
+
+        return acq_param['Actual Vertical Overlap (%)'], acq_param['Actual Horizontal Overlap (%)']
+
+    @staticmethod
+    def _is_number(s):
+        """
+        Check if a string contain any king of number (isnumeric() method doesn't work for decimal numbers).
+        Returns
+        -------
+        True if s is a number, False otherwise
+        """
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _is_valid_acquisition(path):
+        """
+        This function returns True if path folder is a COLM acquisition.
+        Parameters
+        ----------
+        path: str
+            path to check if acquisition is COLM
+
+        Returns
+        -------
+        bool
+        """
+        return os.path.exists(os.path.join(path, 'Experiment.ini'))
+
+    @staticmethod
+    def _get_n_channels(path):
+        """
+        Returns the number of channel of the COLM acquisition.
+        """
+        files = sorted(glob(os.path.join(path, 'VW0', 'LOC000', '*CHN*.tif')))
+        return int(re.findall(r'CHN(\d+)', files[-1])[0])+1
+
 
 class clearscopeParser(tileParser):
     """
@@ -675,7 +815,7 @@ class clearscopeParser(tileParser):
     stitched later on.
 
     """
-    def __init__(self, path, channel=0):
+    def __init__(self, path, channel=0, verbose=True):
         """
         Constructor of the tileParser object for COLM acquisition.
 
@@ -708,7 +848,8 @@ class clearscopeParser(tileParser):
         self.neighbors, self.n_edges = self._get_neighbors_map()
         self.neighbors_tot = self._get_total_neighbors_map()
         self.path_list = self._get_path_list()
-        self._print_info()
+        if verbose:
+            self._print_info()
 
         # Define some folders
         base, _ = os.path.split(self.path)
@@ -727,7 +868,7 @@ class clearscopeParser(tileParser):
 
         self.acq_param = {}
         for l in lines:
-            pattern_matched = re.match('^(\w*) = (.*)$', l)
+            pattern_matched = re.match(r'^(\w*) = (.*)$', l)
             if pattern_matched is not None:
                 if pattern_matched.group(2).isnumeric():
                     self.acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
@@ -758,7 +899,7 @@ class clearscopeParser(tileParser):
         tiles = []
         for f in files:
 
-            pattern_search = re.findall('\d{6}_(\d{6})___\dc', f)
+            pattern_search = re.findall(r'\d{6}_(\d{6})___\dc', f)
             if pattern_search != []:
                 n = int(pattern_search[0])
                 row, col = self._get_row_col(n)
@@ -807,7 +948,7 @@ class clearscopeParser(tileParser):
 
             n = []
             for file in files:
-                pattern_search = re.findall('\d{6}_\d{6}___(\d{6})_\dc.tif', file)
+                pattern_search = re.findall(r'\d{6}_\d{6}___(\d{6})_\dc.tif', file)
                 n.append(int(pattern_search[0]))
 
             n = np.array(n)
@@ -844,7 +985,7 @@ class clearscopeParser(tileParser):
                 list_of_filenames.append(filename)
 
             # Then we check if some are missing
-            patterns = re.findall('(\d{6})_(\d{6})___\d{6}_(\d)c.tif', files[0])
+            patterns = re.findall(r'(\d{6})_(\d{6})___\d{6}_(\d)c.tif', files[0])
             patterns = patterns[0]
             a1 = patterns[0]
             a2 = patterns[1]
@@ -889,3 +1030,27 @@ class clearscopeParser(tileParser):
                             imsave(os.path.join(folder, '{}_{}___{:06d}_{}c.tif'.format(a1, a2, ind, a3)),
                                    u.astype('uint16'),
                                    check_contrast=False)
+
+    @staticmethod
+    def _is_valid_acquisition(path):
+        """
+        This function returns True if path folder is a CLEARSCOPE acquisition.
+        Parameters
+        ----------
+        path: str
+            path to check if acquisition is COLM
+
+        Returns
+        -------
+        bool
+        """
+        return '0001' in os.listdir(path)
+
+    @staticmethod
+    def _get_n_channels(path):
+        """
+        Returns the number of channel of the CLEARSCOPE acquisition. This is based on a regex that checks
+        the highest n in the path: some_path/X_Y___nx/
+        """
+        folders = glob(os.path.join(path, '0001', '*/'))
+        return np.max([int(re.findall(r'__(\d)c', x)[0])+1 for x in folders])

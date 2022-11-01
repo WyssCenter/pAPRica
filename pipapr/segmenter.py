@@ -1209,12 +1209,12 @@ class tileTrainer():
         if display_result:
             if func_to_get_cc is not None:
                 tile.parts_cc = func_to_get_cc(tile.apr, parts_pred)
-                pipapr.viewer.display_segmentation(self.apr, self.parts, tile.parts_cc)
+                pipapr.viewer.display_segmentation(tile.apr, tile.parts, tile.parts_cc)
             elif bg_label is not None:
                 parts_pred = np.array(parts_pred)
                 parts_pred[parts_pred==bg_label] = 0
                 parts_pred = pyapr.ShortParticles(parts_pred)
-                pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
+                pipapr.viewer.display_segmentation(tile.apr, tile.parts, parts_pred)
 
     def save_classifier(self, path=None):
         """

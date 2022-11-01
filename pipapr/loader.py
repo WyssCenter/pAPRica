@@ -10,6 +10,7 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 import os
+import shutil
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -438,11 +439,26 @@ class tileLoader():
         v: array_like
             numpy array containing the data.
         """
-        files_sorted = sorted(glob(os.path.join(self.path, '*')))
+        files_sorted = sorted(glob(os.path.join(path, '*')))
         n_files = len(files_sorted)
         v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
             v[i] = imread(f)
 
         return v
+
+    def _erase_from_disk(self):
+        """
+        Delete tile from disk, use with caution!
+
+        Returns
+        -------
+        None
+        """
+
+        if self.type == 'apr':
+            os.remove(self.path)
+        else:
+            shutil.rmtree(self.path)
+
 

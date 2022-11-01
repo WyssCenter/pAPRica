@@ -50,7 +50,9 @@ class clearscopeRunningPipeline():
             self.output_path = self.path
         else:
             self.output_path = output_path
-        self.folder_settings, self.name_acq = os.path.split(path)
+        self.folder_settings = self.path
+        self.name_acq = os.path.basename(path)
+        # self.folder_settings, self.name_acq = os.path.split(path)
         self.frame_size = 2048
         self.n_channels = n_channels
         self.tile_processed = 0
@@ -140,7 +142,7 @@ class clearscopeRunningPipeline():
         None
         """
 
-        while self.tile_processed < self.n_tiles:
+        while self.tile_processed < self.n_tiles*self.n_channels:
 
             is_available, tile = self._is_new_tile_available()
 
@@ -331,6 +333,53 @@ class clearscopeRunningPipeline():
         self.reg_y = reg_y
         self.reg_z = reg_z
 
+    def set_z_range(self, z_begin, z_end):
+        """
+        Set a range of depth fo computing the stitching.
+
+
+        Parameters
+        ----------
+        z_begin: int
+            first depth to be included in the max-proj
+        z_end: int
+            last depth to be included in the max-proj
+
+        Returns
+        -------
+        None
+        """
+
+        self.z_begin = z_begin
+        self.z_end = z_end
+
+    def set_overlap_margin(self, margin):
+        """
+        Modify the overlaping area size. If the overlaping area is smaller than the true one, the stitching can't
+        be performed properly. If the overlaping area area is more than twice the size of the true one it will also
+        fail (due to the circular FFT in the phase cross correlation).
+
+        Parameters
+        ----------
+        margin: float
+            safety margin in % to take the overlaping area.
+
+        Returns
+        -------
+        None
+        """
+        if margin > 45:
+            raise ValueError('Error: overlap margin is too big and will make the stitching fail.')
+        if margin < 1:
+            raise ValueError('Error: overlap margin is too small and may make the stitching fail.')
+
+        self.overlap_h = int(self.expected_overlap_h*(1+margin/100))
+        if self.expected_overlap_h > self.frame_size:
+            self.expected_overlap_h = self.frame_size
+        self.overlap_v = int(self.expected_overlap_v*(1+margin/100))
+        if self.expected_overlap_v > self.frame_size:
+            self.expected_overlap_v = self.frame_size
+
     def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, progress_bar=True):
         """
         Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
@@ -450,33 +499,6 @@ class clearscopeRunningPipeline():
             plt.imshow(rgb)
 
         return rgb
-
-    def set_overlap_margin(self, margin):
-        """
-        Modify the overlaping area size. If the overlaping area is smaller than the true one, the stitching can't
-        be performed properly. If the overlaping area area is more than twice the size of the true one it will also
-        fail (due to the circular FFT in the phase cross correlation).
-
-        Parameters
-        ----------
-        margin: float
-            safety margin in % to take the overlaping area.
-
-        Returns
-        -------
-        None
-        """
-        if margin > 45:
-            raise ValueError('Error: overlap margin is too big and will make the stitching fail.')
-        if margin < 1:
-            raise ValueError('Error: overlap margin is too small and may make the stitching fail.')
-
-        self.overlap_h = int(self.expected_overlap_h*(1+margin/100))
-        if self.expected_overlap_h > self.frame_size:
-            self.expected_overlap_h = self.frame_size
-        self.overlap_v = int(self.expected_overlap_v*(1+margin/100))
-        if self.expected_overlap_v > self.frame_size:
-            self.expected_overlap_v = self.frame_size
 
     def _reconstruct_z_slice(self, z=None, n_proj=0, downsample=1, color=False, debug=False, plot=True, progress_bar=True):
         """
@@ -619,7 +641,8 @@ class clearscopeRunningPipeline():
         print('Waiting for AcquireSettings.txt file in {}'.
               format(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq))))
 
-        files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
+        # files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
+        files = glob(os.path.join(self.folder_settings, '*.ini'))
         while files == []:
             sleep(1)
             files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
@@ -633,7 +656,7 @@ class clearscopeRunningPipeline():
 
         self.acq_param = {}
         for l in lines:
-            pattern_matched = re.match('^(\w*) = (.*)$', l)
+            pattern_matched = re.match(r'^(\w*) = (\S*)', l)
             if pattern_matched is not None:
                 if pattern_matched.group(2).isnumeric():
                     self.acq_param[pattern_matched.group(1)] = float(pattern_matched.group(2))
@@ -648,8 +671,8 @@ class clearscopeRunningPipeline():
         self.ncol = int(self.acq_param['ScanGridX'])
         self.n_planes =int(self.acq_param['StackDepths'])
 
-        self.expected_overlap_v = self.acq_param['VSThrowAwayYBottom']*2
-        self.expected_overlap_h = self.acq_param['VSThrowAwayXRight']*2
+        self.expected_overlap_v = int(self.acq_param['VSThrowAwayYBottom']*2)
+        self.expected_overlap_h = int(self.acq_param['VSThrowAwayXRight']*2)
 
         self.overlap_h = int(self.expected_overlap_h*1.2)
         if self.expected_overlap_h > self.frame_size:
@@ -713,7 +736,7 @@ class clearscopeRunningPipeline():
             row and col numbers
         """
 
-        pattern_search = re.findall('\d{6}_(\d{6})___\dc', path)
+        pattern_search = re.findall(r'\d{6}_(\d{6})___\dc', path)
 
         if pattern_search != []:
             n = int(pattern_search[0])
@@ -741,7 +764,7 @@ class clearscopeRunningPipeline():
             Channel number
         """
 
-        pattern_search = re.findall('\d{6}_\d{6}___(\d)c', path)
+        pattern_search = re.findall(r'\d{6}_\d{6}___(\d)c', path)
 
         if pattern_search != []:
             return int(pattern_search[0])
@@ -801,8 +824,9 @@ class clearscopeRunningPipeline():
             else:
                 neighbors = [[row - 1 , col]]
 
-        self.rows.append(row)
-        self.cols.append(col)
+        if channel == self.stitched_channel:
+            self.rows.append(row)
+            self.cols.append(col)
         filename = '{}_{}.apr'.format(row, col)
         self.paths_apr.append(os.path.join(self.folder_apr, 'ch{}'.format(channel), filename))
 

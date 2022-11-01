@@ -51,6 +51,7 @@ from skimage.filters import gaussian
 from skimage.metrics import normalized_root_mse
 from skimage.transform import warp, AffineTransform, downscale_local_mean
 from tqdm import tqdm
+import napari
 
 
 def max_sum_over_single_max(reference_image, moving_image, d):
@@ -538,7 +539,7 @@ class baseStitcher():
         self.mask = False
         self.threshold = None
 
-    def save_database(self, path):
+    def save_database(self, path=None):
         """
         Save database at the given path. The database must be built before calling this method.
 
@@ -553,7 +554,30 @@ class baseStitcher():
             raise TypeError('Error: database can''t be saved because it was not created. '
                             'Please call build_database() first.')
 
+        if path is None:
+            path = os.path.join(self.tiles.path, 'registration_results.csv')
+
         self.database.to_csv(path)
+
+    def load_database(self, path=None, force=False):
+        """
+        Save database at the given path. The database must be built before calling this method.
+
+        Parameters
+        ----------
+        path: string
+            path to save the database.
+
+        """
+
+        if self.database is not None and force is False:
+            raise TypeError('Error: database can''t be read because a database is already exist and force is set'
+                            'to False.')
+
+        if path is None:
+            path = os.path.join(self.tiles.path, 'registration_results.csv')
+
+        self.database = pd.read_csv(path)
 
     def activate_segmentation(self, segmenter):
         """
@@ -830,15 +854,14 @@ class baseStitcher():
                 if seg:
                     merged_seg[y1:y2, x1:x2] = np.maximum(merged_seg[y1:y2, x1:x2], cc)
 
-        if plot:
-            plt.figure()
+        if plot is not None:
+            viewer = napari.Viewer()
             if color:
-                plt.imshow(self._process_RGB_for_display(merged_data))
+                viewer.add_image(self._process_RGB_for_display(merged_data), name='Z plane')
             else:
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='Z plane')
                 if seg:
-                    plt.imshow(label2rgb(merged_seg, image=self._process_GRAY_for_display(merged_data),  bg_label=0))
-                else:
-                    plt.imshow(self._process_GRAY_for_display(merged_data), cmap='gray')
+                    viewer.add_labels(merged_seg, name='Segmentation labels.')
 
         if not seg:
             return merged_data
@@ -947,11 +970,11 @@ class baseStitcher():
                 merged_data[z1:z2, x1:x2] = np.maximum(merged_data[z1:z2, x1:x2], data)
 
         if plot:
-            plt.figure()
+            viewer = napari.Viewer()
             if color:
-                plt.imshow(self._process_RGB_for_display(merged_data))
+                viewer.add_image(self._process_RGB_for_display(merged_data), name='Y plane')
             else:
-                plt.imshow(np.log(merged_data), cmap='gray')
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='Y plane')
 
         return merged_data
 
@@ -1057,11 +1080,11 @@ class baseStitcher():
                 merged_data[z1:z2, y1:y2] = np.maximum(merged_data[z1:z2, y1:y2], data)
 
         if plot:
-            plt.figure()
+            viewer = napari.Viewer()
             if color:
-                plt.imshow(self._process_RGB_for_display(merged_data))
+                viewer.add_image(self._process_RGB_for_display(merged_data), name='X plane')
             else:
-                plt.imshow(np.log(merged_data), cmap='gray')
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='X plane')
 
         return merged_data
 

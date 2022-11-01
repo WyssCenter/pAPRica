@@ -705,7 +705,6 @@ class baseStitcher():
         ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + frame_size[0]))
 
         H = np.zeros((ny, nx), dtype='uint16')
-        S = np.ones((ny, nx), dtype='uint16') * 0.7
         V = np.zeros((ny, nx), dtype='uint16')
 
         H_pos = (x_pos - x_pos.min()) / downsample

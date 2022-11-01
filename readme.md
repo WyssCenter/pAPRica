@@ -33,3 +33,9 @@ Alternatively the documentation can be generated locally, first `cd` into the do
 Then run:
 
 `make html` (linux) or `make.bat html` (windows)
+
+# Tests
+
+To run test locally:
+
+`python -m pytest --import-mode=append tests/`

@@ -2,6 +2,7 @@
    :maxdepth: 4
 
    pipapr.atlaser
+   pipapr.batcher
    pipapr.converter
    pipapr.loader
    pipapr.parser

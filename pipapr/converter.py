@@ -92,7 +92,7 @@ class tileConverter():
                              path=None,
                              lazy_loading=True,
                              tree_mode='mean',
-                             progress_bar=True,):
+                             progress_bar=True):
         """
         Convert all parsed tiles to APR using auto-parameters.
 

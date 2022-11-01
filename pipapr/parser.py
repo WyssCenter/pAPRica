@@ -77,7 +77,7 @@ def autoParser(path, **kwargs):
         if parser._is_valid_acquisition(path):
             return parser(path, **kwargs)
 
-def get_channel_number(path):
+def get_number_of_channels(path):
     """
     This functions returns the number of channels acquired in an acquisition located in ´path´ folder.
     Parameters

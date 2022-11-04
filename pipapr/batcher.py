@@ -116,11 +116,8 @@ class multiChannelAcquisition():
             Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
             for tile in tiles:
-                if not force_convert:
-                    # If APR already exists, no need to convert
-                    if not os.path.exists(os.path.join(folder_apr,
-                                                       '{}_{}.apr'.format(tile.row, tile.col))):
-
+                if force_convert or not os.path.exists(os.path.join(folder_apr,
+                                                                    '{}_{}.apr'.format(tile.row, tile.col))):
                         # Either fetch Ip_th or automatically compute it
                         if Ip is not None:
                             Ip_th = Ip[i]
@@ -159,49 +156,9 @@ class multiChannelAcquisition():
                         # Save converted data
                         filename = '{}_{}.apr'.format(tile.row, tile.col)
                         pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
-                    else:
-                        print('Tile {}_{}.apr already exists, it will not be converted. If you want to force the '
-                              'conversion please use ''force_convert'' flag'.format(tile.row, tile.col))
-
                 else:
-                    # Either fetch Ip_th or automatically compute it
-                    if Ip is not None:
-                        Ip_th = Ip[i]
-                    else:
-                        Ip_th = self._get_Ip_th(tiles, method=Ip_method)
-
-                    tile.load_tile()
-
-                    # Set parameters
-                    par = pyapr.APRParameters()
-                    par.Ip_th = Ip_th
-                    par.rel_error = rel_error
-                    par.dx = dx
-                    par.dy = dy
-                    par.dz = dz
-                    par.gradient_smoothing = gradient_smoothing
-                    par.auto_parameters = True
-
-                    # Convert tile to APR and save
-                    apr = pyapr.APR()
-                    parts = pyapr.ShortParticles()
-                    converter = pyapr.converter.FloatConverter()
-                    converter.set_parameters(par)
-                    converter.verbose = True
-                    converter.get_apr(apr, tile.data)
-                    parts.sample_image(apr, tile.data)
-
-                    if lazy_loading:
-                        if tree_mode == 'mean':
-                            tree_parts = pyapr.tree.fill_tree_mean(apr, parts)
-                        elif tree_mode == 'max':
-                            tree_parts = pyapr.tree.fill_tree_max(apr, parts)
-                    else:
-                        tree_parts = None
-
-                    # Save converted data
-                    filename = '{}_{}.apr'.format(tile.row, tile.col)
-                    pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
+                    print('Tile {}_{}.apr already exists, it will not be converted. If you want to force the '
+                          'conversion please use ''force_convert'' flag'.format(tile.row, tile.col))
 
             self.acq_type = 'apr'
             self.path = os.path.join(self.path, 'APR')

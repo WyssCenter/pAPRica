@@ -29,7 +29,7 @@ import os
 from pathlib import Path
 
 import numpy as np
-from skimage.io import imread
+from skimage.io import imread, imsave
 from glob import glob
 from tqdm import tqdm
 import pyapr
@@ -53,9 +53,20 @@ class multiChannelAcquisition():
         self.n_channels = pipapr.parser.get_number_of_channels(self.path)
         # Check if apr is available
         self.is_apr_available = os.path.exists(os.path.join(path, 'APR'))
-        self.acq_type = self._get_acq_type()
+        if self.is_apr_available:
+            self.acq_type = self._get_acq_type()
+            self.tiles_list = self._get_tiles_list(verbose=False)
+            self.overlap_v, self.overlap_h = self.tiles_list[0].get_overlap()
+            self.acq_type = 'apr'
+            self.path = os.path.join(self.path, 'APR')
+            self.tiles_list = self._get_tiles_list()
+        else:
+            self.acq_type = self._get_acq_type()
+            self.tiles_list = self._get_tiles_list()
+            self.overlap_v, self.overlap_h = self.tiles_list[0].get_overlap()
 
-        self.tiles_list = self._get_tiles_list()
+
+
 
     def convert_all_channels(self,
                              Ip_method='black_corner',
@@ -67,8 +78,7 @@ class multiChannelAcquisition():
                              dy=1,
                              dz=1,
                              lazy_loading=True,
-                             tree_mode='mean',
-                             progress_bar=True):
+                             tree_mode='mean',):
         """
         Function to convert all the channel to APR. The intensity threshold `Ip_th` is automatically determined
         using the provided method or using the given
@@ -100,11 +110,9 @@ class multiChannelAcquisition():
         None
         """
 
-        base_folder, _ = os.path.split(self.path)
-
         for i, tiles in enumerate(self.tiles_list):
             # Safely create folder to save apr data
-            folder_apr = os.path.join(base_folder, 'APR', 'ch{}'.format(tiles.channel))
+            folder_apr = os.path.join(self.path, 'APR', 'ch{}'.format(tiles.channel))
             Path(folder_apr).mkdir(parents=True, exist_ok=True)
 
             for tile in tiles:
@@ -195,6 +203,40 @@ class multiChannelAcquisition():
                     filename = '{}_{}.apr'.format(tile.row, tile.col)
                     pyapr.io.write(os.path.join(folder_apr, filename), apr, parts, tree_parts=tree_parts)
 
+            self.acq_type = 'apr'
+            self.path = os.path.join(self.path, 'APR')
+            self.tiles_list = self._get_tiles_list()
+
+    def stitch_acq(self,
+                   channel):
+
+        tiles = self.tiles_list[channel]
+        stitcher = pipapr.tileStitcher(tiles, overlap_h=self.overlap_h, overlap_v=self.overlap_v)
+
+        tile = tiles[0]
+        tile.lazy_load_tile(level_delta=0)
+        z = int(tile.lazy_data.shape[0] / 2)
+
+        stitcher.set_z_range(z_begin=z-50, z_end=z+50)
+        stitcher.set_overlap_margin(margin=10)
+
+        stitcher.compute_registration()
+        stitcher.save_database(os.path.join(self.path, 'registration_results.csv'))
+
+        self.database = stitcher.database
+        self.stitcher = stitcher
+
+
+    def reconstruct_3D_all_channels(self,
+                                    downsample=16,
+                                    ):
+
+        for tiles in self.tiles_list:
+            merger = pipapr.stitcher.tileMerger(tiles, self.database)
+            merger.set_downsample(downsample)
+            merger.merge_max()
+            imsave(os.path.join(tiles.path, '3D_reconstruction.tif'), merger.merged_data)
+
     # def stitch_single_channel(self,
     #                           channel=0):
     #
@@ -226,15 +268,15 @@ class multiChannelAcquisition():
     #     u = stitcher.reconstruct_slice(plot=False)
     #     imsave(os.path.join(tiles.path, 'middle_plane_stitched.tif'), u, check_contrast=False)
 
-    def _get_tiles_list(self):
+    def _get_tiles_list(self, **kwargs):
         """
         Function to get the list of tiles (one tileParser object for each channel)
 
         """
         if self.acq_type == 'apr':
-            return [pipapr.tileParser(f, ftype='apr') for f in sorted(glob(os.path.join(self.path, 'ch*/')))]
+            return [pipapr.tileParser(f, ftype='apr', **kwargs) for f in sorted(glob(os.path.join(self.path, 'ch*/')))]
         else:
-            return [pipapr.autoParser(self.path, channel=x) for x in range(pipapr.parser.get_number_of_channels(self.path))]
+            return [pipapr.autoParser(self.path, channel=x, **kwargs) for x in range(pipapr.parser.get_number_of_channels(self.path))]
 
     def _get_acq_type(self):
         """

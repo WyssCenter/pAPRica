@@ -31,7 +31,6 @@ from pathlib import Path
 import numpy as np
 from skimage.io import imread, imsave
 from glob import glob
-from tqdm import tqdm
 import pyapr
 
 import pipapr
@@ -41,32 +40,39 @@ class multiChannelAcquisition():
 
     def __init__(self, path):
         """
-        Class to store a multichannel acquisition. If data was converted to APR, then this class is instantiated with
-        the APR rather than the raw data.
+        Class to store a multichannel acquisition.
+
+        3 cases can occur:
+          - Only APR data is available (e.g. raw data was deleted) then tiles_list is None and conversion can't be done
+            anymore.
+          - APR data is not available (e.g. conversion was never done) then tiles_apr is None until conversion is done
+            and stitching and reconstructions are not possible.
+          - Both APR and raw data are available.
 
         Parameters
         ----------
         path: str
             path to folder containing the acquisition.
         """
-        self.path = path
-        self.n_channels = pipapr.parser.get_number_of_channels(self.path)
-        # Check if apr is available
-        self.is_apr_available = os.path.exists(os.path.join(path, 'APR'))
-        if self.is_apr_available:
-            self.acq_type = self._get_acq_type()
-            self.tiles_list = self._get_tiles_list(verbose=False)
-            self.overlap_v, self.overlap_h = self.tiles_list[0].get_overlap()
+
+
+        if os.path.exists(os.path.join(path, 'ch0')):
+            self.path = None
             self.acq_type = 'apr'
-            self.path = os.path.join(self.path, 'APR')
-            self.tiles_list = self._get_tiles_list()
+            self.path_apr = path
         else:
+            self.path = path
+            self.is_apr_available = os.path.exists(os.path.join(path, 'APR'))
             self.acq_type = self._get_acq_type()
-            self.tiles_list = self._get_tiles_list()
+            if self.is_apr_available:
+                print('\nAPR available.')
+                self.path_apr = os.path.join(path, 'APR')
+
+        self.tiles_list, self.tiles_list_apr = self._get_tiles_list()
+        self.n_channels = len(self.tiles_list) if self.tiles_list is not None else len(self.tiles_list_apr)
+
+        if self.tiles_list is not None:
             self.overlap_v, self.overlap_h = self.tiles_list[0].get_overlap()
-
-
-
 
     def convert_all_channels(self,
                              Ip_method='black_corner',
@@ -78,10 +84,10 @@ class multiChannelAcquisition():
                              dy=1,
                              dz=1,
                              lazy_loading=True,
-                             tree_mode='mean',):
+                             tree_mode='mean'):
         """
         Function to convert all the channel to APR. The intensity threshold `Ip_th` is automatically determined
-        using the provided method or using the given
+        using the provided method or passed as a list.
 
         Parameters
         ----------
@@ -160,14 +166,30 @@ class multiChannelAcquisition():
                     print('Tile {}_{}.apr already exists, it will not be converted. If you want to force the '
                           'conversion please use ''force_convert'' flag'.format(tile.row, tile.col))
 
-            self.acq_type = 'apr'
-            self.path = os.path.join(self.path, 'APR')
-            self.tiles_list = self._get_tiles_list()
+        self.is_apr_available = True
+        self.path_apr = os.path.join(self.path, 'APR')
+        self.tiles_list_apr = [pipapr.tileParser(f, ftype='apr', verbose=False) for f in
+                              sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
 
     def stitch_acq(self,
                    channel):
+        """
+        Stitch the acquisition using the given channel.
 
-        tiles = self.tiles_list[channel]
+        Parameters
+        ----------
+        channel: int
+            Channel to compute the stitching on.
+
+        Returns
+        -------
+        None
+        """
+
+        if self.tiles_list_apr is None:
+            raise TypeError('Error: APR data not available, convert data before stitching.')
+
+        tiles = self.tiles_list_apr[channel]
         stitcher = pipapr.tileStitcher(tiles, overlap_h=self.overlap_h, overlap_v=self.overlap_v)
 
         tile = tiles[0]
@@ -185,59 +207,62 @@ class multiChannelAcquisition():
 
 
     def reconstruct_3D_all_channels(self,
-                                    downsample=16,
-                                    ):
+                                    downsample=16):
+        """
+        Reconstruct all channels in 3D at a lower resolution. Reconstructions are saved in the same folder as the
+        APR data.
 
-        for tiles in self.tiles_list:
+        Parameters
+        ----------
+        downsample: int
+            downsample factor to use for the reconstruction.
+
+        Returns
+        -------
+        None
+        """
+
+        if self.tiles_list_apr is None:
+            raise TypeError('Error: APR data not available, convert data before reconstruction.')
+
+        for tiles in self.tiles_list_apr:
             merger = pipapr.stitcher.tileMerger(tiles, self.database)
             merger.set_downsample(downsample)
             merger.merge_max()
             imsave(os.path.join(tiles.path, '3D_reconstruction.tif'), merger.merged_data)
 
-    # def stitch_single_channel(self,
-    #                           channel=0):
-    #
-    #     # Check if apr is available
-    #     self.is_apr_available = os.path.exists(os.path.join(self.path, 'APR'))
-    #     # If data was previously converted to APR then the microscopy acquisition is the APR folder containing the
-    #     # folder for each channel.
-    #     if self.is_apr_available:
-    #         self.acq_type = 'apr'
-    #         self.path = os.path.join(path, 'APR')
-    #     else:
-    #
-    #     from skimage.io import imsave
-    #
-    #     tiles = self.tiles_list[channel]
-    #     overlap_v, overlap_h = tiles.get_overlap()
-    #     stitcher = pipapr.tileStitcher(tiles, overlap_h=overlap_h, overlap_v=overlap_v)
-    #
-    #     tile = tiles[0]
-    #     tile.lazy_load_tile(level_delta=0)
-    #     z = int(tile.lazy_data.shape[0] / 2)
-    #
-    #     stitcher.set_z_range(z_begin=z-50, z_end=z+50)
-    #     stitcher.set_overlap_margin(margin=10)
-    #
-    #     stitcher.compute_registration()
-    #     stitcher.save_database()
-    #
-    #     u = stitcher.reconstruct_slice(plot=False)
-    #     imsave(os.path.join(tiles.path, 'middle_plane_stitched.tif'), u, check_contrast=False)
 
-    def _get_tiles_list(self, **kwargs):
+    def _get_tiles_list(self):
         """
-        Function to get the list of tiles (one tileParser object for each channel)
+        Function to get the list of tiles (one tileParser object for each channel) for raw, APR or both.
 
+        Returns
+        -------
+        tiles_list: list
+            list containing the `tileLoader` objects for each channel for the raw data
+        tiles_list: list
+            list containing the `tileLoader` objects for each channel for the APR data
         """
         if self.acq_type == 'apr':
-            return [pipapr.tileParser(f, ftype='apr', **kwargs) for f in sorted(glob(os.path.join(self.path, 'ch*/')))]
+            tiles_list_apr = [pipapr.tileParser(f, ftype='apr') for f in
+                              sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
+            tiles_list = None
+        elif not self.is_apr_available:
+            tiles_list = [pipapr.autoParser(self.path, channel=x) for x in
+                          range(pipapr.parser.get_number_of_channels(self.path))]
+            tiles_list_apr = None
         else:
-            return [pipapr.autoParser(self.path, channel=x, **kwargs) for x in range(pipapr.parser.get_number_of_channels(self.path))]
+            tiles_list_apr = [pipapr.tileParser(f, ftype='apr', verbose=False) for f in
+                              sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
+            tiles_list = [pipapr.autoParser(self.path, channel=x) for x in
+                          range(pipapr.parser.get_number_of_channels(self.path))]
+
+        return tiles_list, tiles_list_apr
 
     def _get_acq_type(self):
         """
-        Get the acquisition type (type of microscope used to acquire the data).
+        Get the acquisition type (type of microscope used to acquire the data). If acquisition type is APR it means
+        that the raw data is not available.
 
         Returns
         -------
@@ -264,7 +289,7 @@ class multiChannelAcquisition():
 
         Returns
         -------
-
+        The intensity threshold computed using the given method.
         """
         if method == 'black_corner':
             u = imread(sorted(glob(tiles.path_list[0] + '*.tif'))[0])
@@ -273,4 +298,7 @@ class multiChannelAcquisition():
             raise ValueError('Error: unknown method for computing Ip_th')
 
     def __getitem__(self, item):
-        return self.tiles_list[item]
+        if self.is_apr_available:
+            return self.tiles_list_apr[item]
+        else:
+            return self.tiles_list[item]

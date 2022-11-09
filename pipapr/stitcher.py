@@ -853,7 +853,7 @@ class baseStitcher():
                 if seg:
                     merged_seg[y1:y2, x1:x2] = np.maximum(merged_seg[y1:y2, x1:x2], cc)
 
-        if plot is not None:
+        if plot:
             viewer = napari.Viewer()
             if color:
                 viewer.add_image(self._process_RGB_for_display(merged_data), name='Z plane')

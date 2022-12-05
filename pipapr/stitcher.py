@@ -858,7 +858,7 @@ class baseStitcher():
             if color:
                 viewer.add_image(self._process_RGB_for_display(merged_data), name='Z plane')
             else:
-                viewer.add_image(self._process_GRAY_for_display(merged_data), name='Z plane')
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='Z plane', contrast_limits=[0, 2**16-1])
                 if seg:
                     viewer.add_labels(merged_seg, name='Segmentation labels.')
 
@@ -1168,15 +1168,25 @@ class baseStitcher():
                             np.save(os.path.join(self.tiles.folder_max_projs,
                                                  '{}_{}_{}_{}.npy'.format(row, col, loc, d)), data[i])
 
-    def _load_max_projs(self):
+    def _load_max_projs(self, path):
         """
         Load the maximum intensity projection previously stored.
+
+        Parameters
+        ----------
+        path: str
+            path to load the maximum intensity projection from. If None then default to `max_projs` folder in the
+            acquisition folder.
 
         Returns
         -------
         None
         """
         projs = np.empty((self.nrow, self.ncol), dtype=object)
+        if path is None:
+            folder_max_projs = self.tiles.folder_max_projs
+        else:
+            folder_max_projs = path
 
         for tile in self.tiles:
             proj = {}
@@ -1185,7 +1195,7 @@ class baseStitcher():
                     # EAST 1
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_east_{}.npy'.format(tile.row, tile.col, d))))
                     proj['east'] = tmp
             if tile.col - 1 >= 0:
@@ -1193,7 +1203,7 @@ class baseStitcher():
                     # EAST 2
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_west_{}.npy'.format(tile.row, tile.col, d))))
                     proj['west'] = tmp
             if tile.row + 1 < self.tiles.nrow:
@@ -1201,7 +1211,7 @@ class baseStitcher():
                     # SOUTH 1
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_south_{}.npy'.format(tile.row, tile.col, d))))
                     proj['south'] = tmp
             if tile.row - 1 >= 0:
@@ -1209,7 +1219,7 @@ class baseStitcher():
                     # SOUTH 2
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_north_{}.npy'.format(tile.row, tile.col, d))))
                     proj['north'] = tmp
 
@@ -1462,14 +1472,14 @@ class tileStitcher(baseStitcher):
         self._build_database()
         self._print_info()
 
-    def compute_registration_from_max_projs(self):
+    def compute_registration_from_max_projs(self, path=None):
         """
         Compute the registration directly from the max-projections. Max-projections must have been computed before.
 
         """
 
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
-        projs = self._load_max_projs()
+        projs = self._load_max_projs(path=path)
 
         # Then we loop again through the tiles but now we have access to the max-proj
         for tile in tqdm(self.tiles, desc='Compute cross-correlation'):

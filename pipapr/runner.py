@@ -50,7 +50,8 @@ class clearscopeRunningPipeline():
             self.output_path = self.path
         else:
             self.output_path = output_path
-        self.folder_settings = self.path
+        # self.folder_settings = self.path
+        self.folder_settings = path
         self.name_acq = os.path.basename(path)
         # self.folder_settings, self.name_acq = os.path.split(path)
         self.frame_size = 2048
@@ -168,9 +169,6 @@ class clearscopeRunningPipeline():
 
                 if self.stitcher is True:
                     self._pre_stitch(tile)
-                #
-                # if self.viewer is not None:
-                #     self._update_viewer(tile)
 
                 self._update_next_tile()
 
@@ -184,6 +182,9 @@ class clearscopeRunningPipeline():
             _, _ = self._produce_registration_map()
             self._build_database()
             self._print_info()
+            self.database.to_csv(os.path.join(self.folder_apr,
+                                              'ch{}'.format(self.stitched_channel),
+                                              'registration_results.csv'))
             self.tiles = pipapr.tileParser(os.path.join(self.folder_apr, 'ch{}'.format(self.stitched_channel)))
 
     def activate_conversion(self,
@@ -641,8 +642,8 @@ class clearscopeRunningPipeline():
         print('Waiting for AcquireSettings.txt file in {}'.
               format(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq))))
 
-        # files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
-        files = glob(os.path.join(self.folder_settings, '*.ini'))
+        files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))
+        # files = glob(os.path.join(self.folder_settings, '*.ini'))
         while files == []:
             sleep(1)
             files = glob(os.path.join(self.folder_settings, '{}_AcquireSettings.txt'.format(self.name_acq)))

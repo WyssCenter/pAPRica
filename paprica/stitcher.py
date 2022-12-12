@@ -3,15 +3,15 @@ Submodule containing classes and functions relative to **stitching**.
 
 With this submodule the user can stitch a previously parsed dataset, typically the autofluorescence channel:
 
->>> import pipapr
->>> tiles_autofluo = pipapr.parser.tileParser(path_to_autofluo, frame_size=1024, overlap=25)
->>> stitcher = pipapr.stitcher.tileStitcher(tiles_autofluo)
+>>> import paprica
+>>> tiles_autofluo = paprica.parser.tileParser(path_to_autofluo, frame_size=1024, overlap=25)
+>>> stitcher = paprica.stitcher.tileStitcher(tiles_autofluo)
 >>> stitcher.compute_registration_fast()
 
 Others channel can then easily stitched using the previous one as reference:
 
->>> tiles_signal = pipapr.parser.tileParser(path_to_data, frame_size=1024, overlap=25)
->>> stitcher_channel = pipapr.stitcher.channelStitcher(stitcher, tiles_autofluo, tiles_signal)
+>>> tiles_signal = paprica.parser.tileParser(path_to_data, frame_size=1024, overlap=25)
+>>> stitcher_channel = paprica.stitcher.channelStitcher(stitcher, tiles_autofluo, tiles_signal)
 >>> stitcher_channel.compute_rigid_registration()
 
 Doing that each tile in the second data set will be registered to the corresponding autofluorescence tile and
@@ -51,6 +51,7 @@ from skimage.filters import gaussian
 from skimage.metrics import normalized_root_mse
 from skimage.transform import warp, AffineTransform, downscale_local_mean
 from tqdm import tqdm
+import napari
 
 
 def max_sum_over_single_max(reference_image, moving_image, d):
@@ -538,7 +539,7 @@ class baseStitcher():
         self.mask = False
         self.threshold = None
 
-    def save_database(self, path):
+    def save_database(self, path=None):
         """
         Save database at the given path. The database must be built before calling this method.
 
@@ -553,7 +554,30 @@ class baseStitcher():
             raise TypeError('Error: database can''t be saved because it was not created. '
                             'Please call build_database() first.')
 
+        if path is None:
+            path = os.path.join(self.tiles.path, 'registration_results.csv')
+
         self.database.to_csv(path)
+
+    def load_database(self, path=None, force=False):
+        """
+        Save database at the given path. The database must be built before calling this method.
+
+        Parameters
+        ----------
+        path: string
+            path to save the database.
+
+        """
+
+        if self.database is not None and force is False:
+            raise TypeError('Error: database can''t be read because a database is already exist and force is set'
+                            'to False.')
+
+        if path is None:
+            path = os.path.join(self.tiles.path, 'registration_results.csv')
+
+        self.database = pd.read_csv(path)
 
     def activate_segmentation(self, segmenter):
         """
@@ -681,7 +705,6 @@ class baseStitcher():
         ny = int(np.ceil((y_pos.max() - y_pos.min()) / downsample + frame_size[0]))
 
         H = np.zeros((ny, nx), dtype='uint16')
-        S = np.ones((ny, nx), dtype='uint16') * 0.7
         V = np.zeros((ny, nx), dtype='uint16')
 
         H_pos = (x_pos - x_pos.min()) / downsample
@@ -831,14 +854,13 @@ class baseStitcher():
                     merged_seg[y1:y2, x1:x2] = np.maximum(merged_seg[y1:y2, x1:x2], cc)
 
         if plot:
-            plt.figure()
+            viewer = napari.Viewer()
             if color:
-                plt.imshow(self._process_RGB_for_display(merged_data))
+                viewer.add_image(self._process_RGB_for_display(merged_data), name='Z plane')
             else:
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='Z plane', contrast_limits=[0, 2**16-1])
                 if seg:
-                    plt.imshow(label2rgb(merged_seg, image=self._process_GRAY_for_display(merged_data),  bg_label=0))
-                else:
-                    plt.imshow(self._process_GRAY_for_display(merged_data), cmap='gray')
+                    viewer.add_labels(merged_seg, name='Segmentation labels.')
 
         if not seg:
             return merged_data
@@ -947,11 +969,11 @@ class baseStitcher():
                 merged_data[z1:z2, x1:x2] = np.maximum(merged_data[z1:z2, x1:x2], data)
 
         if plot:
-            plt.figure()
+            viewer = napari.Viewer()
             if color:
-                plt.imshow(self._process_RGB_for_display(merged_data))
+                viewer.add_image(self._process_RGB_for_display(merged_data), name='Y plane')
             else:
-                plt.imshow(np.log(merged_data), cmap='gray')
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='Y plane')
 
         return merged_data
 
@@ -1057,11 +1079,11 @@ class baseStitcher():
                 merged_data[z1:z2, y1:y2] = np.maximum(merged_data[z1:z2, y1:y2], data)
 
         if plot:
-            plt.figure()
+            viewer = napari.Viewer()
             if color:
-                plt.imshow(self._process_RGB_for_display(merged_data))
+                viewer.add_image(self._process_RGB_for_display(merged_data), name='X plane')
             else:
-                plt.imshow(np.log(merged_data), cmap='gray')
+                viewer.add_image(self._process_GRAY_for_display(merged_data), name='X plane')
 
         return merged_data
 
@@ -1146,15 +1168,25 @@ class baseStitcher():
                             np.save(os.path.join(self.tiles.folder_max_projs,
                                                  '{}_{}_{}_{}.npy'.format(row, col, loc, d)), data[i])
 
-    def _load_max_projs(self):
+    def _load_max_projs(self, path):
         """
         Load the maximum intensity projection previously stored.
+
+        Parameters
+        ----------
+        path: str
+            path to load the maximum intensity projection from. If None then default to `max_projs` folder in the
+            acquisition folder.
 
         Returns
         -------
         None
         """
         projs = np.empty((self.nrow, self.ncol), dtype=object)
+        if path is None:
+            folder_max_projs = self.tiles.folder_max_projs
+        else:
+            folder_max_projs = path
 
         for tile in self.tiles:
             proj = {}
@@ -1163,7 +1195,7 @@ class baseStitcher():
                     # EAST 1
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_east_{}.npy'.format(tile.row, tile.col, d))))
                     proj['east'] = tmp
             if tile.col - 1 >= 0:
@@ -1171,7 +1203,7 @@ class baseStitcher():
                     # EAST 2
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_west_{}.npy'.format(tile.row, tile.col, d))))
                     proj['west'] = tmp
             if tile.row + 1 < self.tiles.nrow:
@@ -1179,7 +1211,7 @@ class baseStitcher():
                     # SOUTH 1
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_south_{}.npy'.format(tile.row, tile.col, d))))
                     proj['south'] = tmp
             if tile.row - 1 >= 0:
@@ -1187,7 +1219,7 @@ class baseStitcher():
                     # SOUTH 2
                     tmp = []
                     for i, d in enumerate(['zy', 'zx', 'yx']):
-                        tmp.append(np.load(os.path.join(self.tiles.folder_max_projs,
+                        tmp.append(np.load(os.path.join(folder_max_projs,
                                                         '{}_{}_north_{}.npy'.format(tile.row, tile.col, d))))
                     proj['north'] = tmp
 
@@ -1440,14 +1472,14 @@ class tileStitcher(baseStitcher):
         self._build_database()
         self._print_info()
 
-    def compute_registration_from_max_projs(self):
+    def compute_registration_from_max_projs(self, path=None):
         """
         Compute the registration directly from the max-projections. Max-projections must have been computed before.
 
         """
 
         # First we pre-compute the max-projections and keep them in memory or save them on disk and load them up.
-        projs = self._load_max_projs()
+        projs = self._load_max_projs(path=path)
 
         # Then we loop again through the tiles but now we have access to the max-proj
         for tile in tqdm(self.tiles, desc='Compute cross-correlation'):

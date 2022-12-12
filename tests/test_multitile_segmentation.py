@@ -4,8 +4,8 @@ import pyapr
 import os
 from skimage.io import imsave
 from pathlib import Path
-import pipapr
-from pipapr.segmenter import gaussian_blur, compute_gradmag, particle_levels, compute_laplacian
+import paprica
+from paprica.segmenter import gaussian_blur, compute_gradmag, particle_levels, compute_laplacian
 import sparse
 
 
@@ -129,28 +129,28 @@ def test_main():
                delimiter=',')
 
     # Parse synthetic data
-    tiles = pipapr.tileParser(os.path.join(path, 'tif'))
+    tiles = paprica.tileParser(os.path.join(path, 'tif'))
 
     # Convert them to APR
-    converter = pipapr.converter.tileConverter(tiles)
+    converter = paprica.converter.tileConverter(tiles)
     converter.batch_convert_to_apr(Ip_th=100, rel_error=0.4, path=os.path.join(path, 'APR'))
 
     # Parse synthetic data
-    tiles_apr = pipapr.tileParser(os.path.join(path, 'APR'), frame_size=int(length/dH))
+    tiles_apr = paprica.tileParser(os.path.join(path, 'APR'), frame_size=int(length / dH))
 
     # Stitch data-set
-    stitcher = pipapr.tileStitcher(tiles_apr, overlap_h=overlap_H, overlap_v=overlap_V)
+    stitcher = paprica.tileStitcher(tiles_apr, overlap_h=overlap_H, overlap_v=overlap_V)
     stitcher.compute_registration()
 
     # Simulate training of segmentation
     tile = tiles_apr[0]
     tile.load_tile()
-    trainer = pipapr.tileTrainer(tile, func_to_get_cc=get_cc_from_features, func_to_compute_features=compute_features)
+    trainer = paprica.tileTrainer(tile, func_to_get_cc=get_cc_from_features, func_to_compute_features=compute_features)
     trainer.labels_manual = sparse.COO.from_numpy(label[:100, :100, :100])
     trainer.pixel_list = trainer.labels_manual.coords.T
     trainer.labels = trainer.labels_manual.data
     trainer.train_classifier(n_estimators=100)
 
     # Segment tiles
-    segmenter = pipapr.multitileSegmenter.from_trainer(tiles_apr, database=stitcher.database, trainer=trainer)
+    segmenter = paprica.multitileSegmenter.from_trainer(tiles_apr, database=stitcher.database, trainer=trainer)
     segmenter.compute_multitile_segmentation(save_cc=False)

@@ -2,7 +2,7 @@
 Submodule containing classes and functions relative to data **loading**.
 
 Usually, tileLoader objects are instantiated directly by iterating over the parser. Alternatively, they can be
-instantiated directly by the constructor by calling *tile = pipapr.loader.tileLoader()*.
+instantiated directly by the constructor by calling *tile = paprica.loader.tileLoader()*.
 
 By using this code you agree to the terms of the software license agreement.
 
@@ -10,6 +10,7 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 import os
+import shutil
 from glob import glob
 
 import matplotlib.pyplot as plt
@@ -18,7 +19,7 @@ import pyapr
 from skimage.io import imread
 from tqdm import tqdm
 
-import pipapr
+import paprica
 
 
 def tile_from_apr(apr, parts):
@@ -84,7 +85,6 @@ class tileLoader():
     """
     Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.
 
-    Tile post processing is done on APR data, so if the input data is tiff it is first converted.
     """
     def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root,
                  channel):
@@ -310,7 +310,7 @@ class tileLoader():
         """
         if self.apr is None:
             self.load_tile()
-        pipapr.viewer.display_apr(self.apr, self.parts, **kwargs)
+        paprica.viewer.display_apr(self.apr, self.parts, **kwargs)
 
     def plot_particles_size_distribution(self):
         """
@@ -438,11 +438,45 @@ class tileLoader():
         v: array_like
             numpy array containing the data.
         """
-        files_sorted = sorted(glob(os.path.join(self.path, '*')))
+        files_sorted = sorted(glob(os.path.join(path, '*')))
         n_files = len(files_sorted)
         v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
             v[i] = imread(f)
 
         return v
+
+    # def _load_mesospim(self, path):
+    #     """
+    #     Load MESOSPIM data and return it as a 3D array.
+    #
+    #     Parameters
+    #     ----------
+    #     path: string
+    #         path to folder where the data should be loaded.
+    #
+    #     Returns
+    #     -------
+    #     v: array_like
+    #         numpy array containing the data.
+    #     """
+    #     if path.endswith('.raw'):
+    #         return self._load_raw(path)
+    #     elif path.endswith('.tiff') or path.endswith('.tif'):
+    #         return imread(path)
+
+    def _erase_from_disk(self):
+        """
+        Delete tile from disk, use with caution!
+
+        Returns
+        -------
+        None
+        """
+
+        if self.type == 'apr':
+            os.remove(self.path)
+        else:
+            shutil.rmtree(self.path)
+
 

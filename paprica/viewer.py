@@ -23,7 +23,7 @@ from skimage.filters import gaussian
 from skimage.io import imread
 from skimage.transform import resize
 
-import pipapr
+import paprica
 
 
 def display_apr_from_path(path, **kwargs):
@@ -463,7 +463,7 @@ class tileViewer():
         """
         self.tiles = tiles
 
-        if isinstance(database, pipapr.stitcher.tileStitcher):
+        if isinstance(database, paprica.stitcher.tileStitcher):
             self.database = database.database
         elif isinstance(database, pd.DataFrame):
             self.database = database

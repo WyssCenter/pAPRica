@@ -16,7 +16,7 @@ import pyapr
 from skimage.io import imsave
 from tqdm import tqdm
 
-import pipapr
+import paprica
 
 
 class tileConverter():
@@ -25,7 +25,7 @@ class tileConverter():
     """
 
     def __init__(self,
-                 tiles: pipapr.parser.baseParser):
+                 tiles: paprica.parser.baseParser):
         """
         Constructor for the tileConverter class.
 
@@ -35,7 +35,7 @@ class tileConverter():
             parser object referencing tiles to be converted.
         """
 
-        if isinstance(tiles, pipapr.parser.tileParser):
+        if isinstance(tiles, paprica.parser.tileParser):
             self.is_multitile = True # Not multitile
         else:
             self.is_multitile = False # Multitile
@@ -92,7 +92,7 @@ class tileConverter():
                              path=None,
                              lazy_loading=True,
                              tree_mode='mean',
-                             progress_bar=True,):
+                             progress_bar=True):
         """
         Convert all parsed tiles to APR using auto-parameters.
 
@@ -191,9 +191,9 @@ class tileConverter():
 
         if self.is_multitile:
             # Modify tileParser object to use APR instead
-            self.tiles = pipapr.parser.tileParser(folder_apr,
-                                                  frame_size=self.tiles.frame_size,
-                                                  ftype='apr')
+            self.tiles = paprica.parser.tileParser(folder_apr,
+                                                   frame_size=self.tiles.frame_size,
+                                                   ftype='apr')
 
     def batch_reconstruct_pixel(self, mode='constant', progress_bar=True):
         """

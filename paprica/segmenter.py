@@ -19,7 +19,7 @@ import sparse
 from joblib import load
 from tqdm import tqdm
 
-import pipapr
+import paprica
 
 
 def _predict_on_APR_block(x, clf, n_parts=1e7, output='class', verbose=False):
@@ -320,7 +320,7 @@ class tileSegmenter():
                    func_to_get_cc=func_to_get_cc,
                    verbose=verbose)
 
-    def compute_segmentation(self, tile: pipapr.loader.tileLoader,
+    def compute_segmentation(self, tile: paprica.loader.tileLoader,
                              save_cc=True, save_mask=False, lazy_loading=True):
         """
         Compute the segmentation and stores the result as an independent APR.
@@ -411,7 +411,7 @@ class multitileSegmenter():
     """
 
     def __init__(self,
-                 tiles: pipapr.parser.tileParser,
+                 tiles: paprica.parser.tileParser,
                  database: (str, pd.DataFrame),
                  clf,
                  func_to_compute_features,
@@ -472,7 +472,7 @@ class multitileSegmenter():
 
     @classmethod
     def from_trainer(cls,
-                     tiles: pipapr.parser.tileParser,
+                     tiles: paprica.parser.tileParser,
                      database: (str, pd.DataFrame),
                      trainer,
                      verbose=True):
@@ -500,7 +500,7 @@ class multitileSegmenter():
 
     @classmethod
     def from_classifier(cls,
-                        tiles: pipapr.parser.tileParser,
+                        tiles: paprica.parser.tileParser,
                         database: (str, pd.DataFrame),
                         classifier,
                         func_to_compute_features,
@@ -637,8 +637,8 @@ class multitileSegmenter():
 
         pd.DataFrame(self.cells).to_csv(output_path, header=['z', 'y', 'x'])
 
-    def _segment_tile(self, tile: pipapr.loader.tileLoader,
-                             save_cc=True, save_mask=False, lazy_loading=True):
+    def _segment_tile(self, tile: paprica.loader.tileLoader,
+                      save_cc=True, save_mask=False, lazy_loading=True):
         """
         Compute the segmentation and stores the result as an independent APR.
 
@@ -883,7 +883,7 @@ class tileTrainer():
     """
 
     def __init__(self,
-                 tile: pipapr.loader.tileLoader,
+                 tile: paprica.loader.tileLoader,
                  func_to_compute_features,
                  func_to_get_cc=None):
 
@@ -1143,12 +1143,12 @@ class tileTrainer():
         # Display segmentation using Napari
         if display_result:
             if self.parts_cc is not None:
-                pipapr.viewer.display_segmentation(self.apr, self.parts, self.parts_cc)
+                paprica.viewer.display_segmentation(self.apr, self.parts, self.parts_cc)
             elif bg_label is not None:
                 parts_pred = np.array(self.parts_mask.copy())
                 parts_pred[parts_pred == bg_label] = 0
                 parts_pred = pyapr.ShortParticles(parts_pred)
-                pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
+                paprica.viewer.display_segmentation(self.apr, self.parts, parts_pred)
 
     def display_training_annotations(self, **kwargs):
         """
@@ -1209,12 +1209,12 @@ class tileTrainer():
         if display_result:
             if func_to_get_cc is not None:
                 tile.parts_cc = func_to_get_cc(tile.apr, parts_pred)
-                pipapr.viewer.display_segmentation(self.apr, self.parts, tile.parts_cc)
+                paprica.viewer.display_segmentation(tile.apr, tile.parts, tile.parts_cc)
             elif bg_label is not None:
                 parts_pred = np.array(parts_pred)
                 parts_pred[parts_pred==bg_label] = 0
                 parts_pred = pyapr.ShortParticles(parts_pred)
-                pipapr.viewer.display_segmentation(self.apr, self.parts, parts_pred)
+                paprica.viewer.display_segmentation(tile.apr, tile.parts, parts_pred)
 
     def save_classifier(self, path=None):
         """
@@ -1266,7 +1266,7 @@ class tileTrainer():
 
         viewer = napari.Viewer()
         for i in range(self.f.shape[1]):
-            viewer.add_layer(pipapr.viewer.apr_to_napari_Image(self.apr, pyapr.FloatParticles(self.f[:, i])))
+            viewer.add_layer(paprica.viewer.apr_to_napari_Image(self.apr, pyapr.FloatParticles(self.f[:, i])))
         napari.run()
 
     def _remove_ambiguities(self, verbose):

@@ -4,11 +4,10 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advanced stitching &mdash; pipapr 0.0.1 documentation</title>
+  <title>Advanced stitching &mdash; paprica 0.0.1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/mystnb.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -18,11 +17,7 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
-        <script>let toggleHintShow = 'Click to show';</script>
-        <script>let toggleHintHide = 'Click to hide';</script>
-        <script>let toggleOpenOnPrint = 'true';</script>
-        <script src="../_static/togglebutton.js"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+        <script src="../_static/sphinx_highlight.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -35,7 +30,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="../index.html" class="icon icon-home"> pipapr
+            <a href="../index.html" class="icon icon-home"> paprica
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -63,6 +58,7 @@
 <p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../pipapr.batcher.html">pipapr.batcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pipapr.converter.html">pipapr.converter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pipapr.loader.html">pipapr.loader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../pipapr.parser.html">pipapr.parser</a></li>
@@ -78,16 +74,16 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">pipapr</a>
+          <a href="../index.html">paprica</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../tutorials.html">Tutorials</a> &raquo;</li>
-      <li>Advanced stitching</li>
+      <li><a href="../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../tutorials.html">Tutorials</a></li>
+      <li class="breadcrumb-item active">Advanced stitching</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/notebooks/stitcher_advanced_ne.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -104,12 +100,12 @@
 <p>In this tutorial you will learn how to stitch multichannel data and how to change the stitcher option to obtain the best stitching results.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pipapr</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span>import pipapr
+import matplotlib.pyplot as plt
 
-<span class="n">path</span> <span class="o">=</span> <span class="s1">&#39;../../../tests/data/apr&#39;</span>
-<span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
-<span class="n">stitcher</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileStitcher</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">overlap_h</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">overlap_v</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+path = &#39;../../../tests/data/apr&#39;
+tiles = pipapr.tileParser(path=path, ftype=&#39;apr&#39;, frame_size=512)
+stitcher = pipapr.tileStitcher(tiles, overlap_h=25, overlap_v=25)
 </pre></div>
 </div>
 </div>
@@ -118,7 +114,7 @@
 might be necessary to reduce the number of planes included in the computation. To do so we provide a ´set_z_range´ method that here restrict the computation between plane 100 and 200:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">stitcher</span><span class="o">.</span><span class="n">set_z_range</span><span class="p">(</span><span class="n">z_begin</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">z_end</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span>stitcher.set_z_range(z_begin=100, z_end=200)
 </pre></div>
 </div>
 </div>
@@ -126,7 +122,7 @@ might be necessary to reduce the number of planes included in the computation. T
 <p>The overlap margin between tile can also be modified. By default, the pipeline use 20% more than the given overlap to register the tiles. Ideally this margin should be small enough to avoid spurious matches but <strong>must</strong> be large enough that the true overlaps are actually smaller than the one used for registration. If the true overlap is larger than the one used for the computation, then it is impossible for the pipeline to register correctly the tiles. Note that this limitation exists for many other pipelines and is not APR specific. The following allows to set the margin to 5%:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">stitcher</span><span class="o">.</span><span class="n">set_overlap_margin</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span>stitcher.set_overlap_margin(5)
 </pre></div>
 </div>
 </div>
@@ -134,7 +130,7 @@ might be necessary to reduce the number of planes included in the computation. T
 <p>We also provide a way to avoid large displacements that can happen e.g. between two empty tiles. It basically sets the registration output to the expected one (given on the stitcher instantiation) if the computed displacement differs more than the one that is set. The associated reliability will be set low so that the global optimisation should avoid this computation anyway. In the following we set the regularisation parameter to 20 pixels for each dimension:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">stitcher</span><span class="o">.</span><span class="n">set_regularization</span><span class="p">(</span><span class="n">reg_x</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">reg_y</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">reg_z</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span>stitcher.set_regularization(reg_x=20, reg_y=20, reg_z=20)
 </pre></div>
 </div>
 </div>
@@ -145,7 +141,7 @@ might be necessary to reduce the number of planes included in the computation. T
 <p>The way multiple channel are stitched is very easy: we start by stitching a master channel (ideally the one that has nice signal and SNR) and we then register the other channels on the master channel. Let’s start by computing the registration of the previously loaded master channel:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">stitcher</span><span class="o">.</span><span class="n">compute_registration</span><span class="p">(</span><span class="n">progress_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span>stitcher.compute_registration(progress_bar=False)
 </pre></div>
 </div>
 </div>
@@ -153,8 +149,8 @@ might be necessary to reduce the number of planes included in the computation. T
 <p>Then we can parse a second channel and register it to the master one:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles_ch2</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to second channel&#39;</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">,</span> <span class="n">frame_size</span><span class="o">=</span><span class="mi">512</span><span class="p">)</span>
-<span class="n">stitcher</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">channelStitcher</span><span class="p">(</span><span class="n">stitcher</span><span class="o">=</span><span class="n">stitcher</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">tiles</span><span class="p">,</span> <span class="n">moving</span><span class="o">=</span><span class="n">tiles_ch2</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span>tiles_ch2 = pipapr.tileParser(path=&#39;path to second channel&#39;, ftype=&#39;apr&#39;, frame_size=512)
+stitcher = pipapr.channelStitcher(stitcher=stitcher, ref=tiles, moving=tiles_ch2)
 </pre></div>
 </div>
 </div>

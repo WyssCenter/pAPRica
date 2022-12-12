@@ -4,11 +4,10 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.runner &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.runner &mdash; paprica 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
-      <link rel="stylesheet" href="_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -18,11 +17,7 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script>let toggleHintShow = 'Click to show';</script>
-        <script>let toggleHintHide = 'Click to hide';</script>
-        <script>let toggleOpenOnPrint = 'true';</script>
-        <script src="_static/togglebutton.js"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -34,7 +29,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> pipapr
+            <a href="index.html" class="icon icon-home"> paprica
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -52,6 +47,7 @@
 <p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="pipapr.atlaser.html">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.batcher.html">pipapr.batcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
@@ -67,16 +63,16 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">pipapr</a>
+          <a href="index.html">paprica</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
-      <li>pipapr.runner</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="pipapr.html">&lt;no title&gt;</a></li>
+      <li class="breadcrumb-item active">pipapr.runner</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.runner.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -86,532 +82,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-pipapr.runner">
-<span id="pipapr-runner"></span><h1>pipapr.runner<a class="headerlink" href="#module-pipapr.runner" title="Permalink to this heading"></a></h1>
-<p>Submodule containing classes and functions relative to the running pipeline.</p>
-<p>By using this code you agree to the terms of the software license agreement.</p>
-<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.runner.</span></span><span class="sig-name descname"><span class="pre">clearscopeRunningPipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_channels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.__init__" title="Permalink to this definition"></a></dt>
-<dd><p>Constructor for the clearscopeRunningPipeline.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path</strong> (<em>str</em>) – Path of the acquisition. It has to be the acquisition folder (root of /0001/ folder).</p></li>
-<li><p><strong>n_channels</strong> (<em>int</em>) – Number of channels that will be acquired. This will be parsed/guessed in the future.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._build_database">
-<span class="sig-name descname"><span class="pre">_build_database</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._build_database"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._build_database" title="Permalink to this definition"></a></dt>
-<dd><p>Build the database for storing the registration parameters. This method needs to be called after
-the registration map has been produced.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._build_sparse_graphs">
-<span class="sig-name descname"><span class="pre">_build_sparse_graphs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._build_sparse_graphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._build_sparse_graphs" title="Permalink to this definition"></a></dt>
-<dd><p>Build the sparse graph from the reliability and (row, col). This method needs to be called after the
-pair-wise registration has been performed for all neighbors pair.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._check_conversion">
-<span class="sig-name descname"><span class="pre">_check_conversion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._check_conversion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._check_conversion" title="Permalink to this definition"></a></dt>
-<dd><p>Checks that conversion is ok, if not it should keep the original data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>tileLoader</em></a>) – tile object to try if conversion worked as expected using facy metrics.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._check_for_apr_file">
-<span class="sig-name descname"><span class="pre">_check_for_apr_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._check_for_apr_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._check_for_apr_file" title="Permalink to this definition"></a></dt>
-<dd><p>Check if a given APR file already exists at a given location.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>pipapr.loader.tileLoader</em></a>) – tileLoader object</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>apr, parts</strong> – tuple containing APR and particles if found or (None, None) if not found.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pypapr.APR, pyapr.ParticleData</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._convert_to_apr">
-<span class="sig-name descname"><span class="pre">_convert_to_apr</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._convert_to_apr"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._convert_to_apr" title="Permalink to this definition"></a></dt>
-<dd><p>Convert the given tile to APR.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>tileLoader</em></a>) – tile object to be converted to APR.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._get_channel">
-<span class="sig-name descname"><span class="pre">_get_channel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._get_channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._get_channel" title="Permalink to this definition"></a></dt>
-<dd><p>Get channel from Clearscope tile path.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – Clearscope tile path</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>_</strong> – Channel number</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._get_ind">
-<span class="sig-name descname"><span class="pre">_get_ind</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind_from</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ind_to</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._get_ind"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._get_ind" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the ind in the original graph which corresponds to (ind_from, ind_to) in the minimum spanning tree.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ind_from</strong> (<em>int</em>) – starting node in the directed graph</p></li>
-<li><p><strong>ind_to</strong> (<em>int</em>) – ending node in the directed graph</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>ind</strong> – corresponding ind in the original graph</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>int</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._get_row_col">
-<span class="sig-name descname"><span class="pre">_get_row_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._get_row_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._get_row_col" title="Permalink to this definition"></a></dt>
-<dd><p>Get ClearScope tile row and col position given the tile path.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – ClearScope tile path</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>row, col</strong> – row and col numbers</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(int, int)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._get_tile">
-<span class="sig-name descname"><span class="pre">_get_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._get_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._get_tile" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the tile at the given path.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – tile path</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>tile</strong> – tile object</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader">tileLoader</a></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._is_new_tile_available">
-<span class="sig-name descname"><span class="pre">_is_new_tile_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._is_new_tile_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._is_new_tile_available" title="Permalink to this definition"></a></dt>
-<dd><p>Checks if a new tile is available for processing.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p><strong>is_available</strong> (<em>bool</em>) – True if a new tile is available, False otherwise</p></li>
-<li><p><strong>tile</strong> (<em>tileLoader</em>) – tile object is available, None otherwise</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._optimize_sparse_graphs">
-<span class="sig-name descname"><span class="pre">_optimize_sparse_graphs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._optimize_sparse_graphs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._optimize_sparse_graphs" title="Permalink to this definition"></a></dt>
-<dd><p>Optimize the sparse graph by computing the minimum spanning tree for each direction (H, D, V). This
-method needs to be called after the sparse graphs have been built.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._parse_acquisition_settings">
-<span class="sig-name descname"><span class="pre">_parse_acquisition_settings</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._parse_acquisition_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._parse_acquisition_settings" title="Permalink to this definition"></a></dt>
-<dd><p>Function that parses the setting txt file created by cleascope software at the begining of the acquisition
-and automatically extract the required parameters for the running pipeline to work.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._pre_stitch">
-<span class="sig-name descname"><span class="pre">_pre_stitch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._pre_stitch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._pre_stitch" title="Permalink to this definition"></a></dt>
-<dd><p>Perform pre-stitching, i.e. perform maximum intensity projection of the tile and register with available
-neighbors.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>pipapr.loader.tileLoader</em></a>) – tileLoader object containing the tile to perform the pre-stitiching on.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._print_info">
-<span class="sig-name descname"><span class="pre">_print_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._print_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._print_info" title="Permalink to this definition"></a></dt>
-<dd><p>Display stitching result information.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._process_RGB_for_display">
-<span class="sig-name descname"><span class="pre">_process_RGB_for_display</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._process_RGB_for_display"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._process_RGB_for_display" title="Permalink to this definition"></a></dt>
-<dd><p>Process RGB data for correctly displaying it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>u</strong> (<em>ndarray</em>) – RGB data</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>data_to_display</strong> – RGB data displayable with correct contrast and colors.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._produce_registration_map">
-<span class="sig-name descname"><span class="pre">_produce_registration_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._produce_registration_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._produce_registration_map" title="Permalink to this definition"></a></dt>
-<dd><p>Produce the registration map where reg_rel_map[d, row, col] (d = H,V,D) is the relative tile
-position in pixel from the expected one. This method needs to be called after the optimization has been done.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._project_tile">
-<span class="sig-name descname"><span class="pre">_project_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._project_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._project_tile" title="Permalink to this definition"></a></dt>
-<dd><p>Perform maximum intensity projection of the tile in the overlap area (+ predefined margin). For each tile
-a dictionnary ´tile´ is created and the ´[‘zy’, ‘zx’, ‘yx’]´ projections are save as a list in the dictionnary
-where the key corresponds to the edge location ´[‘north’, ‘south’, ‘east’, ‘west’]´.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>tileLoader</em></a>) – tile object</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._reconstruct_z_slice">
-<span class="sig-name descname"><span class="pre">_reconstruct_z_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._reconstruct_z_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._reconstruct_z_slice" title="Permalink to this definition"></a></dt>
-<dd><p>Reconstruct and merge the sample at a given depth z.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>z</strong> (<em>int</em>) – reconstruction depth (vary with downsample)</p></li>
-<li><p><strong>n_proj</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Number of planes to perform the maximum intensity projection.</p></li>
-<li><p><strong>dim</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).</p></li>
-<li><p><strong>downsample</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].</p></li>
-<li><p><strong>color</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.</p></li>
-<li><p><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to add a white square for each tile, making it easy to see overlapping areas.</p></li>
-<li><p><strong>plot</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Define if the function plots the results with Matplotlib or just returns an array.</p></li>
-<li><p><strong>seg</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to also reconstruct the segmentation. Only works with <cite>dim=0</cite></p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>merged_data</strong> – Merged frame at depth z.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._register_tile">
-<span class="sig-name descname"><span class="pre">_register_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tile</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._register_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._register_tile" title="Permalink to this definition"></a></dt>
-<dd><p>Perform pair-wise registration of a given tile with all its previously processed neighbors.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>tile</strong> (<a class="reference internal" href="pipapr.loader.html#pipapr.loader.tileLoader" title="pipapr.loader.tileLoader"><em>pipapr.loader.tileLoader</em></a>) – tileLoader object containing the tile to perform the pre-stitiching on.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._regularize">
-<span class="sig-name descname"><span class="pre">_regularize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reg</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._regularize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._regularize" title="Permalink to this definition"></a></dt>
-<dd><p>Remove too large displacement and replace them with expected one with a large uncertainty.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>reg</strong> (<em>array_like</em>) – list of registration (displacement) parameters</p></li>
-<li><p><strong>rel</strong> (<em>array_like</em>) – list of reliability parameters corresponding to each displacement.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>(reg, rel)</strong> – Updated lists after regularization.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>(array_like, array_like)</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline._update_next_tile">
-<span class="sig-name descname"><span class="pre">_update_next_tile</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline._update_next_tile"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline._update_next_tile" title="Permalink to this definition"></a></dt>
-<dd><p>Update next tile coordinates given the expected pattern.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.activate_conversion">
-<span class="sig-name descname"><span class="pre">activate_conversion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Ip_th</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">108</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_loading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.activate_conversion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.activate_conversion" title="Permalink to this definition"></a></dt>
-<dd><p>Activate conversion for the running pipeline.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>Ip_th</strong> (<em>int</em>) – Intensity threshold</p></li>
-<li><p><strong>rel_error</strong> (<em>float in</em><em> [</em><em>0</em><em>, </em><em>1</em><em>[</em>) – relative error bound</p></li>
-<li><p><strong>gradient_smoothing</strong> (<em>(</em><em>float</em><em>)</em>) – B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of smoothing)</p></li>
-<li><p><strong>dx</strong> (<em>float</em>) – PSF size in x, used to compute the gradient</p></li>
-<li><p><strong>dy</strong> (<em>float</em>) – PSF size in y, used to compute the gradient</p></li>
-<li><p><strong>dz</strong> (<em>float</em>) – PSF size in z, used to compute the gradient</p></li>
-<li><p><strong>lazy_loading</strong> (<em>bool</em>) – if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
-the APR. It will require about 1/7 more storage.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.activate_stitching">
-<span class="sig-name descname"><span class="pre">activate_stitching</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.activate_stitching"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.activate_stitching" title="Permalink to this definition"></a></dt>
-<dd><p>Activate stitching the data for the running pipeline.</p>
-<p>Stitching the data consists in:</p>
-<p>1) Computing the maximum intensity projections for each side that will have a neighboring tile once a tile is
-completely acquired
-2) Once a neighboring tile is available and the maximum intensity projections have been computed for this tile,
-estimate the pairwise registration parameters, saving the results in a graph for each dimension, along with the
-reliability of the estimation.
-3) Globaly optimize at the end to find the optimal tile placement.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>channel</strong> (<em>int</em>) – Number of the channel to perform the stitching on.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.deactivate_compression">
-<span class="sig-name descname"><span class="pre">deactivate_compression</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.deactivate_compression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.deactivate_compression" title="Permalink to this definition"></a></dt>
-<dd><p>Deactivate B3D compression when saving particles.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.plot_stitching_info">
-<span class="sig-name descname"><span class="pre">plot_stitching_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.plot_stitching_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.plot_stitching_info" title="Permalink to this definition"></a></dt>
-<dd><p>Plot pair-wise registration error for each axis [H, V, D].</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.reconstruct_slice">
-<span class="sig-name descname"><span class="pre">reconstruct_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">loc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.reconstruct_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.reconstruct_slice" title="Permalink to this definition"></a></dt>
-<dd><p>Reconstruct whole sample 2D section at the given location and in a given dimension. This function can also
-reconstruct a maximum intensity projection if <cite>n_proj&gt;0</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>loc</strong> (<em>int</em><em> (</em><em>default: middle of the sample</em><em>)</em>) – Position of the plane where the reconstruction should be done. The location varies depending on the
-downsample parameter and should be adapted.</p></li>
-<li><p><strong>n_proj</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Number of planes to perform the maximum intensity projection.</p></li>
-<li><p><strong>dim</strong> (<em>int</em><em> (</em><em>default: 0</em><em>)</em>) – Dimension of the reconstruction, e.g. 0 will be [y, x] plane (orthogonal to z).</p></li>
-<li><p><strong>downsample</strong> (<em>int</em><em> (</em><em>default: 1</em><em>)</em>) – Downsample factor for the reconstruction. Must be in [1, 2, 4, 8, 16, 32].</p></li>
-<li><p><strong>color</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to reconstruct with checkerboard color pattern. Useful to identify doubling artifacts.</p></li>
-<li><p><strong>debug</strong> (<em>bool</em><em> (</em><em>default: False</em><em>)</em>) – Option to add a white square for each tile, making it easy to see overlapping areas.</p></li>
-<li><p><strong>plot</strong> (<em>bool</em><em> (</em><em>default: True</em><em>)</em>) – Define if the function plots the results with Matplotlib or just returns an array.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>_</strong> – Array containing the reconstructed data.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.reconstruct_z_color">
-<span class="sig-name descname"><span class="pre">reconstruct_z_color</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_proj</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.reconstruct_z_color"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.reconstruct_z_color" title="Permalink to this definition"></a></dt>
-<dd><p>Reconstruct and merge the sample at a given depth z.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>z</strong> (<em>int</em>) – reconstruction depth</p></li>
-<li><p><strong>downsample</strong> (<em>int</em>) – downsample for reconstruction (must be a power of 2)</p></li>
-<li><p><strong>debug</strong> (<em>bool</em>) – if true the border of each tile will be highlighted</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>merged_data</strong> – Merged frame at depth z.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.run">
-<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.run" title="Permalink to this definition"></a></dt>
-<dd><p>Start the running pipeline. It is basically a loop waiting for each tile to be saved at the specified path.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.set_compression">
-<span class="sig-name descname"><span class="pre">set_compression</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quantization_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bg</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">108</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.set_compression"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.set_compression" title="Permalink to this definition"></a></dt>
-<dd><p>Activate B3D compression for saving tiles.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>quantization_factor</strong> (<em>int</em>) – quantization factor: the higher, the more compressed (refer to B3D paper for more detail).</p></li>
-<li><p><strong>bg</strong> (<em>int</em>) – background value: any value below this threshold will be set to the background value. This helps
-save up space by having the same value for the background (refer to B3D paper for more details).</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.set_overlap_margin">
-<span class="sig-name descname"><span class="pre">set_overlap_margin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">margin</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.set_overlap_margin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.set_overlap_margin" title="Permalink to this definition"></a></dt>
-<dd><p>Modify the overlaping area size. If the overlaping area is smaller than the true one, the stitching can’t
-be performed properly. If the overlaping area area is more than twice the size of the true one it will also
-fail (due to the circular FFT in the phase cross correlation).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>margin</strong> (<em>float</em>) – safety margin in % to take the overlaping area.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.runner.clearscopeRunningPipeline.set_regularization">
-<span class="sig-name descname"><span class="pre">set_regularization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reg_x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg_z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/runner.html#clearscopeRunningPipeline.set_regularization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.runner.clearscopeRunningPipeline.set_regularization" title="Permalink to this definition"></a></dt>
-<dd><p>Set the regularization for the stitching to prevent aberrant displacements.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>reg_x</strong> (<em>int</em>) – if the horizontal displacement computed in the pairwise registration for any tile is greater than
-reg_x (in pixel unit) then the expected displacement (from motor position) is taken.</p></li>
-<li><p><strong>reg_y</strong> (<em>int</em>) – if the horizontal displacement computed in the pairwise registration for any tile is greater than
-reg_z (in pixel unit) then the expected displacement (from motor position) is taken.</p></li>
-<li><p><strong>reg_z</strong> (<em>int</em>) – if the horizontal displacement computed in the pairwise registration for any tile is greater than
-reg_z (in pixel unit) then the expected displacement (from motor position) is taken.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
+  <section id="pipapr-runner">
+<h1>pipapr.runner<a class="headerlink" href="#pipapr-runner" title="Permalink to this heading"></a></h1>
 </section>
 
 

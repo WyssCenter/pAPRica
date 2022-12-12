@@ -4,11 +4,10 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pipapr.atlaser &mdash; pipapr 0.0.1 documentation</title>
+  <title>pipapr.atlaser &mdash; paprica 0.0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/mystnb.css" type="text/css" />
-      <link rel="stylesheet" href="_static/togglebutton.css" type="text/css" />
+      <link rel="stylesheet" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -18,15 +17,11 @@
         <script src="_static/underscore.js"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="_static/doctools.js"></script>
-        <script>let toggleHintShow = 'Click to show';</script>
-        <script>let toggleHintHide = 'Click to hide';</script>
-        <script>let toggleOpenOnPrint = 'true';</script>
-        <script src="_static/togglebutton.js"></script>
-        <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+        <script src="_static/sphinx_highlight.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="pipapr.converter" href="pipapr.converter.html" />
+    <link rel="next" title="pipapr.batcher" href="pipapr.batcher.html" />
     <link rel="prev" title="&lt;no title&gt;" href="pipapr.html" /> 
 </head>
 
@@ -35,7 +30,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> pipapr
+            <a href="index.html" class="icon icon-home"> paprica
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -53,6 +48,7 @@
 <p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">pipapr.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pipapr.batcher.html">pipapr.batcher</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipapr.converter.html">pipapr.converter</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipapr.loader.html">pipapr.loader</a></li>
 <li class="toctree-l1"><a class="reference internal" href="pipapr.parser.html">pipapr.parser</a></li>
@@ -68,16 +64,16 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">pipapr</a>
+          <a href="index.html">paprica</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="pipapr.html">&lt;no title&gt;</a> &raquo;</li>
-      <li>pipapr.atlaser</li>
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="pipapr.html">&lt;no title&gt;</a></li>
+      <li class="breadcrumb-item active">pipapr.atlaser</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/pipapr.atlaser.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -87,271 +83,8 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-pipapr.atlaser">
-<span id="pipapr-atlaser"></span><h1>pipapr.atlaser<a class="headerlink" href="#module-pipapr.atlaser" title="Permalink to this heading"></a></h1>
-<p>Submodule containing classes and functions relative to <strong>atlasing</strong>.</p>
-<p>This submodule is essentially a wrapper to Brainreg (<a class="reference external" href="https://github.com/brainglobe/brainreg">https://github.com/brainglobe/brainreg</a>) for atlasing and
-Allen Brain Atlas for ontology analysis. It contains many convenience method for manipulating data
-(per region, per superpixel, etc.).</p>
-<p>By using this code you agree to the terms of the software license agreement.</p>
-<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pipapr.atlaser.</span></span><span class="sig-name descname"><span class="pre">tileAtlaser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_pixel_size:</span> <span class="pre">(&lt;built-in</span> <span class="pre">function</span> <span class="pre">array&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'list'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atlas=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merged_data=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Class used for registering a dataset to the Atlas and do some post processing using the Atlas (e.g count cells
-per region).</p>
-<p>It can be instantiated using a tileMerger object (for registration using Brainreg) or directly with a
-previously registered Atlas.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">original_pixel_size:</span> <span class="pre">(&lt;built-in</span> <span class="pre">function</span> <span class="pre">array&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'list'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample:</span> <span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">atlas=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merged_data=None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.__init__" title="Permalink to this definition"></a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>original_pixel_size</strong> (<em>array_like</em>) – pixel size in µm on the original data</p></li>
-<li><p><strong>downsample</strong> (<em>int</em>) – downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
-for registration to the Atlas.</p></li>
-<li><p><strong>atlas</strong> (<em>ndarray</em><em>, </em><em>string</em>) – atlas data or path for loading the atlas data</p></li>
-<li><p><strong>merger</strong> (<a class="reference internal" href="pipapr.stitcher.html#pipapr.stitcher.tileMerger" title="pipapr.stitcher.tileMerger"><em>tileMerger</em></a>) – tileMerger object</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.from_atlas">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_atlas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">atlas:</span> <span class="pre">(&lt;built-in</span> <span class="pre">function</span> <span class="pre">array&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">downsample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_pixel_size:</span> <span class="pre">(&lt;built-in</span> <span class="pre">function</span> <span class="pre">array&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'list'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.from_atlas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.from_atlas" title="Permalink to this definition"></a></dt>
-<dd><p>Constructor from a previously computed Atlas. Typically to perform postprocessing using an Atlas (e.g.
-count cells per brain region).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>atlas</strong> (<em>ndarray</em><em>, </em><em>string</em>) – atlas data or path for loading the atlas data</p></li>
-<li><p><strong>downsample</strong> (<em>int</em>) – downsampling used by APRSlicer to reconstruct the lower resolution pixel data used
-for registration to the Atlas.</p></li>
-<li><p><strong>original_pixel_size</strong> (<em>array_like</em>) – pixel size in µm on the original data</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>tileAtlaser object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.from_merger">
-<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_merger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">merger:</span> <span class="pre">~pipapr.stitcher.tileMerger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">original_pixel_size:</span> <span class="pre">(&lt;built-in</span> <span class="pre">function</span> <span class="pre">array&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'list'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.from_merger"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.from_merger" title="Permalink to this definition"></a></dt>
-<dd><p>Constructor from a tileMerger object. Typically to perform the registration to the Atlas on
-autofluorescence data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>merger</strong> (<a class="reference internal" href="pipapr.stitcher.html#pipapr.stitcher.tileMerger" title="pipapr.stitcher.tileMerger"><em>tileMerger</em></a>) – tileMerger object</p></li>
-<li><p><strong>original_pixel_size</strong> (<em>array_like</em>) – pixel size in µm on the original data</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>tileAtlaser object</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_area_mask_by_acronym">
-<span class="sig-name descname"><span class="pre">get_area_mask_by_acronym</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">acronym_list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_area_mask_by_acronym"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_area_mask_by_acronym" title="Permalink to this definition"></a></dt>
-<dd><p>Return the mask corresponding to brain regions given in <cite>acronym_list</cite>, brain regions referred by their
-Allen brain acronym.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>acronym_list</strong> (<em>list</em>) – list of Allen Brain region acronyms to count the mapped cells.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>mask</strong> – mask containing <cite>1</cite> for the region in <cite>acronym_list</cite> ans <cite>0</cite> elsewhere.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_cell_number_by_acronym">
-<span class="sig-name descname"><span class="pre">get_cell_number_by_acronym</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">acronym_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cells_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_cell_number_by_acronym"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_cell_number_by_acronym" title="Permalink to this definition"></a></dt>
-<dd><p>Get the total number of segmented cell in different regions referenced by their acronyms.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>acronym_list</strong> (<em>list</em>) – list of acronyms (ABA)</p></li>
-<li><p><strong>cells_ids</strong> (<em>ndarray</em>) – cells ID (typically computed by self.get_cells_id())</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>cell_number</strong> – list containing the total number of cells for each asked region.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>arraylike</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_cells_density">
-<span class="sig-name descname"><span class="pre">get_cells_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kernel_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_cells_density"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_cells_density" title="Permalink to this definition"></a></dt>
-<dd><p>Retuns the cell density (local average number of cell per voxel). The local average is computed using a gaussian
-kernel.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>cells</strong> (<em>ndarray</em>) – cell positions</p></li>
-<li><p><strong>kernel_size</strong> (<em>int</em>) – radius of the gaussian for local cell density estimation</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>_</strong> – estimated cell density</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_cells_density_per_region">
-<span class="sig-name descname"><span class="pre">get_cells_density_per_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_cells_density_per_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_cells_density_per_region" title="Permalink to this definition"></a></dt>
-<dd><p>Retuns the cell density (number of cell per voxel) per region.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cells_id</strong> (<em>ndarray</em>) – cells ID (typically computed by self.get_cells_id())</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>heatmap</strong> – 3D array where each brain region value is the cell density in this region.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_cells_id">
-<span class="sig-name descname"><span class="pre">get_cells_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_cells_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_cells_id" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Allen Brain Atlas region ID for each cell.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cells</strong> (<em>ndarray</em>) – cell positions</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>labels</strong> – containing the cell region ID.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_cells_number_per_region">
-<span class="sig-name descname"><span class="pre">get_cells_number_per_region</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cells_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_cells_number_per_region"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_cells_number_per_region" title="Permalink to this definition"></a></dt>
-<dd><p>Retuns the number of cell per region.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>cells_id</strong> (<em>ndarray</em>) – cells ID (typically computed by self.get_cells_id())</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>heatmap</strong> – 3D array where each brain region value is the number of cells contained in this region.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_loc_id">
-<span class="sig-name descname"><span class="pre">get_loc_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_loc_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_loc_id" title="Permalink to this definition"></a></dt>
-<dd><p>Return the ID (brain region) of a given position (typically to retrieve cell position in the brain).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>x</strong> (<em>int</em>) – x position</p></li>
-<li><p><strong>y</strong> (<em>int</em>) – y position</p></li>
-<li><p><strong>z</strong> (<em>int</em>) – z position</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>_</strong> – ID at the queried position.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.get_ontology_mapping">
-<span class="sig-name descname"><span class="pre">get_ontology_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.get_ontology_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.get_ontology_mapping" title="Permalink to this definition"></a></dt>
-<dd><p>Get the mapping between area ID and name with Allen SDK.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>labels</strong> (<em>ndarray</em>) – array of labels to group by ID and fetch area name.</p></li>
-<li><p><strong>n</strong> (<em>int</em>) – number of parent area to group for.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>area_count</strong> – area names with the counts.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.load_atlas">
-<span class="sig-name descname"><span class="pre">load_atlas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.load_atlas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.load_atlas" title="Permalink to this definition"></a></dt>
-<dd><p>Function to load a previously computed atlas.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>path</strong> (<em>string</em>) – path to the registered atlas file.</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="pipapr.atlaser.tileAtlaser.register_to_atlas">
-<span class="sig-name descname"><span class="pre">register_to_atlas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'./'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">orientation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'spr'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">merged_data_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'merged_data.tif'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pipapr/atlaser.html#tileAtlaser.register_to_atlas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pipapr.atlaser.tileAtlaser.register_to_atlas" title="Permalink to this definition"></a></dt>
-<dd><p>Function to compute the registration to the Atlas. It is just a wrapper to call brainreg.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>output_dir</strong> (<em>string</em>) – output directory to save atlas</p></li>
-<li><p><strong>orientation</strong> (<em>string</em>) – orientation of the input data with respect to the origin in Z,Y,X order. E.g. ‘spr’ means
-superior (so going from origin to z = zlim we go from superior to inferior), posterior
-(so going from origin to y = ylim we go from posterior to anterior part) and right (so going
-from origin to x = xlim we go from right to left part)</p></li>
-<li><p><strong>merged_data_filename</strong> (<em>string</em>) – named of the merged array (Brainreg reads data from files so we need to save
-the merged volume beforehand.</p></li>
-<li><p><strong>debug</strong> (<em>bool</em>) – add debug option for brainreg which will save intermediate steps.</p></li>
-<li><p><strong>params</strong> (<em>dict</em>) – dictionary with keys as brainreg options and values as parameters (see here:
-<a class="reference external" href="https://docs.brainglobe.info/brainreg/user-guide/parameters">https://docs.brainglobe.info/brainreg/user-guide/parameters</a>)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
+  <section id="pipapr-atlaser">
+<h1>pipapr.atlaser<a class="headerlink" href="#pipapr-atlaser" title="Permalink to this heading"></a></h1>
 </section>
 
 
@@ -359,7 +92,7 @@ the merged volume beforehand.</p></li>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="pipapr.html" class="btn btn-neutral float-left" title="&lt;no title&gt;" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="pipapr.converter.html" class="btn btn-neutral float-right" title="pipapr.converter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="pipapr.batcher.html" class="btn btn-neutral float-right" title="pipapr.batcher" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

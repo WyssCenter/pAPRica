@@ -26,8 +26,8 @@ from skimage.filters import gaussian
 from skimage.color import hsv2rgb
 from tqdm import tqdm
 
-import pipapr
-from pipapr.stitcher import _get_max_proj_apr, _get_proj_shifts, _get_masked_proj_shifts
+import paprica
+from paprica.stitcher import _get_max_proj_apr, _get_proj_shifts, _get_masked_proj_shifts
 
 
 class clearscopeRunningPipeline():
@@ -185,7 +185,7 @@ class clearscopeRunningPipeline():
             self.database.to_csv(os.path.join(self.folder_apr,
                                               'ch{}'.format(self.stitched_channel),
                                               'registration_results.csv'))
-            self.tiles = pipapr.tileParser(os.path.join(self.folder_apr, 'ch{}'.format(self.stitched_channel)))
+            self.tiles = paprica.tileParser(os.path.join(self.folder_apr, 'ch{}'.format(self.stitched_channel)))
 
     def activate_conversion(self,
                              Ip_th=108,
@@ -831,16 +831,16 @@ class clearscopeRunningPipeline():
         filename = '{}_{}.apr'.format(row, col)
         self.paths_apr.append(os.path.join(self.folder_apr, 'ch{}'.format(channel), filename))
 
-        return pipapr.loader.tileLoader(path=path,
-                                        row=row,
-                                        col=col,
-                                        ftype=self.type,
-                                        neighbors=neighbors,
-                                        neighbors_tot=None,
-                                        neighbors_path=None,
-                                        frame_size=2048,
-                                        folder_root=self.path,
-                                        channel=channel)
+        return paprica.loader.tileLoader(path=path,
+                                         row=row,
+                                         col=col,
+                                         ftype=self.type,
+                                         neighbors=neighbors,
+                                         neighbors_tot=None,
+                                         neighbors_path=None,
+                                         frame_size=2048,
+                                         folder_root=self.path,
+                                         channel=channel)
 
     def _pre_stitch(self, tile):
         """
@@ -1982,7 +1982,7 @@ class clearscopeRunningPipeline():
 #             else:
 #                 neighbors = [[row - 1, col]]
 #
-#         return pipapr.loader.tileLoader(path=path,
+#         return paprica.loader.tileLoader(path=path,
 #                                         row=row,
 #                                         col=col,
 #                                         ftype=self.type,

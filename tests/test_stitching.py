@@ -7,7 +7,7 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 from time import time
-import pipapr
+import paprica
 import pandas as pd
 import os
 
@@ -17,15 +17,15 @@ def test_main():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr')
 
     # Parse data
-    tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size=512, ftype='apr')
 
     # Stitch data
     t = time()
-    stitcher1 = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
+    stitcher1 = paprica.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
     stitcher1.compute_registration(on_disk=False)
     print('Elapsed time new registration on RAM: {} s.'.format((time()-t)))
     t = time()
-    stitcher2 = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
+    stitcher2 = paprica.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
     stitcher2.compute_registration(on_disk=True)
     print('Elapsed time new registration on disk: {} s.'.format((time()-t)))
 

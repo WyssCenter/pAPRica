@@ -32,7 +32,7 @@ import numpy as np
 from skimage.io import imread, imsave
 from tqdm import tqdm
 
-import pipapr
+import paprica
 
 def get_microscope_list():
     """
@@ -52,9 +52,9 @@ def get_microscope_list():
         dictionnary containing all supported microscopes.
     """
     microscope_list = {}
-    for name, obj in inspect.getmembers(pipapr.parser):
+    for name, obj in inspect.getmembers(paprica.parser):
         if inspect.isclass(obj):
-            if issubclass(obj, pipapr.parser.baseParser) and (obj != pipapr.parser.baseParser):
+            if issubclass(obj, paprica.parser.baseParser) and (obj != paprica.parser.baseParser):
                 microscope_list[name] = obj
     return microscope_list
 
@@ -396,16 +396,16 @@ class baseParser():
         col = t['col']
         row = t['row']
 
-        return pipapr.loader.tileLoader(path=path,
-                                          row=row,
-                                          col=col,
-                                          ftype=self.type,
-                                          neighbors=self.neighbors,
-                                          neighbors_tot=self.neighbors_tot,
-                                          neighbors_path=self.neighbors_path,
-                                          frame_size=self.frame_size,
-                                          folder_root=self.folder_root,
-                                          channel=self.channel)
+        return paprica.loader.tileLoader(path=path,
+                                         row=row,
+                                         col=col,
+                                         ftype=self.type,
+                                         neighbors=self.neighbors,
+                                         neighbors_tot=self.neighbors_tot,
+                                         neighbors_path=self.neighbors_path,
+                                         frame_size=self.frame_size,
+                                         folder_root=self.folder_root,
+                                         channel=self.channel)
 
     def __iter__(self):
         """
@@ -422,16 +422,16 @@ class baseParser():
                 col = t['col']
                 row = t['row']
 
-                yield pipapr.loader.tileLoader(path=path,
-                                              row=row,
-                                              col=col,
-                                              ftype=self.type,
-                                              neighbors=self.neighbors,
-                                              neighbors_tot=self.neighbors_tot,
-                                              neighbors_path=self.neighbors_path,
-                                              frame_size=self.frame_size,
-                                              folder_root=self.folder_root,
-                                              channel=self.channel)
+                yield paprica.loader.tileLoader(path=path,
+                                                row=row,
+                                                col=col,
+                                                ftype=self.type,
+                                                neighbors=self.neighbors,
+                                                neighbors_tot=self.neighbors_tot,
+                                                neighbors_path=self.neighbors_path,
+                                                frame_size=self.frame_size,
+                                                folder_root=self.folder_root,
+                                                channel=self.channel)
 
     def __len__(self):
         """
@@ -595,16 +595,16 @@ class tileParser(baseParser):
                 if self.tiles_pattern[r, c]:
                     neighbors_path.append(self.tile_pattern_path[r, c])
 
-            return pipapr.loader.tileLoader(path=path,
-                                            row=row,
-                                            col=col,
-                                            ftype=self.type,
-                                            neighbors=neighbors,
-                                            neighbors_tot=neighbors_tot,
-                                            neighbors_path=neighbors_path,
-                                            frame_size=self.frame_size,
-                                            folder_root=self.folder_root,
-                                            channel=self.channel)
+            return paprica.loader.tileLoader(path=path,
+                                             row=row,
+                                             col=col,
+                                             ftype=self.type,
+                                             neighbors=neighbors,
+                                             neighbors_tot=neighbors_tot,
+                                             neighbors_path=neighbors_path,
+                                             frame_size=self.frame_size,
+                                             folder_root=self.folder_root,
+                                             channel=self.channel)
 
         elif isinstance(item, int):
             t = self.tiles_list[item]
@@ -619,16 +619,16 @@ class tileParser(baseParser):
                 if self.tiles_pattern[r, c]:
                     neighbors_path.append(self.tile_pattern_path[r, c])
 
-            return pipapr.loader.tileLoader(path=path,
-                                              row=row,
-                                              col=col,
-                                              ftype=self.type,
-                                              neighbors=neighbors,
-                                              neighbors_tot=neighbors_tot,
-                                              neighbors_path=neighbors_path,
-                                              frame_size=self.frame_size,
-                                              folder_root=self.folder_root,
-                                              channel=self.channel)
+            return paprica.loader.tileLoader(path=path,
+                                             row=row,
+                                             col=col,
+                                             ftype=self.type,
+                                             neighbors=neighbors,
+                                             neighbors_tot=neighbors_tot,
+                                             neighbors_path=neighbors_path,
+                                             frame_size=self.frame_size,
+                                             folder_root=self.folder_root,
+                                             channel=self.channel)
 
         elif isinstance(item, slice):
             sliced_parser = copy.copy(self)
@@ -658,16 +658,16 @@ class tileParser(baseParser):
                     if self.tiles_pattern[r, c]:
                         neighbors_path.append(self.tile_pattern_path[r, c])
 
-                yield pipapr.loader.tileLoader(path=path,
-                                              row=row,
-                                              col=col,
-                                              ftype=self.type,
-                                              neighbors=neighbors,
-                                              neighbors_tot=neighbors_tot,
-                                              neighbors_path=neighbors_path,
-                                              frame_size=self.frame_size,
-                                              folder_root=self.folder_root,
-                                              channel=self.channel)
+                yield paprica.loader.tileLoader(path=path,
+                                                row=row,
+                                                col=col,
+                                                ftype=self.type,
+                                                neighbors=neighbors,
+                                                neighbors_tot=neighbors_tot,
+                                                neighbors_path=neighbors_path,
+                                                frame_size=self.frame_size,
+                                                folder_root=self.folder_root,
+                                                channel=self.channel)
 
     @staticmethod
     def _is_valid_acquisition(path):
@@ -701,12 +701,10 @@ class colmParser(tileParser):
         ----------
         path: string
             path where to look for the data. More specifically it should be the folder that contains the acquisition.
-        nrow: int
-            number of row for parsing COLM LOCXXX data
-        ncol: int
-            number of col for parsing COLM LOCXXX data
         channel: int
             fluorescence channel for parsing COLM LOCXXX data
+        verbose: bool
+            Control verbosity of the parsing. If True, the parser will print acquisition info in the terminal.
 
         """
 
@@ -772,20 +770,6 @@ class colmParser(tileParser):
         return acq_param['Actual Vertical Overlap (%)'], acq_param['Actual Horizontal Overlap (%)']
 
     @staticmethod
-    def _is_number(s):
-        """
-        Check if a string contain any king of number (isnumeric() method doesn't work for decimal numbers).
-        Returns
-        -------
-        True if s is a number, False otherwise
-        """
-        try:
-            float(s)
-            return True
-        except ValueError:
-            return False
-
-    @staticmethod
     def _is_valid_acquisition(path):
         """
         This function returns True if path folder is a COLM acquisition.
@@ -808,6 +792,20 @@ class colmParser(tileParser):
         files = sorted(glob(os.path.join(path, 'VW0', 'LOC000', '*CHN*.tif')))
         return int(re.findall(r'CHN(\d+)', files[-1])[0])+1
 
+    @staticmethod
+    def _is_number(s):
+        """
+        Check if a string contain any king of number (isnumeric() method doesn't work for decimal numbers).
+        Returns
+        -------
+        True if s is a number, False otherwise
+        """
+        try:
+            float(s)
+            return True
+        except ValueError:
+            return False
+
 
 class clearscopeParser(tileParser):
     """
@@ -823,12 +821,10 @@ class clearscopeParser(tileParser):
         ----------
         path: string
             path where to look for the data.
-        nrow: int
-            number of row for parsing COLM LOCXXX data
-        ncol: int
-            number of col for parsing COLM LOCXXX data
         channel: int
-            fluorescence channel for parsing COLM LOCXXX data
+            fluorescence channel for parsing CLEARSCOPE data
+        verbose: bool
+            Control verbosity of the parsing. If True, the parser will print acquisition info in the terminal.
 
         """
 
@@ -1054,3 +1050,120 @@ class clearscopeParser(tileParser):
         """
         folders = glob(os.path.join(path, '0001', '*/'))
         return np.max([int(re.findall(r'__(\d)c', x)[0])+1 for x in folders])
+
+
+# class mesospimParser(tileParser):
+#     """
+#     Class used to parse multi-tile colm data where each tile position in space matters. Tile parsed this way are usually
+#     stitched later on.
+#
+#     """
+#     def __init__(self, path, channel=0, verbose=True):
+#         """
+#         Constructor of the tileParser object for MESOSPIM acquisition.
+#
+#         Parameters
+#         ----------
+#         path: string
+#             path where to look for the data. More specifically it should be the folder that contains the acquisition.
+#         channel: int
+#             fluorescence channel for parsing MESOSPIM data
+#         verbose: bool
+#             Control verbosity of the parsing. If True, the parser will print acquisition info in the terminal.
+#
+#         """
+#
+#         self.path = path
+#         self.frame_size = 2048
+#         self.channel = channel
+#         self.channel_wavelength = self._get_channel_wavelength(channel)
+#         self.type = 'mesospim'
+#
+#         self.tiles_list = self._get_tile_list()
+#         self.n_tiles = len(self.tiles_list)
+#         if self.n_tiles == 0:
+#             raise FileNotFoundError('Error: no tile were found.')
+#
+#         # self._correct_offset()
+#         # self.ncol = self._get_ncol()
+#         # self.nrow = self._get_nrow()
+#         # self._sort_tiles()
+#         # self.tiles_pattern, self.tile_pattern_path = self._get_tiles_pattern()
+#         # self.neighbors, self.n_edges = self._get_neighbors_map()
+#         # self.neighbors_tot = self._get_total_neighbors_map()
+#         # self.path_list = self._get_path_list()
+#         # if verbose:
+#         #     self._print_info()
+#
+#         # Define some folders
+#         base, _ = os.path.split(self.path)
+#         self.folder_root = base
+#         self.folder_max_projs = os.path.join(base, 'max_projs')
+#
+#
+#     def _get_channel_wavelength(self, channel):
+#         files = glob(os.path.join(self.path, '*_Ch*_*.tiff'))
+#         channel_list = []
+#         for f in files:
+#             pattern_search = re.findall(r'_Ch(\d{3})_', f)
+#             if pattern_search != []:
+#                 channel_list.append(int(pattern_search[-1]))
+#
+#         channel_list = sorted(list(set(channel_list)))
+#
+#         return int(channel_list[channel])
+#     def _get_tiles_path(self):
+#         """
+#         Returns a list containing individual tiff.
+#
+#         """
+#         return glob(os.path.join(self.path, '*_Ch{}_*.tiff'.format(self.channel_wavelength)))
+#
+#     def _get_tiles_from_path(self, files):
+#         """
+#         Returns a list of tiles as a dictionary.
+#
+#         """
+#         tiles = []
+#         for f in files:
+#             # For each file we read the x and y position
+#             x, y = get_pos()
+#
+#             # Then we have to find the row and col for each tile
+#
+#
+#             tile = {'path': f,
+#                     'row': row,
+#                     'col': col,
+#                     }
+#             tiles.append(tile)
+#         return tiles
+#
+#     def get_overlap(self):
+#         """
+#         Extract overlap from MESOSPIM `meta.txt` files.
+#
+#         """
+#
+#     @staticmethod
+#     def _is_valid_acquisition(path):
+#         """
+#         This function returns True if path folder is a MESOSPIM acquisition.
+#         Parameters
+#         ----------
+#         path: str
+#             path to check if acquisition is COLM
+#
+#         Returns
+#         -------
+#         bool
+#         """
+#         return glob(path, '*_meta.txt') != 0
+#
+#     @staticmethod
+#     def _get_n_channels(path):
+#         """
+#         Returns the number of channel of the MESOSPIM acquisition.
+#         """
+#         files = sorted(glob(os.path.join(path, '*Tile0*_*.tif')))
+#         return len(files)

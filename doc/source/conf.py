@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'pipapr'
+project = 'paprica'
 copyright = '2022, Wyss Center for Bio and Neuro Engineering'
 author = 'Jules Scholler, Joel Jonsson'
 

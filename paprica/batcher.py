@@ -33,7 +33,7 @@ from skimage.io import imread, imsave
 from glob import glob
 import pyapr
 
-import pipapr
+import paprica
 
 
 class multiChannelAcquisition():
@@ -168,8 +168,8 @@ class multiChannelAcquisition():
 
         self.is_apr_available = True
         self.path_apr = os.path.join(self.path, 'APR')
-        self.tiles_list_apr = [pipapr.tileParser(f, ftype='apr', verbose=False) for f in
-                              sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
+        self.tiles_list_apr = [paprica.tileParser(f, ftype='apr', verbose=False) for f in
+                               sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
 
     def stitch_acq(self,
                    channel):
@@ -190,7 +190,7 @@ class multiChannelAcquisition():
             raise TypeError('Error: APR data not available, convert data before stitching.')
 
         tiles = self.tiles_list_apr[channel]
-        stitcher = pipapr.tileStitcher(tiles, overlap_h=self.overlap_h, overlap_v=self.overlap_v)
+        stitcher = paprica.tileStitcher(tiles, overlap_h=self.overlap_h, overlap_v=self.overlap_v)
 
         tile = tiles[0]
         tile.lazy_load_tile(level_delta=0)
@@ -226,7 +226,7 @@ class multiChannelAcquisition():
             raise TypeError('Error: APR data not available, convert data before reconstruction.')
 
         for tiles in self.tiles_list_apr:
-            merger = pipapr.stitcher.tileMerger(tiles, self.database)
+            merger = paprica.stitcher.tileMerger(tiles, self.database)
             merger.set_downsample(downsample)
             merger.merge_max()
             imsave(os.path.join(tiles.path, '3D_reconstruction.tif'), merger.merged_data)
@@ -244,18 +244,18 @@ class multiChannelAcquisition():
             list containing the `tileLoader` objects for each channel for the APR data
         """
         if self.acq_type == 'apr':
-            tiles_list_apr = [pipapr.tileParser(f, ftype='apr') for f in
+            tiles_list_apr = [paprica.tileParser(f, ftype='apr') for f in
                               sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
             tiles_list = None
         elif not self.is_apr_available:
-            tiles_list = [pipapr.autoParser(self.path, channel=x) for x in
-                          range(pipapr.parser.get_number_of_channels(self.path))]
+            tiles_list = [paprica.autoParser(self.path, channel=x) for x in
+                          range(paprica.parser.get_number_of_channels(self.path))]
             tiles_list_apr = None
         else:
-            tiles_list_apr = [pipapr.tileParser(f, ftype='apr', verbose=False) for f in
+            tiles_list_apr = [paprica.tileParser(f, ftype='apr', verbose=False) for f in
                               sorted(glob(os.path.join(self.path_apr, 'ch*/')))]
-            tiles_list = [pipapr.autoParser(self.path, channel=x) for x in
-                          range(pipapr.parser.get_number_of_channels(self.path))]
+            tiles_list = [paprica.autoParser(self.path, channel=x) for x in
+                          range(paprica.parser.get_number_of_channels(self.path))]
 
         return tiles_list, tiles_list_apr
 
@@ -270,7 +270,7 @@ class multiChannelAcquisition():
             microscope used to acquire the data
         """
 
-        tiles = pipapr.autoParser(self.path, verbose=False)
+        tiles = paprica.autoParser(self.path, verbose=False)
         return tiles.type
 
     def _get_Ip_th(self, tiles, method):
@@ -279,7 +279,7 @@ class multiChannelAcquisition():
 
         Parameters
         ----------
-        tiles: pipapr.parser.tileParser
+        tiles: paprica.parser.tileParser
             tileParser object to compute Ip_th for.
         method: str
             method to compute Ip_th automatically:

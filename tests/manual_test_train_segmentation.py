@@ -5,8 +5,8 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
-import pipapr
-from pipapr.segmenter import compute_laplacian, compute_gradmag, gaussian_blur, particle_levels
+import paprica
+from paprica.segmenter import compute_laplacian, compute_gradmag, gaussian_blur, particle_levels
 import pyapr
 import numpy as np
 
@@ -61,12 +61,12 @@ def main():
     path = 'data/apr'
 
     # We load a tile
-    tiles = pipapr.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
     tile = tiles[2]
     tile.load_tile()
 
     # We create the trainer object and then manually annotate the dataset
-    trainer = pipapr.segmenter.tileTrainer(tile, compute_features)
+    trainer = paprica.segmenter.tileTrainer(tile, compute_features)
     trainer.manually_annotate(use_sparse_labels=True)
     # trainer.save_labels()
     # trainer.load_labels()

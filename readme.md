@@ -2,29 +2,29 @@
 
 PUT CATCHY GIF HERE.
 
-Welcome to APR-pipelines (`pipapr`), a package based on Adaptive Particle Representation (APR) to accelerate
+Welcome to `pAPRica` (Pipelines for Adaptive Particle Representation Image Compositing and Analysis), a package based on Adaptive Particle Representation (APR) to accelerate
 image processing and research involving imaging and microscopy.
 
 <center>
 <img src=./doc/images/pipeline_pv.png title="pipeline image" width="650"/>
 </center>
 
-`pipapr` was built on:
+`pAPRica` was built on:
 
 - [LibAPR](https://github.com/AdaptiveParticles/LibAPR): the C++ backbone library
 - [pyapr](https://github.com/AdaptiveParticles/pyapr/): a python wrapper for LibAPR including unique features
 
 For more information on usage, examples and notebooks, check our documentation.
 
-Briefly, `pipapr` allows to accelerate image processing for volumetric data-sets while lowering the hardware requirements. It
+Briefly, `pAPRica` allows to accelerate image processing for volumetric data-sets while lowering the hardware requirements. It
 is made of several independent modules that are tailored to convert, stitch, segment, map to an atlas and visualize
-data. `pipapr` can work as a postprocessing tool and is also compatible with real time usage during acquisitions, 
+data. `pAPRica` can work as a postprocessing tool and is also compatible with real time usage during acquisitions, 
 enabling minimal lead time between imaging and analysis.
 
 # Requirements
 
-The pipeline is only available for Linux at the moment. There are no limitations to port it to Windows and Mac and you
-are welcome to contact us. The pipeline should run on any computer, it's best if the RAM is 3 times the size of a 
+`pAPRica` is only available for Linux at the moment. There are no limitations to port it to Windows and Mac and you
+are welcome to contact us. It should run on any computer, it's best if the RAM is 3 times the size of a 
 single tile.
 
 # How to install

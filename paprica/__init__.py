@@ -1,7 +1,7 @@
 """
-Initialization module for pipapr (PIPeline for Adaptive Particles Representation).
+Initialization module for pAPRica (Pipelines for Adaptive Particle Representation Image Compositing and Analysis).
 
-**pipapr** is composed of submodules that aims at tackling different tasks such as *stiching*, *segmenting* or
+**pAPRica** is composed of submodules that aims at tackling different tasks such as *stiching*, *segmenting* or
 *viewing* your data.
 
 More information about APR can be found in the original publication (https://www.nature.com/articles/s41467-018-07390-9).

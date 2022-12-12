@@ -7,7 +7,7 @@ By using this code you agree to the terms of the software license agreement.
 """
 
 
-import pipapr
+import paprica
 import numpy as np
 import os
 
@@ -17,7 +17,7 @@ def test_main():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr')
 
     # Parse data
-    tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size=512, ftype='apr')
     tiles.check_files_integrity()
     tiles.compute_average_CR()
 

@@ -4,7 +4,7 @@ LONG_DESCR = open('readme.md').read()
 LICENSE = open('license.txt').read()
 
 setup(
-    name='pipapr',
+    name='paprica',
     version='0.0.1',
     setup_requires='setuptools',
     packages=find_packages(),

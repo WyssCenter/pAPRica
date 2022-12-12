@@ -7,26 +7,26 @@ By using this code you agree to the terms of the software license agreement.
 
 from time import time
 
-import pipapr
+import paprica
 import os
 import numpy as np
 import pyapr
 
 
 def compute_features(apr, parts):
-    gauss = pipapr.segmenter.gaussian_blur(apr, parts, sigma=1.5, size=11)
+    gauss = paprica.segmenter.gaussian_blur(apr, parts, sigma=1.5, size=11)
     print('Gaussian computed.')
 
     # Compute gradient magnitude (central finite differences)
-    grad = pipapr.segmenter.compute_gradmag(apr, gauss)
+    grad = paprica.segmenter.compute_gradmag(apr, gauss)
     print('Gradient magnitude computed.')
     # Compute lvl for each particle
-    lvl = pipapr.segmenter.particle_levels(apr)
+    lvl = paprica.segmenter.particle_levels(apr)
     print('Particle level computed.')
     # Compute difference of Gaussian
-    dog = pipapr.segmenter.gaussian_blur(apr, parts, sigma=3, size=22) - gauss
+    dog = paprica.segmenter.gaussian_blur(apr, parts, sigma=3, size=22) - gauss
     print('DOG computed.')
-    lapl_of_gaussian = pipapr.segmenter.compute_laplacian(apr, gauss)
+    lapl_of_gaussian = paprica.segmenter.compute_laplacian(apr, gauss)
     print('Laplacian of Gaussian computed.')
 
     # Aggregate filters in a feature array
@@ -68,11 +68,11 @@ def main():
 
     # Parse data
     t_ini = time()
-    tiles = pipapr.parser.tileParser(path, frame_size=512, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size=512, ftype='apr')
     t = time()
 
     # Stitch
-    stitcher = pipapr.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
+    stitcher = paprica.stitcher.tileStitcher(tiles, overlap_h=25, overlap_v=25)
 
     t = time()
     stitcher.compute_registration()
@@ -87,18 +87,18 @@ def main():
     stitcher.save_database(os.path.join(path, 'registration_results.csv'))
 
     # Segment and extract objects across the whole volume
-    trainer = pipapr.tileTrainer(tiles[0],
-                                 func_to_compute_features=compute_features,
-                                 func_to_get_cc=get_cc_from_features)
+    trainer = paprica.tileTrainer(tiles[0],
+                                  func_to_compute_features=compute_features,
+                                  func_to_get_cc=get_cc_from_features)
     trainer.manually_annotate()
     trainer.train_classifier(n_estimators=100)
-    segmenter = pipapr.segmenter.multitileSegmenter(tiles, stitcher.database, clf=trainer.clf,
-                                                    func_to_compute_features=compute_features,
-                                                    func_to_get_cc=get_cc_from_features)
+    segmenter = paprica.segmenter.multitileSegmenter(tiles, stitcher.database, clf=trainer.clf,
+                                                     func_to_compute_features=compute_features,
+                                                     func_to_get_cc=get_cc_from_features)
     segmenter.compute_multitile_segmentation(save_cc=True)
 
     # Display result
-    viewer = pipapr.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=segmenter.cells)
+    viewer = paprica.viewer.tileViewer(tiles, stitcher.database, segmentation=True, cells=segmenter.cells)
     viewer.display_all_tiles(pyramidal=True, downsample=1, contrast_limits=[0, 3000])
 
 

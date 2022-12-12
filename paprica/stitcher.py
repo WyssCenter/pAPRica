@@ -3,15 +3,15 @@ Submodule containing classes and functions relative to **stitching**.
 
 With this submodule the user can stitch a previously parsed dataset, typically the autofluorescence channel:
 
->>> import pipapr
->>> tiles_autofluo = pipapr.parser.tileParser(path_to_autofluo, frame_size=1024, overlap=25)
->>> stitcher = pipapr.stitcher.tileStitcher(tiles_autofluo)
+>>> import paprica
+>>> tiles_autofluo = paprica.parser.tileParser(path_to_autofluo, frame_size=1024, overlap=25)
+>>> stitcher = paprica.stitcher.tileStitcher(tiles_autofluo)
 >>> stitcher.compute_registration_fast()
 
 Others channel can then easily stitched using the previous one as reference:
 
->>> tiles_signal = pipapr.parser.tileParser(path_to_data, frame_size=1024, overlap=25)
->>> stitcher_channel = pipapr.stitcher.channelStitcher(stitcher, tiles_autofluo, tiles_signal)
+>>> tiles_signal = paprica.parser.tileParser(path_to_data, frame_size=1024, overlap=25)
+>>> stitcher_channel = paprica.stitcher.channelStitcher(stitcher, tiles_autofluo, tiles_signal)
 >>> stitcher_channel.compute_rigid_registration()
 
 Doing that each tile in the second data set will be registered to the corresponding autofluorescence tile and

@@ -20,7 +20,7 @@ from skimage.filters import gaussian
 from skimage.io import imread, imsave
 from tqdm import tqdm
 
-import pipapr
+import paprica
 
 
 class tileAtlaser():
@@ -73,7 +73,7 @@ class tileAtlaser():
 
     @classmethod
     def from_merger(cls,
-                   merger: pipapr.stitcher.tileMerger,
+                   merger: paprica.stitcher.tileMerger,
                    original_pixel_size: (np.array, list)):
         """
         Constructor from a tileMerger object. Typically to perform the registration to the Atlas on

@@ -1,7 +1,3 @@
-# pipapr: pipeline with Adaptive Particle Representation (APR)
-
-PUT CATCHY GIF HERE.
-
 Welcome to `pAPRica` (Pipelines for Adaptive Particle Representation Image Compositing and Analysis), a package based on Adaptive Particle Representation (APR) to accelerate
 image processing and research involving imaging and microscopy.
 

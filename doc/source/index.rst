@@ -15,6 +15,7 @@ visualization, stitching, segmentation, and atlasing.
    :caption: Documentation
 
    installation
+   documentation
    tutorials
 
 .. toctree::

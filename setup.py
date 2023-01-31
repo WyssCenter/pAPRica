@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 LONG_DESCR = open('readme.md').read()
-LICENSE = open('license.txt').read()
+LICENSE = open('license.txt', encoding='utf8').read()
 
 setup(
     name='paprica',

@@ -1,7 +1,7 @@
-pipapr.batcher
-==============
+paprica.batcher
+===============
 
-.. automodule:: pipapr.batcher
+.. automodule:: paprica.batcher
    :members:
    :undoc-members:
    :show-inheritance:

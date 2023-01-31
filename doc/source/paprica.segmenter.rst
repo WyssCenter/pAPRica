@@ -1,7 +1,7 @@
-pipapr.segmenter
-================
+paprica.segmenter
+=================
 
-.. automodule:: pipapr.segmenter
+.. automodule:: paprica.segmenter
    :members:
    :undoc-members:
    :show-inheritance:

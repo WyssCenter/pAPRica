@@ -1,7 +1,7 @@
-pipapr.viewer
-=============
+paprica.viewer
+==============
 
-.. automodule:: pipapr.viewer
+.. automodule:: paprica.viewer
    :members:
    :undoc-members:
    :show-inheritance:

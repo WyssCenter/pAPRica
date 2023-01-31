@@ -1,7 +1,7 @@
-pipapr.atlaser
-==============
+paprica.atlaser
+===============
 
-.. automodule:: pipapr.atlaser
+.. automodule:: paprica.atlaser
    :members:
    :undoc-members:
    :show-inheritance:

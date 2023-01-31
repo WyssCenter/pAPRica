@@ -1,7 +1,7 @@
-pipapr.runner
-=============
+paprica.runner
+==============
 
-.. automodule:: pipapr.runner
+.. automodule:: paprica.runner
    :members:
    :undoc-members:
    :show-inheritance:

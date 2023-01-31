@@ -1,7 +1,7 @@
-pipapr.converter
-================
+paprica.converter
+=================
 
-.. automodule:: pipapr.converter
+.. automodule:: paprica.converter
    :members:
    :undoc-members:
    :show-inheritance:

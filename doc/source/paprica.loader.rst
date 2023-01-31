@@ -1,7 +1,7 @@
-pipapr.loader
-=============
+paprica.loader
+==============
 
-.. automodule:: pipapr.loader
+.. automodule:: paprica.loader
    :members:
    :undoc-members:
    :show-inheritance:

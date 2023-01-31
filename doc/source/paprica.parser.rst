@@ -1,7 +1,7 @@
-pipapr.parser
-=============
+paprica.parser
+==============
 
-.. automodule:: pipapr.parser
+.. automodule:: paprica.parser
    :members:
    :undoc-members:
    :show-inheritance:

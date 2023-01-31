@@ -1,7 +1,7 @@
-pipapr.atlaser
+paprica.parser
 ==============
 
-.. automodule:: pipapr.atlaser
+.. automodule:: paprica.parser
    :members:
    :undoc-members:
    :show-inheritance:

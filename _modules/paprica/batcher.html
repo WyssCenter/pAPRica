@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paprica.batcher &mdash; paprica 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> paprica
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">How to install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Generating documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.atlaser.html">paprica.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.batcher.html">paprica.batcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.converter.html">paprica.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.loader.html">paprica.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.parser.html">paprica.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.segmenter.html">paprica.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.stitcher.html">paprica.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.viewer.html">paprica.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.runner.html">paprica.runner</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">paprica</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">paprica.batcher</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for paprica.batcher</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Submodule containing classes and functions relative to **batch processing**.</span>
+
+<span class="sd">This submodule introduce the notion of multichannel acquisition which can be either the folder structure resulting</span>
+<span class="sd">from a given microscope acquisition or a converted acquisition (usually living in the original acquisition folder).</span>
+
+<span class="sd">The default (converted) folder is saved in the first acquisition folder with the following structure:</span>
+
+<span class="sd">        APR/ch0/0_0.apr</span>
+<span class="sd">                0_1.apr</span>
+<span class="sd">                ...</span>
+<span class="sd">                n_m.apr</span>
+<span class="sd">            ch1/0_0.apr</span>
+<span class="sd">                0_1.apr</span>
+<span class="sd">                ...</span>
+<span class="sd">                n_m.apr</span>
+<span class="sd">            ...</span>
+<span class="sd">            chx/0_0.apr</span>
+<span class="sd">                0_1.apr</span>
+<span class="sd">                ...</span>
+<span class="sd">                n_m.apr</span>
+
+<span class="sd">By using this code you agree to the terms of the software license agreement.</span>
+
+<span class="sd">© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">import</span> <span class="nn">pyapr</span>
+
+<span class="kn">import</span> <span class="nn">paprica</span>
+
+
+<div class="viewcode-block" id="multiChannelAcquisition"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition">[docs]</a><span class="k">class</span> <span class="nc">multiChannelAcquisition</span><span class="p">():</span>
+
+<div class="viewcode-block" id="multiChannelAcquisition.__init__"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class to store a multichannel acquisition.</span>
+
+<span class="sd">        3 cases can occur:</span>
+<span class="sd">          - Only APR data is available (e.g. raw data was deleted) then tiles_list is None and conversion can&#39;t be done</span>
+<span class="sd">            anymore.</span>
+<span class="sd">          - APR data is not available (e.g. conversion was never done) then tiles_apr is None until conversion is done</span>
+<span class="sd">            and stitching and reconstructions are not possible.</span>
+<span class="sd">          - Both APR and raw data are available.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path: str</span>
+<span class="sd">            path to folder containing the acquisition.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;ch0&#39;</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acq_type</span> <span class="o">=</span> <span class="s1">&#39;apr&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path_apr</span> <span class="o">=</span> <span class="n">path</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_apr_available</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;APR&#39;</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">acq_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_acq_type</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_apr_available</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">APR available.&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">path_apr</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;APR&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tiles_list</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">overlap_v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">overlap_h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_overlap</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="multiChannelAcquisition.convert_all_channels"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition.convert_all_channels">[docs]</a>    <span class="k">def</span> <span class="nf">convert_all_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                             <span class="n">Ip_method</span><span class="o">=</span><span class="s1">&#39;black_corner&#39;</span><span class="p">,</span>
+                             <span class="n">Ip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">force_convert</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">rel_error</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                             <span class="n">gradient_smoothing</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                             <span class="n">dx</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">dy</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">dz</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                             <span class="n">lazy_loading</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                             <span class="n">tree_mode</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to convert all the channel to APR. The intensity threshold `Ip_th` is automatically determined</span>
+<span class="sd">        using the provided method or passed as a list.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        Ip_method: str</span>
+<span class="sd">            Method to compute Ip_th automatically</span>
+<span class="sd">        Ip: list</span>
+<span class="sd">            List of Ip_th to be used for the conversion</span>
+<span class="sd">        rel_error: float in [0, 1[</span>
+<span class="sd">            relative error bound</span>
+<span class="sd">        gradient_smoothing: (float)</span>
+<span class="sd">            B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of smoothing)</span>
+<span class="sd">        dx: float</span>
+<span class="sd">            PSF size in x, used to compute the gradient</span>
+<span class="sd">        dy: float</span>
+<span class="sd">            PSF size in y, used to compute the gradient</span>
+<span class="sd">        dz: float</span>
+<span class="sd">            PSF size in z, used to compute the gradient</span>
+<span class="sd">        lazy_loading: bool</span>
+<span class="sd">            if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of</span>
+<span class="sd">            the APR. It will require about 1/7 more storage.</span>
+<span class="sd">        tree_mode: str (&#39;mean&#39; or &#39;max&#39;)</span>
+<span class="sd">            controls how downsampled particles are computed. Either the mean or the max is taken.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tiles</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span><span class="p">):</span>
+            <span class="c1"># Safely create folder to save apr data</span>
+            <span class="n">folder_apr</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;APR&#39;</span><span class="p">,</span> <span class="s1">&#39;ch</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tiles</span><span class="o">.</span><span class="n">channel</span><span class="p">))</span>
+            <span class="n">Path</span><span class="p">(</span><span class="n">folder_apr</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">force_convert</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_apr</span><span class="p">,</span>
+                                                                    <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.apr&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">))):</span>
+                        <span class="c1"># Either fetch Ip_th or automatically compute it</span>
+                        <span class="k">if</span> <span class="n">Ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="n">Ip_th</span> <span class="o">=</span> <span class="n">Ip</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">Ip_th</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_Ip_th</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">Ip_method</span><span class="p">)</span>
+
+                        <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+
+                        <span class="c1"># Set parameters</span>
+                        <span class="n">par</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">APRParameters</span><span class="p">()</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">Ip_th</span> <span class="o">=</span> <span class="n">Ip_th</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">rel_error</span> <span class="o">=</span> <span class="n">rel_error</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">dx</span> <span class="o">=</span> <span class="n">dx</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">dy</span> <span class="o">=</span> <span class="n">dy</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">dz</span> <span class="o">=</span> <span class="n">dz</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">gradient_smoothing</span> <span class="o">=</span> <span class="n">gradient_smoothing</span>
+                        <span class="n">par</span><span class="o">.</span><span class="n">auto_parameters</span> <span class="o">=</span> <span class="kc">True</span>
+
+                        <span class="c1"># Convert tile to APR and save</span>
+                        <span class="n">apr</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">APR</span><span class="p">()</span>
+                        <span class="n">parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">()</span>
+                        <span class="n">converter</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">FloatConverter</span><span class="p">()</span>
+                        <span class="n">converter</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">par</span><span class="p">)</span>
+                        <span class="n">converter</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="kc">True</span>
+                        <span class="n">converter</span><span class="o">.</span><span class="n">get_apr</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+                        <span class="n">parts</span><span class="o">.</span><span class="n">sample_image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">lazy_loading</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">tree_mode</span> <span class="o">==</span> <span class="s1">&#39;mean&#39;</span><span class="p">:</span>
+                                <span class="n">tree_parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">fill_tree_mean</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+                            <span class="k">elif</span> <span class="n">tree_mode</span> <span class="o">==</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span>
+                                <span class="n">tree_parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">fill_tree_max</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">tree_parts</span> <span class="o">=</span> <span class="kc">None</span>
+
+                        <span class="c1"># Save converted data</span>
+                        <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.apr&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+                        <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">folder_apr</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">tree_parts</span><span class="o">=</span><span class="n">tree_parts</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Tile </span><span class="si">{}</span><span class="s1">_</span><span class="si">{}</span><span class="s1">.apr already exists, it will not be converted. If you want to force the &#39;</span>
+                          <span class="s1">&#39;conversion please use &#39;&#39;force_convert&#39;&#39; flag&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_apr_available</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_apr</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;APR&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span> <span class="o">=</span> <span class="p">[</span><span class="n">paprica</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>
+                               <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_apr</span><span class="p">,</span> <span class="s1">&#39;ch*/&#39;</span><span class="p">)))]</span></div>
+
+<div class="viewcode-block" id="multiChannelAcquisition.stitch_acq"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition.stitch_acq">[docs]</a>    <span class="k">def</span> <span class="nf">stitch_acq</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                   <span class="n">channel</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Stitch the acquisition using the given channel.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        channel: int</span>
+<span class="sd">            Channel to compute the stitching on.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: APR data not available, convert data before stitching.&#39;</span><span class="p">)</span>
+
+        <span class="n">tiles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span>
+        <span class="n">stitcher</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">tileStitcher</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">overlap_h</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">overlap_h</span><span class="p">,</span> <span class="n">overlap_v</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">overlap_v</span><span class="p">)</span>
+
+        <span class="n">tile</span> <span class="o">=</span> <span class="n">tiles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">tile</span><span class="o">.</span><span class="n">lazy_load_tile</span><span class="p">(</span><span class="n">level_delta</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">lazy_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">stitcher</span><span class="o">.</span><span class="n">set_z_range</span><span class="p">(</span><span class="n">z_begin</span><span class="o">=</span><span class="n">z</span><span class="o">-</span><span class="mi">50</span><span class="p">,</span> <span class="n">z_end</span><span class="o">=</span><span class="n">z</span><span class="o">+</span><span class="mi">50</span><span class="p">)</span>
+        <span class="n">stitcher</span><span class="o">.</span><span class="n">set_overlap_margin</span><span class="p">(</span><span class="n">margin</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+        <span class="n">stitcher</span><span class="o">.</span><span class="n">compute_registration</span><span class="p">()</span>
+        <span class="n">stitcher</span><span class="o">.</span><span class="n">save_database</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;registration_results.csv&#39;</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">stitcher</span><span class="o">.</span><span class="n">database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stitcher</span> <span class="o">=</span> <span class="n">stitcher</span></div>
+
+
+<div class="viewcode-block" id="multiChannelAcquisition.reconstruct_3D_all_channels"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition.reconstruct_3D_all_channels">[docs]</a>    <span class="k">def</span> <span class="nf">reconstruct_3D_all_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                                    <span class="n">downsample</span><span class="o">=</span><span class="mi">16</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Reconstruct all channels in 3D at a lower resolution. Reconstructions are saved in the same folder as the</span>
+<span class="sd">        APR data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsample factor to use for the reconstruction.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: APR data not available, convert data before reconstruction.&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">tiles</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span><span class="p">:</span>
+            <span class="n">merger</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">stitcher</span><span class="o">.</span><span class="n">tileMerger</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
+            <span class="n">merger</span><span class="o">.</span><span class="n">set_downsample</span><span class="p">(</span><span class="n">downsample</span><span class="p">)</span>
+            <span class="n">merger</span><span class="o">.</span><span class="n">merge_max</span><span class="p">()</span>
+            <span class="n">imsave</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tiles</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;3D_reconstruction.tif&#39;</span><span class="p">),</span> <span class="n">merger</span><span class="o">.</span><span class="n">merged_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="multiChannelAcquisition._get_tiles_list"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition._get_tiles_list">[docs]</a>    <span class="k">def</span> <span class="nf">_get_tiles_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to get the list of tiles (one tileParser object for each channel) for raw, APR or both.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tiles_list: list</span>
+<span class="sd">            list containing the `tileLoader` objects for each channel for the raw data</span>
+<span class="sd">        tiles_list: list</span>
+<span class="sd">            list containing the `tileLoader` objects for each channel for the APR data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">acq_type</span> <span class="o">==</span> <span class="s1">&#39;apr&#39;</span><span class="p">:</span>
+            <span class="n">tiles_list_apr</span> <span class="o">=</span> <span class="p">[</span><span class="n">paprica</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>
+                              <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_apr</span><span class="p">,</span> <span class="s1">&#39;ch*/&#39;</span><span class="p">)))]</span>
+            <span class="n">tiles_list</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_apr_available</span><span class="p">:</span>
+            <span class="n">tiles_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">paprica</span><span class="o">.</span><span class="n">autoParser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span>
+                          <span class="nb">range</span><span class="p">(</span><span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">get_number_of_channels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))]</span>
+            <span class="n">tiles_list_apr</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tiles_list_apr</span> <span class="o">=</span> <span class="p">[</span><span class="n">paprica</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span>
+                              <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path_apr</span><span class="p">,</span> <span class="s1">&#39;ch*/&#39;</span><span class="p">)))]</span>
+            <span class="n">tiles_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">paprica</span><span class="o">.</span><span class="n">autoParser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span>
+                          <span class="nb">range</span><span class="p">(</span><span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">get_number_of_channels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))]</span>
+
+        <span class="k">return</span> <span class="n">tiles_list</span><span class="p">,</span> <span class="n">tiles_list_apr</span></div>
+
+<div class="viewcode-block" id="multiChannelAcquisition._get_acq_type"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition._get_acq_type">[docs]</a>    <span class="k">def</span> <span class="nf">_get_acq_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the acquisition type (type of microscope used to acquire the data). If acquisition type is APR it means</span>
+<span class="sd">        that the raw data is not available.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tiles.type: str</span>
+<span class="sd">            microscope used to acquire the data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">tiles</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">autoParser</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tiles</span><span class="o">.</span><span class="n">type</span></div>
+
+<div class="viewcode-block" id="multiChannelAcquisition._get_Ip_th"><a class="viewcode-back" href="../../paprica.batcher.html#paprica.batcher.multiChannelAcquisition._get_Ip_th">[docs]</a>    <span class="k">def</span> <span class="nf">_get_Ip_th</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">method</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to compute the intensity threshold value (Ip_th) automatically.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tiles: paprica.parser.tileParser</span>
+<span class="sd">            tileParser object to compute Ip_th for.</span>
+<span class="sd">        method: str</span>
+<span class="sd">            method to compute Ip_th automatically:</span>
+<span class="sd">            - &#39;black_corner&#39;: compute Ip_th as the mean of the first tile in the top left corner (50 x 50 pixels). This</span>
+<span class="sd">                    methods works if there is no signal in the top left part of the acquisition (which is usually the</span>
+<span class="sd">                    case).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        The intensity threshold computed using the given method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;black_corner&#39;</span><span class="p">:</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="n">tiles</span><span class="o">.</span><span class="n">path_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;*.tif&#39;</span><span class="p">))[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">u</span><span class="p">[:</span><span class="mi">50</span><span class="p">,</span> <span class="p">:</span><span class="mi">50</span><span class="p">]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: unknown method for computing Ip_th&#39;</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_apr_available</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list_apr</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles_list</span><span class="p">[</span><span class="n">item</span><span class="p">]</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

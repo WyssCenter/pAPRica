@@ -1,7 +1,7 @@
-pipapr.converter
+paprica.stitcher
 ================
 
-.. automodule:: pipapr.converter
+.. automodule:: paprica.stitcher
    :members:
    :undoc-members:
    :show-inheritance:

@@ -1,6 +1,9 @@
-How to install
-==============
+Generating documentation
+========================
 
-Clone the repository and then run ``python setup.py install``
+The documentation is built using ``sphinx``. It can be generated locally by executing the following steps from the ``doc`` directory:
+::
+    pip install sphinx sphinx-rtd-theme myst_nb
+    make html
 
-.. note:: Running this command will install all the required dependencies automatically.
+.. note:: If using Windows, change the ``make html`` command to ``make.bat html``.

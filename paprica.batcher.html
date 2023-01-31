@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paprica.batcher &mdash; paprica 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="paprica.converter" href="paprica.converter.html" />
+    <link rel="prev" title="paprica.atlaser" href="paprica.atlaser.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> paprica
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">How to install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Generating documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="paprica.atlaser.html">paprica.atlaser</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">paprica.batcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.converter.html">paprica.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.loader.html">paprica.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.parser.html">paprica.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.segmenter.html">paprica.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.stitcher.html">paprica.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.viewer.html">paprica.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.runner.html">paprica.runner</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">paprica</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="paprica.html">&lt;no title&gt;</a></li>
+      <li class="breadcrumb-item active">paprica.batcher</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/paprica.batcher.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-paprica.batcher">
+<span id="paprica-batcher"></span><h1>paprica.batcher<a class="headerlink" href="#module-paprica.batcher" title="Permalink to this headline"></a></h1>
+<p>Submodule containing classes and functions relative to <strong>batch processing</strong>.</p>
+<p>This submodule introduce the notion of multichannel acquisition which can be either the folder structure resulting
+from a given microscope acquisition or a converted acquisition (usually living in the original acquisition folder).</p>
+<p>The default (converted) folder is saved in the first acquisition folder with the following structure:</p>
+<blockquote>
+<div><dl>
+<dt>APR/ch0/0_0.apr</dt><dd><blockquote>
+<div><p>0_1.apr
+…
+n_m.apr</p>
+</div></blockquote>
+<dl class="simple">
+<dt>ch1/0_0.apr</dt><dd><p>0_1.apr
+…
+n_m.apr</p>
+</dd>
+</dl>
+<p>…
+chx/0_0.apr</p>
+<blockquote>
+<div><p>0_1.apr
+…
+n_m.apr</p>
+</div></blockquote>
+</dd>
+</dl>
+</div></blockquote>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">paprica.batcher.</span></span><span class="sig-name descname"><span class="pre">multiChannelAcquisition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Class to store a multichannel acquisition.</p>
+<dl class="simple">
+<dt>3 cases can occur:</dt><dd><ul class="simple">
+<li><p>Only APR data is available (e.g. raw data was deleted) then tiles_list is None and conversion can’t be done
+anymore.</p></li>
+<li><p>APR data is not available (e.g. conversion was never done) then tiles_apr is None until conversion is done
+and stitching and reconstructions are not possible.</p></li>
+<li><p>Both APR and raw data are available.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – path to folder containing the acquisition.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition._get_Ip_th">
+<span class="sig-name descname"><span class="pre">_get_Ip_th</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tiles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition._get_Ip_th"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition._get_Ip_th" title="Permalink to this definition"></a></dt>
+<dd><p>Function to compute the intensity threshold value (Ip_th) automatically.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tiles</strong> (<a class="reference internal" href="paprica.parser.html#paprica.parser.tileParser" title="paprica.parser.tileParser"><em>paprica.parser.tileParser</em></a>) – tileParser object to compute Ip_th for.</p></li>
+<li><p><strong>method</strong> (<em>str</em>) – <p>method to compute Ip_th automatically:
+- ‘black_corner’: compute Ip_th as the mean of the first tile in the top left corner (50 x 50 pixels). This</p>
+<blockquote>
+<div><p>methods works if there is no signal in the top left part of the acquisition (which is usually the
+case).</p>
+</div></blockquote>
+</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>The intensity threshold computed using the given method.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition._get_acq_type">
+<span class="sig-name descname"><span class="pre">_get_acq_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition._get_acq_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition._get_acq_type" title="Permalink to this definition"></a></dt>
+<dd><p>Get the acquisition type (type of microscope used to acquire the data). If acquisition type is APR it means
+that the raw data is not available.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>tiles.type</strong> – microscope used to acquire the data</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition._get_tiles_list">
+<span class="sig-name descname"><span class="pre">_get_tiles_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition._get_tiles_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition._get_tiles_list" title="Permalink to this definition"></a></dt>
+<dd><p>Function to get the list of tiles (one tileParser object for each channel) for raw, APR or both.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>tiles_list</strong> (<em>list</em>) – list containing the <cite>tileLoader</cite> objects for each channel for the raw data</p></li>
+<li><p><strong>tiles_list</strong> (<em>list</em>) – list containing the <cite>tileLoader</cite> objects for each channel for the APR data</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition.convert_all_channels">
+<span class="sig-name descname"><span class="pre">convert_all_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">Ip_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black_corner'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_convert</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gradient_smoothing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dz</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lazy_loading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tree_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'mean'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition.convert_all_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition.convert_all_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Function to convert all the channel to APR. The intensity threshold <cite>Ip_th</cite> is automatically determined
+using the provided method or passed as a list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>Ip_method</strong> (<em>str</em>) – Method to compute Ip_th automatically</p></li>
+<li><p><strong>Ip</strong> (<em>list</em>) – List of Ip_th to be used for the conversion</p></li>
+<li><p><strong>rel_error</strong> (<em>float in</em><em> [</em><em>0</em><em>, </em><em>1</em><em>[</em>) – relative error bound</p></li>
+<li><p><strong>gradient_smoothing</strong> (<em>(</em><em>float</em><em>)</em>) – B-Spline smoothing parameter (typically between 0 (no smoothing) and 10 (LOTS of smoothing)</p></li>
+<li><p><strong>dx</strong> (<em>float</em>) – PSF size in x, used to compute the gradient</p></li>
+<li><p><strong>dy</strong> (<em>float</em>) – PSF size in y, used to compute the gradient</p></li>
+<li><p><strong>dz</strong> (<em>float</em>) – PSF size in z, used to compute the gradient</p></li>
+<li><p><strong>lazy_loading</strong> (<em>bool</em>) – if lazy_loading is true then the converter save mean tree particle which are necessary for lazy loading of
+the APR. It will require about 1/7 more storage.</p></li>
+<li><p><strong>tree_mode</strong> (<em>str</em><em> (</em><em>'mean'</em><em> or </em><em>'max'</em><em>)</em>) – controls how downsampled particles are computed. Either the mean or the max is taken.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition.reconstruct_3D_all_channels">
+<span class="sig-name descname"><span class="pre">reconstruct_3D_all_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">downsample</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition.reconstruct_3D_all_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition.reconstruct_3D_all_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Reconstruct all channels in 3D at a lower resolution. Reconstructions are saved in the same folder as the
+APR data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>downsample</strong> (<em>int</em>) – downsample factor to use for the reconstruction.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.batcher.multiChannelAcquisition.stitch_acq">
+<span class="sig-name descname"><span class="pre">stitch_acq</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/batcher.html#multiChannelAcquisition.stitch_acq"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.batcher.multiChannelAcquisition.stitch_acq" title="Permalink to this definition"></a></dt>
+<dd><p>Stitch the acquisition using the given channel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>channel</strong> (<em>int</em>) – Channel to compute the stitching on.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="paprica.atlaser.html" class="btn btn-neutral float-left" title="paprica.atlaser" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="paprica.converter.html" class="btn btn-neutral float-right" title="paprica.converter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

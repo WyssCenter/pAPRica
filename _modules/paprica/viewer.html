@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paprica.viewer &mdash; paprica 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> paprica
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">How to install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../documentation.html">Generating documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.atlaser.html">paprica.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.batcher.html">paprica.batcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.converter.html">paprica.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.loader.html">paprica.loader</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.parser.html">paprica.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.segmenter.html">paprica.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.stitcher.html">paprica.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.viewer.html">paprica.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../paprica.runner.html">paprica.runner</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">paprica</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">paprica.viewer</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for paprica.viewer</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module containing classes and functions relative to Viewing.</span>
+
+
+<span class="sd">By using this code you agree to the terms of the software license agreement.</span>
+
+<span class="sd">© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">napari</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pyapr</span>
+<span class="kn">from</span> <span class="nn">matplotlib.colors</span> <span class="kn">import</span> <span class="n">LogNorm</span>
+<span class="kn">from</span> <span class="nn">napari.layers</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">Labels</span><span class="p">,</span> <span class="n">Points</span>
+<span class="kn">from</span> <span class="nn">skimage.color</span> <span class="kn">import</span> <span class="n">hsv2rgb</span>
+<span class="kn">from</span> <span class="nn">skimage.exposure</span> <span class="kn">import</span> <span class="n">rescale_intensity</span>
+<span class="kn">from</span> <span class="nn">skimage.filters</span> <span class="kn">import</span> <span class="n">gaussian</span>
+<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span>
+<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="kn">import</span> <span class="n">resize</span>
+
+<span class="kn">import</span> <span class="nn">paprica</span>
+
+
+<div class="viewcode-block" id="display_apr_from_path"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.display_apr_from_path">[docs]</a><span class="k">def</span> <span class="nf">display_apr_from_path</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display an APR using Napari from a filepath.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path: string</span>
+<span class="sd">        path to APR to be displayed</span>
+<span class="sd">    kwargs: dict</span>
+<span class="sd">        optional parameters for Napari</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">apr</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">APR</span><span class="p">()</span>
+    <span class="n">parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">()</span>
+    <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+    <span class="n">layer</span> <span class="o">=</span> <span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+    <span class="n">display_layers_pyramidal</span><span class="p">([</span><span class="n">layer</span><span class="p">],</span> <span class="n">level_delta</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="display_apr"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.display_apr">[docs]</a><span class="k">def</span> <span class="nf">display_apr</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display an APR using Napari from previously loaded data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr : pyapr.APR</span>
+<span class="sd">        Input APR data structure</span>
+<span class="sd">    parts : pyapr.FloatParticles, pyapr.ShortParticles</span>
+<span class="sd">        Input particle intensities</span>
+<span class="sd">    kwargs: dict</span>
+<span class="sd">        optional parameters for Napari</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">l</span> <span class="o">=</span> <span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">display_layers_pyramidal</span><span class="p">([</span><span class="n">l</span><span class="p">],</span> <span class="n">level_delta</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="apr_to_napari_Image"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.apr_to_napari_Image">[docs]</a><span class="k">def</span> <span class="nf">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">:</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">APR</span><span class="p">,</span>
+                        <span class="n">parts</span><span class="p">:</span> <span class="p">(</span><span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">,</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">FloatParticles</span><span class="p">),</span>
+                        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                        <span class="n">level_delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a napari &#39;Image&#39; layer from an APR. Pixel values are reconstructed on the fly via the APRSlicer class.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr : pyapr.APR</span>
+<span class="sd">        Input APR data structure</span>
+<span class="sd">    parts : pyapr.FloatParticles or pyapr.ShortParticles</span>
+<span class="sd">        Input particle intensities</span>
+<span class="sd">    mode: str (default: &#39;constant&#39;)</span>
+<span class="sd">        Interpolation mode to reconstruct pixel values. Supported values are</span>
+<span class="sd">            constant:   piecewise constant interpolation</span>
+<span class="sd">            smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.</span>
+<span class="sd">            level:      interpolate the particle levels to the pixels</span>
+<span class="sd">    level_delta: int</span>
+<span class="sd">        Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.</span>
+<span class="sd">        Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.</span>
+<span class="sd">        (default: 0)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : napari.layers.Image</span>
+<span class="sd">        An Image layer of the APR that can be viewed in napari.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;contrast_limits&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">contrast_limits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;contrast_limits&#39;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;contrast_limits&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cmin</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">level_min</span><span class="p">()</span> <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;level&#39;</span> <span class="k">else</span> <span class="n">parts</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+        <span class="n">cmax</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">level_max</span><span class="p">()</span> <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;level&#39;</span> <span class="k">else</span> <span class="n">parts</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+        <span class="n">contrast_limits</span> <span class="o">=</span> <span class="p">[</span><span class="n">cmin</span><span class="p">,</span> <span class="n">cmax</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;tree_mode&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="n">tree_mode</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tree_mode&#39;</span><span class="p">)</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;tree_mode&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tree_mode</span> <span class="o">=</span> <span class="s1">&#39;mean&#39;</span>
+    <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Image</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span> <span class="n">tree_mode</span><span class="o">=</span><span class="n">tree_mode</span><span class="p">),</span>
+                 <span class="n">rgb</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">multiscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">contrast_limits</span><span class="o">=</span><span class="n">contrast_limits</span><span class="p">,</span>
+                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="apr_to_napari_Labels"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.apr_to_napari_Labels">[docs]</a><span class="k">def</span> <span class="nf">apr_to_napari_Labels</span><span class="p">(</span><span class="n">apr</span><span class="p">:</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">APR</span><span class="p">,</span>
+                        <span class="n">parts</span><span class="p">:</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">,</span>
+                        <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                        <span class="n">level_delta</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Construct a napari &#39;Layers&#39; layer from an APR. Pixel values are reconstructed on the fly via the APRSlicer class.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr : pyapr.APR</span>
+<span class="sd">        Input APR data structure</span>
+<span class="sd">    parts : pyapr.FloatParticles or pyapr.ShortParticles</span>
+<span class="sd">        Input particle intensities</span>
+<span class="sd">    mode: str (default: &#39;constant&#39;)</span>
+<span class="sd">        Interpolation mode to reconstruct pixel values. Supported values are</span>
+<span class="sd">            constant:   piecewise constant interpolation</span>
+<span class="sd">            smooth:     smooth interpolation (via level-adaptive separable smoothing). Note: significantly slower than constant.</span>
+<span class="sd">            level:      interpolate the particle levels to the pixels</span>
+<span class="sd">    level_delta: int</span>
+<span class="sd">        Sets the resolution of the reconstruction. The size of the image domain is multiplied by a factor of 2**level_delta.</span>
+<span class="sd">        Thus, a value of 0 corresponds to the original pixel image resolution, -1 halves the resolution and +1 doubles it.</span>
+<span class="sd">        (default: 0)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out : napari.layers.Image</span>
+<span class="sd">        A Labels layer of the APR that can be viewed in napari.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="s1">&#39;contrast_limits&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;contrast_limits&#39;</span><span class="p">]</span>
+    <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Labels</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span> <span class="n">tree_mode</span><span class="o">=</span><span class="s1">&#39;max&#39;</span><span class="p">),</span>
+                  <span class="n">multiscale</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<span class="c1"># Define a callback that will take the value of the slider and the viewer</span>
+<div class="viewcode-block" id="resolution_callback"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.resolution_callback">[docs]</a><span class="k">def</span> <span class="nf">resolution_callback</span><span class="p">(</span><span class="n">viewer</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">viewer</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">):</span>
+            <span class="n">old_value</span> <span class="o">=</span> <span class="o">-</span><span class="n">l</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">patch</span><span class="o">.</span><span class="n">level_delta</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">set_level_delta</span><span class="p">(</span><span class="o">-</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">l</span><span class="o">.</span><span class="n">translate</span> <span class="o">=</span> <span class="n">l</span><span class="o">.</span><span class="n">translate</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="n">value</span><span class="o">-</span><span class="n">old_value</span><span class="p">)</span>
+    <span class="n">viewer</span><span class="o">.</span><span class="n">dims</span><span class="o">.</span><span class="n">set_point</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">viewer</span><span class="o">.</span><span class="n">dims</span><span class="o">.</span><span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">value</span><span class="o">-</span><span class="n">old_value</span><span class="p">))</span>
+    <span class="n">viewer</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">viewer</span><span class="o">.</span><span class="n">_update_layers</span><span class="p">()</span>
+    <span class="n">viewer</span><span class="o">.</span><span class="n">reset_view</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="display_layers"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.display_layers">[docs]</a><span class="k">def</span> <span class="nf">display_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display a list of layers using Napari.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    layers: list[napari.Layer]</span>
+<span class="sd">        list of layers to display</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    viewer: napari.Viewer</span>
+<span class="sd">        napari viewer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+
+    <span class="n">napari</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+
+    <span class="k">return</span> <span class="n">viewer</span></div>
+
+
+<div class="viewcode-block" id="display_layers_pyramidal"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.display_layers_pyramidal">[docs]</a><span class="k">def</span> <span class="nf">display_layers_pyramidal</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="n">level_delta</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display a list of layers using Napari.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    layers: list[napari.Layer]</span>
+<span class="sd">        list of layers to display</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    viewer: napari.Viewer</span>
+<span class="sd">        napari viewer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+        <span class="n">viewer</span><span class="o">.</span><span class="n">add_layer</span><span class="p">(</span><span class="n">layer</span><span class="p">)</span>
+
+    <span class="kn">from</span> <span class="nn">qtpy.QtCore</span> <span class="kn">import</span> <span class="n">Qt</span>
+    <span class="kn">from</span> <span class="nn">qtpy.QtWidgets</span> <span class="kn">import</span> <span class="n">QSlider</span>
+
+
+    <span class="n">my_slider</span> <span class="o">=</span> <span class="n">QSlider</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">Horizontal</span><span class="p">)</span>
+    <span class="n">my_slider</span><span class="o">.</span><span class="n">setMinimum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">layers_apr</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">layers</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">APRSlicer</span><span class="p">)]</span>
+    <span class="n">l_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">([</span><span class="n">l</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">apr</span><span class="o">.</span><span class="n">level_max</span><span class="p">()</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">layers_apr</span><span class="p">])</span>
+    <span class="n">l_min</span> <span class="o">=</span> <span class="mi">5</span> <span class="k">if</span> <span class="n">l_max</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="mi">1</span>
+    <span class="n">my_slider</span><span class="o">.</span><span class="n">setMaximum</span><span class="p">(</span><span class="n">l_max</span><span class="o">-</span><span class="n">l_min</span><span class="p">)</span>
+    <span class="n">my_slider</span><span class="o">.</span><span class="n">setSingleStep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">my_slider</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="o">-</span><span class="n">level_delta</span><span class="p">)</span>
+
+    <span class="c1"># Connect your slider to your callback function</span>
+    <span class="n">my_slider</span><span class="o">.</span><span class="n">valueChanged</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span>
+        <span class="k">lambda</span> <span class="n">value</span><span class="o">=</span><span class="n">my_slider</span><span class="p">:</span> <span class="n">resolution_callback</span><span class="p">(</span><span class="n">viewer</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">viewer</span><span class="o">.</span><span class="n">window</span><span class="o">.</span><span class="n">add_dock_widget</span><span class="p">(</span><span class="n">my_slider</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Downsampling&#39;</span><span class="p">,</span> <span class="n">area</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+
+    <span class="n">napari</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+
+    <span class="k">return</span> <span class="n">viewer</span></div>
+
+
+<div class="viewcode-block" id="display_segmentation"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.display_segmentation">[docs]</a><span class="k">def</span> <span class="nf">display_segmentation</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">pyramidal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function displays an image and its associated segmentation map. It uses napari to lazily generate the pixel</span>
+<span class="sd">    data from APR on the fly.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: pyapr.APR</span>
+<span class="sd">        apr object</span>
+<span class="sd">    parts: pyapr.ParticleData</span>
+<span class="sd">        particle object representing the image</span>
+<span class="sd">    mask: pyapr.ParticleData</span>
+<span class="sd">        particle object representing the segmentation mask/connected component</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;APR&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Labels</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Segmentation&#39;</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">pyramidal</span><span class="p">:</span>
+        <span class="n">display_layers_pyramidal</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="n">level_delta</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">display_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="display_heatmap"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.display_heatmap">[docs]</a><span class="k">def</span> <span class="nf">display_heatmap</span><span class="p">(</span><span class="n">heatmap</span><span class="p">,</span> <span class="n">atlas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Display a heatmap (e.g. cell density) that can be overlaid on intensity data and atlas.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    heatmap: ndarray</span>
+<span class="sd">        array containing the heatmap to be displayed</span>
+<span class="sd">    atlas: ndarray</span>
+<span class="sd">        array containing the atlas which will be automatically scaled to the heatmap</span>
+<span class="sd">    data: ndarray</span>
+<span class="sd">        array containing the data.</span>
+<span class="sd">    log: bool</span>
+<span class="sd">        plot in logscale (only used for 2D).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># If u is 2D then use matplotlib so we have a scale bar</span>
+    <span class="k">if</span> <span class="n">heatmap</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">log</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">heatmap</span><span class="p">,</span> <span class="n">norm</span><span class="o">=</span><span class="n">LogNorm</span><span class="p">(),</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">h</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">heatmap</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;jet&#39;</span><span class="p">)</span>
+        <span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+        <span class="n">cbar</span><span class="o">.</span><span class="n">set_label</span><span class="p">(</span><span class="s1">&#39;Number of detected cells&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">([])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+    <span class="c1"># If u is 3D then use napari but no colorbar for now</span>
+    <span class="k">elif</span> <span class="n">heatmap</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">napari</span><span class="o">.</span><span class="n">gui_qt</span><span class="p">():</span>
+            <span class="n">viewer</span> <span class="o">=</span> <span class="n">napari</span><span class="o">.</span><span class="n">Viewer</span><span class="p">()</span>
+            <span class="n">viewer</span><span class="o">.</span><span class="n">add_image</span><span class="p">(</span><span class="n">heatmap</span><span class="p">,</span> <span class="n">colormap</span><span class="o">=</span><span class="s1">&#39;inferno&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Heatmap&#39;</span><span class="p">,</span> <span class="n">blending</span><span class="o">=</span><span class="s1">&#39;additive&#39;</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">atlas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">viewer</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">atlas</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Atlas regions&#39;</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">viewer</span><span class="o">.</span><span class="n">add_image</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Intensity data&#39;</span><span class="p">,</span> <span class="n">blending</span><span class="o">=</span><span class="s1">&#39;additive&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">heatmap</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="compare_stitching"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.compare_stitching">[docs]</a><span class="k">def</span> <span class="nf">compare_stitching</span><span class="p">(</span><span class="n">stitcher1</span><span class="p">,</span> <span class="n">stitcher2</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">rel_map</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare two stitching at a given position `loc` for a given dimension `dim`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stitcher1: tileStitcher</span>
+<span class="sd">        stitcher object 1</span>
+<span class="sd">    stitcher2: tileStitcher</span>
+<span class="sd">        stitcher object 2</span>
+<span class="sd">    loc: int</span>
+<span class="sd">        position in the given dimension</span>
+<span class="sd">    dim: int</span>
+<span class="sd">        dimension to use for comparison</span>
+<span class="sd">    n_proj: int</span>
+<span class="sd">        number of plane to perform the max-projection</span>
+<span class="sd">    downsample: int</span>
+<span class="sd">        downsampling factor for the reconstruction</span>
+<span class="sd">    color: bool</span>
+<span class="sd">        option to display in color</span>
+<span class="sd">    rel_map: bool</span>
+<span class="sd">        overlay reliability map on the reconstructed data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">u1</span> <span class="o">=</span> <span class="n">stitcher1</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="n">n_proj</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="n">downsample</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">u2</span> <span class="o">=</span> <span class="n">stitcher2</span><span class="o">.</span><span class="n">reconstruct_slice</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="n">n_proj</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="n">downsample</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">data_to_display</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">u1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">u1</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="n">tmp</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">200</span><span class="p">)],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">99.9</span><span class="p">))</span>
+            <span class="n">data_to_display</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">rescale_intensity</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">in_range</span><span class="o">=</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">),</span> <span class="n">out_range</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">data_to_display</span><span class="p">)</span>
+        <span class="n">data_to_display</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">u2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+            <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">u2</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="n">tmp</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mi">200</span><span class="p">)],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">99.9</span><span class="p">))</span>
+            <span class="n">data_to_display</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">rescale_intensity</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">in_range</span><span class="o">=</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">),</span> <span class="n">out_range</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">data_to_display</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">u1</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rel_map</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rel_map</span> <span class="o">=</span> <span class="n">resize</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">stitcher1</span><span class="o">.</span><span class="n">plot_stitching_info</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">u1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">rel_map</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;turbo&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">u2</span><span class="p">),</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rel_map</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rel_map</span> <span class="o">=</span> <span class="n">resize</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">stitcher2</span><span class="o">.</span><span class="n">plot_stitching_info</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">u1</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">rel_map</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;turbo&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="reconstruct_colored_projection"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.reconstruct_colored_projection">[docs]</a><span class="k">def</span> <span class="nf">reconstruct_colored_projection</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_proj</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compare two stitching at a given position `loc` for a given dimension `dim`.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    apr: pyapr.APR</span>
+<span class="sd">        apr tree object</span>
+<span class="sd">    parts: pyapr.ParticleData</span>
+<span class="sd">        apr particles</span>
+<span class="sd">    loc: int</span>
+<span class="sd">        position in the given dimension</span>
+<span class="sd">    dim: int</span>
+<span class="sd">        dimension to use for comparison</span>
+<span class="sd">    n_proj: int</span>
+<span class="sd">        number of plane to perform the max-projection</span>
+<span class="sd">    downsample: int</span>
+<span class="sd">        downsampling factor for the reconstruction</span>
+<span class="sd">    color: bool</span>
+<span class="sd">        option to display in color</span>
+<span class="sd">    rel_map: bool</span>
+<span class="sd">        overlay reliability map on the reconstructed data</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">level_delta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">downsample</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">downsample</span><span class="p">)))</span>
+
+    <span class="k">if</span> <span class="n">loc</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">apr_shape</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">shape</span><span class="p">()</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">apr_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">loc</span> <span class="o">&gt;</span> <span class="n">apr_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Error: loc is too large (</span><span class="si">{}</span><span class="s1">), maximum loc at this downsample is </span><span class="si">{}</span><span class="s1">.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loc</span><span class="p">,</span> <span class="n">apr_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">]))</span>
+
+    <span class="n">locf</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">loc</span><span class="o">+</span><span class="n">n_proj</span><span class="p">,</span> <span class="n">apr_shape</span><span class="p">[</span><span class="n">dim</span><span class="p">])</span>
+    <span class="n">patch</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ReconPatch</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">patch</span><span class="o">.</span><span class="n">z_begin</span> <span class="o">=</span> <span class="n">loc</span>
+        <span class="n">patch</span><span class="o">.</span><span class="n">z_end</span> <span class="o">=</span> <span class="n">locf</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">patch</span><span class="o">.</span><span class="n">y_begin</span> <span class="o">=</span> <span class="n">loc</span>
+        <span class="n">patch</span><span class="o">.</span><span class="n">y_end</span> <span class="o">=</span> <span class="n">locf</span>
+    <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">patch</span><span class="o">.</span><span class="n">x_begin</span> <span class="o">=</span> <span class="n">loc</span>
+        <span class="n">patch</span><span class="o">.</span><span class="n">x_end</span> <span class="o">=</span> <span class="n">locf</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">reconstruction</span><span class="o">.</span><span class="n">reconstruct_constant</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span> <span class="n">patch</span><span class="o">=</span><span class="n">patch</span><span class="p">)</span>
+
+    <span class="n">V</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">V</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.7</span>
+    <span class="k">if</span> <span class="n">threshold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">S</span><span class="p">[</span><span class="n">V</span><span class="o">&lt;</span><span class="n">threshold</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">dim</span><span class="p">)</span>
+    <span class="n">H</span> <span class="o">=</span> <span class="n">rescale_intensity</span><span class="p">(</span><span class="n">gaussian</span><span class="p">(</span><span class="n">H</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span> <span class="n">out_range</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span><span class="o">*</span><span class="mf">0.66</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">V</span> <span class="o">+</span> <span class="mi">200</span><span class="p">)</span>
+    <span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">V</span><span class="p">[</span><span class="n">V</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">100</span><span class="p">)],</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">99.9</span><span class="p">))</span>
+    <span class="n">V</span> <span class="o">=</span> <span class="n">rescale_intensity</span><span class="p">(</span><span class="n">V</span><span class="p">,</span> <span class="n">in_range</span><span class="o">=</span><span class="p">(</span><span class="n">vmin</span><span class="p">,</span> <span class="n">vmax</span><span class="p">),</span> <span class="n">out_range</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">S</span> <span class="o">*</span> <span class="n">V</span>
+    <span class="n">rgb</span> <span class="o">=</span> <span class="n">hsv2rgb</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dstack</span><span class="p">((</span><span class="n">H</span><span class="p">,</span><span class="n">S</span><span class="p">,</span><span class="n">V</span><span class="p">)))</span>
+    <span class="n">rescale_intensity</span><span class="p">(</span><span class="n">rgb</span><span class="p">,</span> <span class="n">out_range</span><span class="o">=</span><span class="s1">&#39;uint8&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">plot</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">rgb</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rgb</span></div>
+
+
+<div class="viewcode-block" id="tileViewer"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer">[docs]</a><span class="k">class</span> <span class="nc">tileViewer</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to display the registration and segmentation using Napari.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="tileViewer.__init__"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">tiles</span><span class="p">,</span>
+                 <span class="n">database</span><span class="p">,</span>
+                 <span class="n">segmentation</span><span class="p">:</span> <span class="nb">bool</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">cells</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">atlaser</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tiles: tileParser</span>
+<span class="sd">            tileParser object containing the dataset to be displayed.</span>
+<span class="sd">        database: (pd.Dataframe, string, tileStitcher)</span>
+<span class="sd">            database containing the tile positions.</span>
+<span class="sd">        segmentation: bool</span>
+<span class="sd">            option to also display the segmentation (connected component) data.</span>
+<span class="sd">        cells: ndarray</span>
+<span class="sd">            cells center to be displayed.</span>
+<span class="sd">        atlaser: tileAtlaser</span>
+<span class="sd">            tileAtlaser object containing the Atlas to be displayed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span> <span class="o">=</span> <span class="n">tiles</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">paprica</span><span class="o">.</span><span class="n">stitcher</span><span class="o">.</span><span class="n">tileStitcher</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span><span class="o">.</span><span class="n">database</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">database</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: unknown type for database.&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nrow</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">nrow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span> <span class="o">=</span> <span class="n">tiles</span><span class="o">.</span><span class="n">ncol</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loaded_ind</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span> <span class="o">=</span> <span class="n">segmentation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="o">=</span> <span class="n">cells</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span> <span class="o">=</span> <span class="n">atlaser</span></div>
+
+<div class="viewcode-block" id="tileViewer.get_layers_all_tiles"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer.get_layers_all_tiles">[docs]</a>    <span class="k">def</span> <span class="nf">get_layers_all_tiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display all parsed tiles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</span>
+<span class="sd">        kwargs: dict</span>
+<span class="sd">            dictionary passed to Napari for custom option</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        layers: list[napari.Layer]</span>
+<span class="sd">            list of layers to be displayed by Napari</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute layers to be displayed by Napari</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Convert downsample to level delta</span>
+        <span class="n">level_delta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">downsample</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">downsample</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">:</span>
+            <span class="c1"># Load tile if not loaded, else use cached tile</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_tile_loaded</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">):</span>
+                <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                    <span class="n">cc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+                <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">loaded_ind</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                    <span class="n">tile</span><span class="o">.</span><span class="n">load_segmentation</span><span class="p">()</span>
+                    <span class="n">cc</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+
+
+            <span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">level_delta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">position</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">/</span><span class="n">downsample</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">position</span><span class="p">]</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span>
+                                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                              <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Tile [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                                              <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                                              <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                                              <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span>
+                                              <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Labels</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span>
+                                                   <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                                   <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Segmentation [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                                                   <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                                                   <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span>
+                                                   <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Points</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Cells center&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="o">/</span><span class="n">downsample</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">atlas</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Atlas&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">z_downsample</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">y_downsample</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">x_downsample</span><span class="o">/</span><span class="n">downsample</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">layers</span></div>
+
+<div class="viewcode-block" id="tileViewer.display_all_tiles"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer.display_all_tiles">[docs]</a>    <span class="k">def</span> <span class="nf">display_all_tiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pyramidal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display all parsed tiles.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pyramidal: bool</span>
+<span class="sd">            option to have a slider that controls the displayed resolution</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</span>
+<span class="sd">        kwargs: dict</span>
+<span class="sd">            dictionary passed to Napari for custom option</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute layers to be displayed by Napari</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Convert downsample to level delta</span>
+        <span class="n">level_delta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">downsample</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">downsample</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">:</span>
+            <span class="c1"># Load tile if not loaded, else use cached tile</span>
+            <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_tile_loaded</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">):</span>
+                <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                    <span class="n">cc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+                <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">loaded_ind</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                    <span class="n">tile</span><span class="o">.</span><span class="n">load_segmentation</span><span class="p">()</span>
+                    <span class="n">cc</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+
+            <span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+                <span class="n">blending</span> <span class="o">=</span> <span class="s1">&#39;additive&#39;</span>
+                <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;gray&#39;</span>
+                <span class="n">blending</span> <span class="o">=</span> <span class="s1">&#39;translucent&#39;</span>
+
+            <span class="k">if</span> <span class="n">level_delta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">position</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">/</span><span class="n">downsample</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">position</span><span class="p">]</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span>
+                                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                              <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Tile [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                                              <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                                              <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                                              <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span>
+                                              <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Labels</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span>
+                                                   <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                                   <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Segmentation [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                                                   <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                                                   <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span>
+                                                   <span class="n">blending</span><span class="o">=</span><span class="n">blending</span><span class="p">,</span>
+                                                   <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Points</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Cells center&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dx</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dy</span><span class="o">/</span><span class="n">downsample</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">atlas</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Atlas&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">z_downsample</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">y_downsample</span><span class="o">/</span><span class="n">downsample</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">x_downsample</span><span class="o">/</span><span class="n">downsample</span><span class="p">]))</span>
+
+        <span class="c1"># Display layers</span>
+        <span class="k">if</span> <span class="n">pyramidal</span><span class="p">:</span>
+            <span class="n">display_layers_pyramidal</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="n">level_delta</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">display_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileViewer.display_tiles"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer.display_tiles">[docs]</a>    <span class="k">def</span> <span class="nf">display_tiles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">pyramidal</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Display tiles at position coords.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        coords: list</span>
+<span class="sd">            list of tuples (row, col) containing the tile coordinate to display.</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</span>
+<span class="sd">        kwargs: dict</span>
+<span class="sd">            dictionary passed to Napari for custom option</span>
+<span class="sd">        color: bool</span>
+<span class="sd">            option to display in color</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute layers to be displayed by Napari</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Convert downsample to level delta</span>
+        <span class="n">level_delta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">downsample</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">downsample</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span> <span class="ow">in</span> <span class="n">coords</span><span class="p">:</span>
+                <span class="c1"># Load tile if not loaded, else use cached tile</span>
+                <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_tile_loaded</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">):</span>
+                    <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                        <span class="n">cc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tile</span><span class="o">.</span><span class="n">load_tile</span><span class="p">()</span>
+                    <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">apr</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">loaded_ind</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">loaded_tiles</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                        <span class="n">tile</span><span class="o">.</span><span class="n">load_segmentation</span><span class="p">()</span>
+                        <span class="n">cc</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">parts_cc</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">loaded_segmentation</span><span class="p">[</span><span class="n">ind</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+
+                <span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">level_delta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">position</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="o">/</span> <span class="n">downsample</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">position</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+                    <span class="n">blending</span> <span class="o">=</span> <span class="s1">&#39;additive&#39;</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                            <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;gray&#39;</span>
+                    <span class="n">blending</span> <span class="o">=</span> <span class="s1">&#39;translucent&#39;</span>
+
+                <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Image</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">,</span>
+                                                  <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                                  <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Tile [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                                                  <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                                                  <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                                                  <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span>
+                                                  <span class="n">colormap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+                                                  <span class="n">blending</span><span class="o">=</span><span class="n">blending</span><span class="p">,</span>
+                                                  <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">segmentation</span><span class="p">:</span>
+                    <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">apr_to_napari_Labels</span><span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">cc</span><span class="p">,</span>
+                                                       <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;constant&#39;</span><span class="p">,</span>
+                                                       <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Segmentation [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                                                       <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                                                       <span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">,</span>
+                                                       <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cells</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">par</span> <span class="o">=</span> <span class="n">apr</span><span class="o">.</span><span class="n">get_parameters</span><span class="p">()</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Points</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cells</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Cells center&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="n">par</span><span class="o">.</span><span class="n">dz</span> <span class="o">/</span> <span class="n">downsample</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dx</span> <span class="o">/</span> <span class="n">downsample</span><span class="p">,</span> <span class="n">par</span><span class="o">.</span><span class="n">dy</span> <span class="o">/</span> <span class="n">downsample</span><span class="p">]))</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Labels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">atlas</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Atlas&#39;</span><span class="p">,</span>
+                                 <span class="n">scale</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">z_downsample</span> <span class="o">/</span> <span class="n">downsample</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">y_downsample</span> <span class="o">/</span> <span class="n">downsample</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">atlaser</span><span class="o">.</span><span class="n">x_downsample</span> <span class="o">/</span> <span class="n">downsample</span><span class="p">]))</span>
+
+        <span class="c1"># Display layers</span>
+        <span class="k">if</span> <span class="n">pyramidal</span><span class="p">:</span>
+            <span class="n">display_layers_pyramidal</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="n">level_delta</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">display_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileViewer.check_stitching"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer.check_stitching">[docs]</a>    <span class="k">def</span> <span class="nf">check_stitching</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">downsample</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Function to display the stitched dataset using napari.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        downsample: int</span>
+<span class="sd">            downsampling parameter for APRSlicer (1: full resolution, 2: 2x downsampling, 4: 4x downsampling..etc)</span>
+<span class="sd">        color: bool</span>
+<span class="sd">            option to display in color</span>
+<span class="sd">        kwargs: dict</span>
+<span class="sd">            dictionary passed to Napari for custom option</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Compute layers to be displayed by Napari</span>
+        <span class="n">layers</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c1"># Convert downsample to level delta</span>
+        <span class="n">level_delta</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">downsample</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">downsample</span><span class="p">)))</span>
+
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="p">:</span>
+            <span class="n">tile</span><span class="o">.</span><span class="n">lazy_load_tile</span><span class="p">(</span><span class="n">level_delta</span><span class="o">=</span><span class="n">level_delta</span><span class="p">)</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_tile_position</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">level_delta</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">position</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">/</span><span class="n">downsample</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">position</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">color</span><span class="p">:</span>
+                <span class="n">blending</span> <span class="o">=</span> <span class="s1">&#39;additive&#39;</span>
+                <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">tile</span><span class="o">.</span><span class="n">row</span> <span class="o">%</span> <span class="mi">2</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;green&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;red&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">cmap</span> <span class="o">=</span> <span class="s1">&#39;gray&#39;</span>
+                <span class="n">blending</span> <span class="o">=</span> <span class="s1">&#39;translucent&#39;</span>
+
+            <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Image</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">lazy_data</span><span class="p">,</span>
+                              <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Tile [</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tile</span><span class="o">.</span><span class="n">row</span><span class="p">,</span> <span class="n">tile</span><span class="o">.</span><span class="n">col</span><span class="p">),</span>
+                              <span class="n">translate</span><span class="o">=</span><span class="n">position</span><span class="p">,</span>
+                              <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                              <span class="n">colormap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span>
+                              <span class="n">blending</span><span class="o">=</span><span class="n">blending</span><span class="p">,</span>
+                              <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+
+        <span class="n">display_layers</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="tileViewer._is_tile_loaded"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer._is_tile_loaded">[docs]</a>    <span class="k">def</span> <span class="nf">_is_tile_loaded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns True is tile is loaded, False otherwise.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ravel_multi_index</span><span class="p">((</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">),</span> <span class="n">dims</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nrow</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ncol</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">ind</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_ind</span></div>
+
+<div class="viewcode-block" id="tileViewer._load_tile"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer._load_tile">[docs]</a>    <span class="k">def</span> <span class="nf">_load_tile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load the tile at position [row, col].</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span>
+        <span class="n">path</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;row&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">row</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;col&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">col</span><span class="p">)][</span><span class="s1">&#39;path&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;tiff2D&#39;</span><span class="p">:</span>
+            <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;*.tif&#39;</span><span class="p">))</span>
+            <span class="n">im</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="o">*</span><span class="n">im</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+            <span class="n">u</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">im</span>
+            <span class="n">files</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">files</span><span class="p">):</span>
+                <span class="n">u</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_apr</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;tiff3D&#39;</span><span class="p">:</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_apr</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">tiles</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;apr&#39;</span><span class="p">:</span>
+            <span class="n">apr</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">APR</span><span class="p">()</span>
+            <span class="n">parts</span> <span class="o">=</span> <span class="n">pyapr</span><span class="o">.</span><span class="n">ShortParticles</span><span class="p">()</span>
+            <span class="n">pyapr</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+            <span class="n">u</span> <span class="o">=</span> <span class="p">(</span><span class="n">apr</span><span class="p">,</span> <span class="n">parts</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">u</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Error: image type </span><span class="si">{}</span><span class="s1"> not supported.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">type</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="tileViewer._get_tile_position"><a class="viewcode-back" href="../../paprica.viewer.html#paprica.viewer.tileViewer._get_tile_position">[docs]</a>    <span class="k">def</span> <span class="nf">_get_tile_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parse tile position in the database.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span>
+        <span class="n">tile_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;row&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">row</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;col&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">col</span><span class="p">)]</span>
+        <span class="n">px</span> <span class="o">=</span> <span class="n">tile_df</span><span class="p">[</span><span class="s1">&#39;ABS_H&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">py</span> <span class="o">=</span> <span class="n">tile_df</span><span class="p">[</span><span class="s1">&#39;ABS_V&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pz</span> <span class="o">=</span> <span class="n">tile_df</span><span class="p">[</span><span class="s1">&#39;ABS_D&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="p">[</span><span class="n">pz</span><span class="p">,</span> <span class="n">py</span><span class="p">,</span> <span class="n">px</span><span class="p">]</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

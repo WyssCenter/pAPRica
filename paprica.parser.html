@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>paprica.parser &mdash; paprica 0.0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="paprica.segmenter" href="paprica.segmenter.html" />
+    <link rel="prev" title="paprica.loader" href="paprica.loader.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> paprica
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">How to install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="documentation.html">Generating documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials.html">Tutorials</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API reference:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="paprica.atlaser.html">paprica.atlaser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.batcher.html">paprica.batcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.converter.html">paprica.converter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.loader.html">paprica.loader</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">paprica.parser</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.segmenter.html">paprica.segmenter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.stitcher.html">paprica.stitcher</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.viewer.html">paprica.viewer</a></li>
+<li class="toctree-l1"><a class="reference internal" href="paprica.runner.html">paprica.runner</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">paprica</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="paprica.html">&lt;no title&gt;</a></li>
+      <li class="breadcrumb-item active">paprica.parser</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/paprica.parser.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-paprica.parser">
+<span id="paprica-parser"></span><h1>paprica.parser<a class="headerlink" href="#module-paprica.parser" title="Permalink to this headline"></a></h1>
+<p>Submodule containing classes and functions relative to Parsing.</p>
+<p>The general idea of this submodule is to parse the data to be processed later on. This submodule was developed for
+our particular folder layout and was particularly adapted for COLM, mesoSPIM and ClearScope.</p>
+<p>Note that each channel is parsed separately so as to give maximum flexibility for stitching and visualization.</p>
+<p>There are two general way of parsing the data:
+- <strong>multitile</strong> parsing (tileParser class), where each tile has a given position on a 2D grid and can therefore be stitched
+- <strong>independant</strong> parsing (baseParser class), where each tile is independent</p>
+<p>We also provide a few classes to parse data from given microscopes:
+- COLM
+- MesoSpim
+- ClearScope</p>
+<p>By using this code you agree to the terms of the software license agreement.</p>
+<p>© Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="paprica.parser.autoParser">
+<span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">autoParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#autoParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.autoParser" title="Permalink to this definition"></a></dt>
+<dd><p>This function allows to parse a data-set automatically by guessing the folder architecture.
+This function uses the microscope_list that is automatically infered from this submodule.
+For each microscope it will call the __is_valid_acquisition() method and return the according parser object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>path</strong> (<em>str</em>) – path containing the data</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>tileParser object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="paprica.parser.baseParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">baseParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class used to parse several independent tiles (not multitile).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.__getitem__" title="Permalink to this definition"></a></dt>
+<dd><p>Return tiles, add neighbors information before returning.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the baseParser object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data.</p></li>
+<li><p><strong>frame_size</strong> (<em>int</em>) – size of each frame (camera resolution).</p></li>
+<li><p><strong>ftype</strong> (<em>string</em>) – input data type in ‘apr’, ‘tiff2D’ or ‘tiff3D’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.__iter__" title="Permalink to this definition"></a></dt>
+<dd><p>Method called under the hood when iterating on tiles. Because it is a generator, the memory is released at
+each iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator containing the tileLoader object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.__len__">
+<span class="sig-name descname"><span class="pre">__len__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.__len__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.__len__" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of tiles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._correct_offset">
+<span class="sig-name descname"><span class="pre">_correct_offset</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._correct_offset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._correct_offset" title="Permalink to this definition"></a></dt>
+<dd><p>If the row or column do not start at 0, then we subtract the min_row and min_col so that it starts at 0.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_neighbors_map">
+<span class="sig-name descname"><span class="pre">_get_neighbors_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_neighbors_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_neighbors_map" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the non-redundant neighbors map: neighbors[row, col] gives a list of neighbors and the total
+number of pair-wise neighbors. Only SOUTH and EAST are returned to avoid the redundancy.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_path_list">
+<span class="sig-name descname"><span class="pre">_get_path_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_path_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_path_list" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing the path to each tile.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_tile_list">
+<span class="sig-name descname"><span class="pre">_get_tile_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_tile_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_tile_list" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of tiles as a dictionary</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Create a list of dictionnary for each tile containing it’s path and coordinate on the grid.
+Coordinates are set to None for the baseParser which only parse independant tiles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_tiles_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_tiles_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_tiles_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing file paths (for tiff3D and APR) or folder paths (for tiff2).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_tiles_pattern">
+<span class="sig-name descname"><span class="pre">_get_tiles_pattern</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_tiles_pattern"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_tiles_pattern" title="Permalink to this definition"></a></dt>
+<dd><p>Return the tile pattern (0 = no tile, 1 = tile)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._get_total_neighbors_map">
+<span class="sig-name descname"><span class="pre">_get_total_neighbors_map</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._get_total_neighbors_map"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._get_total_neighbors_map" title="Permalink to this definition"></a></dt>
+<dd><p>Return the total neighbors maps (with redundancy in the case of undirected graph).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._print_info">
+<span class="sig-name descname"><span class="pre">_print_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._print_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._print_info" title="Permalink to this definition"></a></dt>
+<dd><p>Display parsing summary in the terminal.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser._sort_tiles">
+<span class="sig-name descname"><span class="pre">_sort_tiles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser._sort_tiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser._sort_tiles" title="Permalink to this definition"></a></dt>
+<dd><p>Sort tiles so that they are arranged in columns and rows (read from left to right and top to bottom).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.check_files_integrity">
+<span class="sig-name descname"><span class="pre">check_files_integrity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.check_files_integrity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.check_files_integrity" title="Permalink to this definition"></a></dt>
+<dd><p>Check that all tiles are readable and not corrupted.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.compute_average_CR">
+<span class="sig-name descname"><span class="pre">compute_average_CR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">progress_bar</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.compute_average_CR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.compute_average_CR" title="Permalink to this definition"></a></dt>
+<dd><p>Compute the average Computational Ratio (CR). Note: data must be of type APR.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>cr</strong> – average CR for the dataset</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.baseParser.make_lazy_loadable">
+<span class="sig-name descname"><span class="pre">make_lazy_loadable</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#baseParser.make_lazy_loadable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.baseParser.make_lazy_loadable" title="Permalink to this definition"></a></dt>
+<dd><p>Loads all parsed APR tiles and compute and save the tree parts so that the data-set becomes lazy loadable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">clearscopeParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#paprica.parser.tileParser" title="paprica.parser.tileParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">paprica.parser.tileParser</span></code></a></p>
+<p>Class used to parse multi-tile colm data where each tile position in space matters. Tile parsed this way are usually
+stitched later on.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the tileParser object for COLM acquisition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data.</p></li>
+<li><p><strong>channel</strong> (<em>int</em>) – fluorescence channel for parsing CLEARSCOPE data</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Control verbosity of the parsing. If True, the parser will print acquisition info in the terminal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser._get_n_channels">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_get_n_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser._get_n_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser._get_n_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of channel of the CLEARSCOPE acquisition. This is based on a regex that checks
+the highest n in the path: some_path/X_Y___nx/</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser._get_row_col">
+<span class="sig-name descname"><span class="pre">_get_row_col</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser._get_row_col"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser._get_row_col" title="Permalink to this definition"></a></dt>
+<dd><p>Get ClearScope tile row and col position given the tile number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>n</strong> (<em>int</em>) – ClearScope tile number</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>row</strong> (<em>int</em>) – row number</p></li>
+<li><p><strong>col</strong> (<em>int</em>) – col number</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of tiles as a dictionary for ClearScope data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser._get_tiles_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser._get_tiles_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser._get_tiles_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing ClearScope folders which contains individual tiff.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser._is_valid_acquisition">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_valid_acquisition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser._is_valid_acquisition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser._is_valid_acquisition" title="Permalink to this definition"></a></dt>
+<dd><p>This function returns True if path folder is a CLEARSCOPE acquisition.
+:param path: path to check if acquisition is COLM
+:type path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.clearscopeParser.interpolate_missing_frames">
+<span class="sig-name descname"><span class="pre">interpolate_missing_frames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#clearscopeParser.interpolate_missing_frames"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.clearscopeParser.interpolate_missing_frames" title="Permalink to this definition"></a></dt>
+<dd><p>Interpolate missing frames and save them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="paprica.parser.colmParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">colmParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#paprica.parser.tileParser" title="paprica.parser.tileParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">paprica.parser.tileParser</span></code></a></p>
+<p>Class used to parse multi-tile colm data where each tile position in space matters. Tile parsed this way are usually
+stitched later on.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the tileParser object for COLM acquisition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data. More specifically it should be the folder that contains the acquisition.</p></li>
+<li><p><strong>channel</strong> (<em>int</em>) – fluorescence channel for parsing COLM LOCXXX data</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Control verbosity of the parsing. If True, the parser will print acquisition info in the terminal.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser._get_n_channels">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_get_n_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser._get_n_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser._get_n_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of channel of the COLM acquisition.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of tiles as a dictionary for data saved as LOC00X.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser._get_tiles_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_path</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser._get_tiles_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser._get_tiles_path" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list containing COLM folders which contains individual tiff.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser._is_number">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser._is_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser._is_number" title="Permalink to this definition"></a></dt>
+<dd><p>Check if a string contain any king of number (isnumeric() method doesn’t work for decimal numbers).
+:rtype: True if s is a number, False otherwise</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser._is_valid_acquisition">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_is_valid_acquisition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser._is_valid_acquisition"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser._is_valid_acquisition" title="Permalink to this definition"></a></dt>
+<dd><p>This function returns True if path folder is a COLM acquisition.
+:param path: path to check if acquisition is COLM
+:type path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.colmParser.get_overlap">
+<span class="sig-name descname"><span class="pre">get_overlap</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#colmParser.get_overlap"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.colmParser.get_overlap" title="Permalink to this definition"></a></dt>
+<dd><p>Extract overlap from COLM Experiment.ini file.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="paprica.parser.get_microscope_list">
+<span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">get_microscope_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#get_microscope_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.get_microscope_list" title="Permalink to this definition"></a></dt>
+<dd><p>This function builds up a dict containing microscopes supported by the pipeline (refer to the documentation to add yours).
+By default, this list should be equivalent to:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">microscope_list</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;colm&#39;</span><span class="p">:</span> <span class="n">colmParser</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                  <span class="s1">&#39;clearscope&#39;</span><span class="p">:</span> <span class="n">clearscopeParser</span><span class="p">,</span>
+<span class="gp">&gt;&gt;&gt; </span>                  <span class="s1">&#39;default&#39;</span><span class="p">:</span> <span class="n">tileParser</span>
+<span class="gp">&gt;&gt;&gt; </span>                   <span class="p">}</span>
+</pre></div>
+</div>
+<p>The list is built by looking at the class that inherits from the base parser class and that are not the base parser class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><strong>microscope_list</strong> – dictionnary containing all supported microscopes.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="paprica.parser.get_number_of_channels">
+<span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">get_number_of_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#get_number_of_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.get_number_of_channels" title="Permalink to this definition"></a></dt>
+<dd><p>This functions returns the number of channels acquired in an acquisition located in ´path´ folder.
+:param path: path to the folder to check the number of channels
+:type path: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Number of acquired channels</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="paprica.parser.tileParser">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">paprica.parser.</span></span><span class="sig-name descname"><span class="pre">tileParser</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#paprica.parser.baseParser" title="paprica.parser.baseParser"><code class="xref py py-class docutils literal notranslate"><span class="pre">paprica.parser.baseParser</span></code></a></p>
+<p>Class used to parse multi-tile data where each tile position in space matters. Tile parsed this way are usually
+stitched later on.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser.__getitem__">
+<span class="sig-name descname"><span class="pre">__getitem__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser.__getitem__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser.__getitem__" title="Permalink to this definition"></a></dt>
+<dd><p>If item is an int, then returns the corresponding tileLoader object.</p>
+<p>If item is a tuple, then returns the corresponding (row, col) tileLoader object.</p>
+<p>If item is a slice, then it creates a generator so the tileLoader object is garbage collected at each iteration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frame_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2048</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ftype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser.__init__" title="Permalink to this definition"></a></dt>
+<dd><p>Constructor of the tileParser object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path</strong> (<em>string</em>) – path where to look for the data.</p></li>
+<li><p><strong>frame_size</strong> (<em>int</em>) – size of each frame (camera resolution).</p></li>
+<li><p><strong>ftype</strong> (<em>string</em>) – input data type in ‘apr’, ‘tiff2D’ or ‘tiff3D’</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser.__iter__">
+<span class="sig-name descname"><span class="pre">__iter__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser.__iter__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser.__iter__" title="Permalink to this definition"></a></dt>
+<dd><p>Method called under the hood when iterating on tiles. Because it is a generator, the memory is released at
+each iteration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Generator containing the tileLoader object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser._get_n_channels">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_get_n_channels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser._get_n_channels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser._get_n_channels" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of channel of the CLEARSCOPE acquisition. This is based on a regex that checks
+the highest n in the path: some_path/X_Y___nx/</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser._get_ncol">
+<span class="sig-name descname"><span class="pre">_get_ncol</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser._get_ncol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser._get_ncol" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of columns (H) to be stitched.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser._get_nrow">
+<span class="sig-name descname"><span class="pre">_get_nrow</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser._get_nrow"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser._get_nrow" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the number of rows (V) to be stitched.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser._get_tiles_from_path">
+<span class="sig-name descname"><span class="pre">_get_tiles_from_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser._get_tiles_from_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser._get_tiles_from_path" title="Permalink to this definition"></a></dt>
+<dd><p>Create a list of dictionnary for each tile containing it’s path and coordinate on the grid.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser._get_type">
+<span class="sig-name descname"><span class="pre">_get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser._get_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser._get_type" title="Permalink to this definition"></a></dt>
+<dd><p>Automatically determine file type based on what’s inside ‘path’.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="paprica.parser.tileParser._print_info">
+<span class="sig-name descname"><span class="pre">_print_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/paprica/parser.html#tileParser._print_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#paprica.parser.tileParser._print_info" title="Permalink to this definition"></a></dt>
+<dd><p>Display parsing summary in the terminal.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="paprica.loader.html" class="btn btn-neutral float-left" title="paprica.loader" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="paprica.segmenter.html" class="btn btn-neutral float-right" title="paprica.segmenter" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Wyss Center for Bio and Neuro Engineering.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -12,7 +12,7 @@ visualization, stitching, segmentation, and atlas registration.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation
+   :caption: Usage
 
    installation
    documentation

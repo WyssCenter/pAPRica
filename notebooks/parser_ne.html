@@ -38,7 +38,7 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <p class="caption" role="heading"><span class="caption-text">Documentation</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Usage</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../installation.html">How to install</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../documentation.html">Generating documentation</a></li>
@@ -100,9 +100,9 @@
 <p>Note that it is very easy to support new data architecture, you can get in touch for a given implementation. For the first case we use the ´tileParser´ class:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pipapr</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">paprica</span>
 
-<span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the folder containing the data&#39;</span><span class="p">,</span>
+<span class="n">tiles</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">tileParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the folder containing the data&#39;</span><span class="p">,</span>
                           <span class="n">frame_size</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span>
                           <span class="n">ftype</span><span class="o">=</span><span class="s1">&#39;apr&#39;</span><span class="p">)</span>
 </pre></div>
@@ -112,7 +112,7 @@
 <p>For the second case we use the ´colmParser´ class (less inputs are required since the sensor size and data type is fixed by the microscope):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -120,7 +120,7 @@
 <p>And finally for the third case we use the ´clearscopeParser´ class:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">clearscopeParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the ClearScope folder acquisition&#39;</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">clearscopeParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the ClearScope folder acquisition&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -128,9 +128,9 @@
 <p>Note that each channel must be parsed independently (this implementation choice was made to give more flexibility to the user):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles_ch0</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">tiles_ch1</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">tiles_ch2</span> <span class="o">=</span> <span class="n">pipapr</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<div class="highlight-ipython2 notranslate"><div class="highlight"><pre><span></span><span class="n">tiles_ch0</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">tiles_ch1</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">tiles_ch2</span> <span class="o">=</span> <span class="n">paprica</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">colmParser</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s1">&#39;path to the COLM folder acquisition&#39;</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

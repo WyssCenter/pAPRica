@@ -8,11 +8,11 @@ Welcome to the *pAPRica* documentation!
 
 *pAPRica* (pipelines for Adaptive Particle Representation image compositing and analysys) is a package for accelerated processing of microscopy 
 data based on the Adaptive Particle Representation (APR). It contains separate modules for file parsing and loading, APR conversion, 
-visualization, stitching, segmentation, and atlasing.
+visualization, stitching, segmentation, and atlas registration.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation
+   :caption: Usage
 
    installation
    documentation

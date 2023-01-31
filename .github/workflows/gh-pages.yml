@@ -1,58 +1,39 @@
-# Nom de notre workflow
-name: "Build and deploy Github pages"
 
-# Événements sur lesquels il doit être déclenché
+name: "Build and deploy documentation"
 on:
-  push:         # <- Déclenché lorsque l'on pousse du code...
+  push:
     branches:
-      - master  # <- ... mais seulement sur la branche "master"
+      - master  # run on push to master
 
 jobs:
-
-  # Notre job
   build-and-deploy:
     runs-on: ubuntu-latest
-
-    # Tâches à effectuer, comme expliquées ci-dessus
     steps:
 
-      # 1. On récupère le contenu du dépôt
-
       - name: "Checkout"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           persist-credentials: false
 
-      # 2. Partie spécifique à Sphinx (installation des
-      #    dépendances et génération de la doc)
-
       - name: "Set up Python"
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: 3.8
 
-      - name: "Install Python dependencies"
+      - name: "Install package"
         run: |
-          pip3 install setuptools
-          pip3 install sphinx sphinx-rtd-theme
-          pip3 install numpydoc
-          pip3 install myst_nb
-          python -m pip install --upgrade pip
-          pip install markupsafe==2.0.1
-          pip install numpy
-          pip install -e .
-          pip install pyapr>=1.0.0rc1
+          pip install --upgrade pip
+          pip install .
 
       - name: "Build Sphinx Doc"
         run: |
+          pip install sphinx sphinx-rtd-theme myst_nb
           cd doc
           make html
 
-      # 3. Déploiement sur les Github Pages
-
-      - name: "Deploy Github Pages"
-        uses: JamesIves/github-pages-deploy-action@3.7.1
+      - name: "Deploy to Github pages"
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          BRANCH: gh-pages     # <- Branche sur laquelle seront commités les fichiers
-          FOLDER: doc/build/html/  # <- Dossier contenant notre documentation générée
+          BRANCH: gh-pages
+          FOLDER: doc/build/html/

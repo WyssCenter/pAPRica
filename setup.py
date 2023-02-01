@@ -28,7 +28,7 @@ setup(
     description='APR-based image processing pipeline for microscopy data',
     long_description=LONG_DESCR,
     long_description_content_type='text/markdown',
-    url='https://github.com/WyssCenter/APR-pipelines',
+    url='https://github.com/WyssCenter/pAPRica',
     author='Jules Scholler, Joel Jonsson',
     author_email='jules.scholler@wysscenter.ch, jonsson@mpi-cbg.de',
     license=LICENSE,

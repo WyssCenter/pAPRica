@@ -11,6 +11,11 @@ By using this code you agree to the terms of the software license agreement.
 © Copyright 2020 Wyss Center for Bio and Neuro Engineering – All rights reserved
 """
 
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "not-installed"
+
 from . import loader, parser, stitcher, viewer, segmenter, atlaser, converter, runner, batcher
 from .atlaser import tileAtlaser
 from .converter import tileConverter

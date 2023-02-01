@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-LONG_DESCR = open('readme.md').read()
+LONG_DESCR = open('README.md').read()
 LICENSE = open('license.txt', encoding='utf8').read()
 
 setup(

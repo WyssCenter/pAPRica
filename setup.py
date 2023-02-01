@@ -5,7 +5,6 @@ LICENSE = open('license.txt', encoding='utf8').read()
 
 setup(
     name='paprica',
-    version='0.0.1',
     setup_requires='setuptools',
     packages=find_packages(),
     install_requires=[

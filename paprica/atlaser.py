@@ -166,7 +166,7 @@ class tileAtlaser():
             add debug option for brainreg which will save intermediate steps.
         params: dict
             dictionary with keys as brainreg options and values as parameters (see here:
-            https://docs.brainglobe.info/brainreg/user-guide/parameters)
+            https://brainglobe.info/documentation/brainreg/user-guide/parameters)
 
         Returns
         -------

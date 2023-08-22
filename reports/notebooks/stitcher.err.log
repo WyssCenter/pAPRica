@@ -1,19 +1,17 @@
 Traceback (most recent call last):
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
     executenb(
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/nbclient/client.py", line 1204, in execute
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/nbclient/client.py", line 1305, in execute
     return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/nbclient/util.py", line 84, in wrapped
-    return just_run(coro(*args, **kwargs))
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/nbclient/util.py", line 62, in just_run
-    return loop.run_until_complete(coro)
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/asyncio/base_events.py", line 616, in run_until_complete
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/jupyter_core/utils/__init__.py", line 166, in wrapped
+    return loop.run_until_complete(inner)
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/asyncio/base_events.py", line 616, in run_until_complete
     return future.result()
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/nbclient/client.py", line 663, in async_execute
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/nbclient/client.py", line 705, in async_execute
     await self.async_execute_cell(
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/nbclient/client.py", line 965, in async_execute_cell
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/nbclient/client.py", line 1058, in async_execute_cell
     await self._check_raise_for_error(cell, cell_index, exec_reply)
-  File "/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/nbclient/client.py", line 862, in _check_raise_for_error
+  File "/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/nbclient/client.py", line 914, in _check_raise_for_error
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
@@ -25,6 +23,10 @@ fig.set_figheight(20)
 fig.set_figwidth(20)
 ------------------
 
+----- stderr -----
+Error reading APR file: particle dataset 'particles' doesn't exist
+------------------
+
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mValueError[0m                                Traceback (most recent call last)
 Cell [0;32mIn[4], line 1[0m
@@ -32,7 +34,7 @@ Cell [0;32mIn[4], line 1[0m
 [1;32m      3[0m [38;5;66;03m# The code below is only used to format the output image correctly for this tutorial and is not needed if used on your own machine[39;00m
 [1;32m      4[0m fig [38;5;241m=[39m plt[38;5;241m.[39mgcf()
 
-File [0;32m/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/paprica/stitcher.py:635[0m, in [0;36mbaseStitcher.reconstruct_slice[0;34m(self, loc, n_proj, dim, downsample, color, debug, plot, seg, progress_bar)[0m
+File [0;32m/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/paprica/stitcher.py:635[0m, in [0;36mbaseStitcher.reconstruct_slice[0;34m(self, loc, n_proj, dim, downsample, color, debug, plot, seg, progress_bar)[0m
 [1;32m    604[0m [38;5;250m[39m[38;5;124;03m"""[39;00m
 [1;32m    605[0m [38;5;124;03mReconstruct whole sample 2D section at the given location and in a given dimension. This function can also[39;00m
 [1;32m    606[0m [38;5;124;03mreconstruct a maximum intensity projection if `n_proj>0`.[39;00m
@@ -46,33 +48,32 @@ File [0;32m/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/p
 [1;32m    638[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_reconstruct_y_slice(y[38;5;241m=[39mloc, n_proj[38;5;241m=[39mn_proj, downsample[38;5;241m=[39mdownsample, color[38;5;241m=[39mcolor,
 [1;32m    639[0m                                      debug[38;5;241m=[39mdebug, plot[38;5;241m=[39mplot, progress_bar[38;5;241m=[39mprogress_bar)
 
-File [0;32m/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/paprica/stitcher.py:785[0m, in [0;36mbaseStitcher._reconstruct_z_slice[0;34m(self, z, n_proj, downsample, color, debug, plot, seg, progress_bar)[0m
+File [0;32m/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/paprica/stitcher.py:785[0m, in [0;36mbaseStitcher._reconstruct_z_slice[0;34m(self, z, n_proj, downsample, color, debug, plot, seg, progress_bar)[0m
 [1;32m    782[0m level_delta [38;5;241m=[39m [38;5;28mint[39m([38;5;241m-[39mnp[38;5;241m.[39msign(downsample) [38;5;241m*[39m np[38;5;241m.[39mlog2(np[38;5;241m.[39mabs(downsample)))
 [1;32m    784[0m tile [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mtiles[[38;5;241m0[39m]
 [0;32m--> 785[0m [43mtile[49m[38;5;241;43m.[39;49m[43mlazy_load_tile[49m[43m([49m[43mlevel_delta[49m[38;5;241;43m=[39;49m[43mlevel_delta[49m[43m)[49m
 [1;32m    786[0m [38;5;28;01mif[39;00m seg:
 [1;32m    787[0m     tile[38;5;241m.[39mlazy_load_segmentation(level_delta[38;5;241m=[39mlevel_delta)
 
-File [0;32m/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/paprica/loader.py:201[0m, in [0;36mtileLoader.lazy_load_tile[0;34m(self, level_delta)[0m
+File [0;32m/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/paprica/loader.py:201[0m, in [0;36mtileLoader.lazy_load_tile[0;34m(self, level_delta)[0m
 [1;32m    198[0m [38;5;28;01mif[39;00m [38;5;28mself[39m[38;5;241m.[39mtype [38;5;241m!=[39m [38;5;124m'[39m[38;5;124mapr[39m[38;5;124m'[39m:
 [1;32m    199[0m     [38;5;28;01mraise[39;00m [38;5;167;01mTypeError[39;00m([38;5;124m'[39m[38;5;124mError: lazy loading is only supported for APR data.[39m[38;5;124m'[39m)
 [0;32m--> 201[0m [38;5;28mself[39m[38;5;241m.[39mlazy_data [38;5;241m=[39m [43mpyapr[49m[38;5;241;43m.[39;49m[43mreconstruction[49m[38;5;241;43m.[39;49m[43mLazySlicer[49m[43m([49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mpath[49m[43m,[49m[43m [49m[43mlevel_delta[49m[38;5;241;43m=[39;49m[43mlevel_delta[49m[43m,[49m[43m [49m[43mparts_name[49m[38;5;241;43m=[39;49m[38;5;124;43m'[39;49m[38;5;124;43mparticles[39;49m[38;5;124;43m'[39;49m[43m,[49m
 [1;32m    202[0m [43m                                                  [49m[43mtree_parts_name[49m[38;5;241;43m=[39;49m[38;5;124;43m'[39;49m[38;5;124;43mparticles[39;49m[38;5;124;43m'[39;49m[43m)[49m
 [1;32m    203[0m [38;5;28mself[39m[38;5;241m.[39mis_loaded [38;5;241m=[39m [38;5;28;01mTrue[39;00m
 
-File [0;32m/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/pyapr/reconstruction/LazySlicer.py:72[0m, in [0;36mLazySlicer.__init__[0;34m(self, file_path, level_delta, mode, parts_name, tree_parts_name, t, channel_name)[0m
+File [0;32m/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/pyapr/reconstruction/LazySlicer.py:72[0m, in [0;36mLazySlicer.__init__[0;34m(self, file_path, level_delta, mode, parts_name, tree_parts_name, t, channel_name)[0m
 [1;32m     70[0m tree_parts_name [38;5;241m=[39m tree_parts_name [38;5;129;01mor[39;00m get_particle_names([38;5;28mself[39m[38;5;241m.[39mpath, t[38;5;241m=[39mt, channel_name[38;5;241m=[39mchannel_name, tree[38;5;241m=[39m[38;5;28;01mTrue[39;00m)[[38;5;241m0[39m]
 [1;32m     71[0m tree_parts_type [38;5;241m=[39m get_particle_type([38;5;28mself[39m[38;5;241m.[39mpath, t[38;5;241m=[39mt, channel_name[38;5;241m=[39mchannel_name, parts_name[38;5;241m=[39mtree_parts_name, tree[38;5;241m=[39m[38;5;28;01mTrue[39;00m)
 [0;32m---> 72[0m [38;5;28mself[39m[38;5;241m.[39mtree_parts [38;5;241m=[39m [43mtype_to_lazy_particles[49m[43m([49m[43mtree_parts_type[49m[43m)[49m
 [1;32m     73[0m [38;5;28mself[39m[38;5;241m.[39mtree_parts[38;5;241m.[39minit_tree([38;5;28mself[39m[38;5;241m.[39maprfile, tree_parts_name, t, channel_name)
 [1;32m     74[0m [38;5;28mself[39m[38;5;241m.[39mtree_parts[38;5;241m.[39mopen()
 
-File [0;32m/opt/hostedtoolcache/Python/3.8.16/x64/lib/python3.8/site-packages/pyapr/utils/types.py:63[0m, in [0;36mtype_to_lazy_particles[0;34m(typespec)[0m
+File [0;32m/opt/hostedtoolcache/Python/3.8.17/x64/lib/python3.8/site-packages/pyapr/utils/types.py:63[0m, in [0;36mtype_to_lazy_particles[0;34m(typespec)[0m
 [1;32m     61[0m [38;5;28;01mif[39;00m typespec [38;5;129;01min[39;00m ([38;5;124m'[39m[38;5;124muint64[39m[38;5;124m'[39m, np[38;5;241m.[39muint64):
 [1;32m     62[0m     [38;5;28;01mreturn[39;00m LazyDataLong()
 [0;32m---> 63[0m [38;5;28;01mraise[39;00m [38;5;167;01mValueError[39;00m([38;5;124mf[39m[38;5;124m'[39m[38;5;124mType [39m[38;5;132;01m{[39;00mtypespec[38;5;132;01m}[39;00m[38;5;124m is currently not supported. Valid types are [39m[38;5;130;01m\'[39;00m[38;5;124muint8[39m[38;5;130;01m\'[39;00m[38;5;124m, [39m[38;5;130;01m\'[39;00m[38;5;124muint16[39m[38;5;130;01m\'[39;00m[38;5;124m, [39m[38;5;124m'[39m
 [1;32m     64[0m                  [38;5;124mf[39m[38;5;124m'[39m[38;5;130;01m\'[39;00m[38;5;124muint64[39m[38;5;130;01m\'[39;00m[38;5;124m and [39m[38;5;130;01m\'[39;00m[38;5;124mfloat[39m[38;5;130;01m\'[39;00m[38;5;124m ([39m[38;5;130;01m\'[39;00m[38;5;124mfloat32[39m[38;5;130;01m\'[39;00m[38;5;124m)[39m[38;5;124m'[39m)
 
 [0;31mValueError[0m: Type  is currently not supported. Valid types are 'uint8', 'uint16', 'uint64' and 'float' ('float32')
-ValueError: Type  is currently not supported. Valid types are 'uint8', 'uint16', 'uint64' and 'float' ('float32')
 

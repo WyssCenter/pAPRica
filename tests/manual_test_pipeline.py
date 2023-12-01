@@ -68,7 +68,7 @@ def main():
 
     # Parse data
     t_ini = time()
-    tiles = paprica.parser.tileParser(path, frame_size=512, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size_h=512, frame_size_v=512, ftype='apr')
     t = time()
 
     # Stitch

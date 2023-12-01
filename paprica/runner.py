@@ -54,7 +54,8 @@ class clearscopeRunningPipeline():
         self.folder_settings = path
         self.name_acq = os.path.basename(path)
         # self.folder_settings, self.name_acq = os.path.split(path)
-        self.frame_size = 2048
+        self.frame_size_h = 2048
+        self.frame_size_v = 2048
         self.n_channels = n_channels
         self.tile_processed = 0
         self.type = 'clearscope'
@@ -101,8 +102,8 @@ class clearscopeRunningPipeline():
         self.segment = False
         self.segmenter = None
 
-        self.reg_x = int(self.frame_size*0.05)
-        self.reg_y = int(self.frame_size*0.05)
+        self.reg_x = int(self.frame_size_h*0.05)
+        self.reg_y = int(self.frame_size_v*0.05)
         self.reg_z = 20
 
         self.z_begin = None
@@ -375,11 +376,11 @@ class clearscopeRunningPipeline():
             raise ValueError('Error: overlap margin is too small and may make the stitching fail.')
 
         self.overlap_h = int(self.expected_overlap_h*(1+margin/100))
-        if self.expected_overlap_h > self.frame_size:
-            self.expected_overlap_h = self.frame_size
+        if self.expected_overlap_h > self.frame_size_h:
+            self.expected_overlap_h = self.frame_size_h
         self.overlap_v = int(self.expected_overlap_v*(1+margin/100))
-        if self.expected_overlap_v > self.frame_size:
-            self.expected_overlap_v = self.frame_size
+        if self.expected_overlap_v > self.frame_size_v:
+            self.expected_overlap_v = self.frame_size_v
 
     def reconstruct_slice(self, loc=None, n_proj=0, dim=0, downsample=1, color=False, debug=False, plot=True, progress_bar=True):
         """
@@ -676,11 +677,11 @@ class clearscopeRunningPipeline():
         self.expected_overlap_h = int(self.acq_param['VSThrowAwayXRight']*2)
 
         self.overlap_h = int(self.expected_overlap_h*1.2)
-        if self.expected_overlap_h > self.frame_size:
-            self.expected_overlap_h = self.frame_size
+        if self.expected_overlap_h > self.frame_size_h:
+            self.expected_overlap_h = self.frame_size_h
         self.overlap_v = int(self.expected_overlap_v*1.2)
-        if self.expected_overlap_v > self.frame_size:
-            self.expected_overlap_v = self.frame_size
+        if self.expected_overlap_v > self.frame_size_v:
+            self.expected_overlap_v = self.frame_size_v
 
         print('\nAcquisition parameters:'
               '\n- number of row: {}'
@@ -690,8 +691,8 @@ class clearscopeRunningPipeline():
               '\n- horizontal overlap: {:0.2f}%'
               '\n- vertical overlap: {:0.2f}%'
               .format(self.nrow, self.ncol, self.n_planes, self.n_channels,
-                      self.expected_overlap_h/self.frame_size*100,
-                      self.expected_overlap_v/self.frame_size*100))
+                      self.expected_overlap_h/self.frame_size_h*100,
+                      self.expected_overlap_v/self.frame_size_v*100))
 
     def _is_new_tile_available(self):
         """
@@ -838,7 +839,8 @@ class clearscopeRunningPipeline():
                                          neighbors=neighbors,
                                          neighbors_tot=None,
                                          neighbors_path=None,
-                                         frame_size=2048,
+                                         frame_size_h=2048,
+                                         frame_size_v=2048,
                                          folder_root=self.path,
                                          channel=channel)
 
@@ -982,12 +984,12 @@ class clearscopeRunningPipeline():
 
                 # EAST 1
                 patch = pyapr.ReconPatch()
-                patch.y_begin = self.frame_size - self.overlap_h
+                patch.y_begin = self.frame_size_h - self.overlap_h
                 if self.z_begin is None:
                     proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                 else:
                     patch_yx = pyapr.ReconPatch()
-                    patch_yx.y_begin = self.frame_size - self.overlap_h
+                    patch_yx.y_begin = self.frame_size_h - self.overlap_h
                     patch_yx.z_begin = self.z_begin
                     patch_yx.z_end = self.z_end
                     proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch=patch, patch_yx=patch_yx,
@@ -1055,12 +1057,12 @@ class clearscopeRunningPipeline():
 
                 # SOUTH 1
                 patch = pyapr.ReconPatch()
-                patch.x_begin = self.frame_size - self.overlap_v
+                patch.x_begin = self.frame_size_v - self.overlap_v
                 if self.z_begin is None:
                     proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                 else:
                     patch_yx = pyapr.ReconPatch()
-                    patch_yx.x_begin = self.frame_size - self.overlap_v
+                    patch_yx.x_begin = self.frame_size_v - self.overlap_v
                     patch_yx.z_begin = self.z_begin
                     patch_yx.z_end = self.z_end
                     proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch=patch, patch_yx=patch_yx,
@@ -1210,16 +1212,16 @@ class clearscopeRunningPipeline():
         None
         """
         overlap = np.median(np.diff(np.median(self.registration_map_abs[0], axis=0)))
-        self.effective_overlap_h = (self.frame_size-overlap)/self.frame_size*100
+        self.effective_overlap_h = (self.frame_size_h-overlap)/self.frame_size_h*100
         print('Effective horizontal overlap: {:0.2f}%'.format(self.effective_overlap_h))
         overlap = np.median(np.diff(np.median(self.registration_map_abs[1], axis=1)))
-        self.effective_overlap_v = (self.frame_size-overlap)/self.frame_size*100
+        self.effective_overlap_v = (self.frame_size_v-overlap)/self.frame_size_v*100
         print('Effective vertical overlap: {:0.2f}%'.format(self.effective_overlap_v))
 
-        if np.abs(self.effective_overlap_v*self.frame_size/100-self.expected_overlap_v)>0.2*self.expected_overlap_v:
+        if np.abs(self.effective_overlap_v*self.frame_size_v/100-self.expected_overlap_v)>0.2*self.expected_overlap_v:
             warnings.warn('Expected vertical overlap is very different from the computed one, the registration '
                           'might be wrong.')
-        if np.abs(self.effective_overlap_h*self.frame_size/100-self.expected_overlap_h)>0.2*self.expected_overlap_h:
+        if np.abs(self.effective_overlap_h*self.frame_size_h/100-self.expected_overlap_h)>0.2*self.expected_overlap_h:
             warnings.warn('Expected horizontal overlap is very different from the computed one, the registration '
                           'might be wrong.')
 
@@ -1335,10 +1337,10 @@ class clearscopeRunningPipeline():
         reg_abs_map = np.zeros_like(reg_rel_map)
         # H
         for x in range(reg_abs_map.shape[2]):
-            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size-self.overlap_h)
+            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size_h-self.overlap_h)
         # V
         for x in range(reg_abs_map.shape[1]):
-            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap_v)
+            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size_h-self.overlap_v)
         # D
         reg_abs_map[2] = reg_rel_map[2]
         self.registration_map_abs = reg_abs_map

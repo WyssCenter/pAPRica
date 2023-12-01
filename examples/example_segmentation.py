@@ -51,7 +51,7 @@ path = '/home/user/folder_containing_data'
 # If you don't have any data to try on, you can run the 'example_create_synthetic_dataset.py' script
 
 # We then parse this data using the parser
-tiles = paprica.tileParser(path=path, frame_size=2048, ftype='apr')
+tiles = paprica.tileParser(path=path, frame_size_h=2048, frame_size_v=2048, ftype='apr')
 
 # Here we will manually train the segmenter on the first tile
 trainer = paprica.tileTrainer(tiles[0, 0], func_to_compute_features=compute_features)

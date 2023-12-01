@@ -136,7 +136,8 @@ def test_main():
     converter.batch_convert_to_apr(Ip_th=100, rel_error=0.4, path=os.path.join(path, 'APR'))
 
     # Parse synthetic data
-    tiles_apr = paprica.tileParser(os.path.join(path, 'APR'), frame_size=int(length / dH))
+    tiles_apr = paprica.tileParser(os.path.join(path, 'APR'),
+                                   frame_size_h=int(length / dH), frame_size_v=int(length / dV))
 
     # Stitch data-set
     stitcher = paprica.tileStitcher(tiles_apr, overlap_h=overlap_H, overlap_v=overlap_V)

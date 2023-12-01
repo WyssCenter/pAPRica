@@ -4,13 +4,13 @@ Submodule containing classes and functions relative to **stitching**.
 With this submodule the user can stitch a previously parsed dataset, typically the autofluorescence channel:
 
 >>> import paprica
->>> tiles_autofluo = paprica.parser.tileParser(path_to_autofluo, frame_size=1024, overlap=25)
+>>> tiles_autofluo = paprica.parser.tileParser(path_to_autofluo, frame_size_h=1024, frame_size_v=1024, overlap=25)
 >>> stitcher = paprica.stitcher.tileStitcher(tiles_autofluo)
 >>> stitcher.compute_registration_fast()
 
 Others channel can then easily stitched using the previous one as reference:
 
->>> tiles_signal = paprica.parser.tileParser(path_to_data, frame_size=1024, overlap=25)
+>>> tiles_signal = paprica.parser.tileParser(path_to_data, frame_size_h=1024, frame_size_v=1024, overlap=25)
 >>> stitcher_channel = paprica.stitcher.channelStitcher(stitcher, tiles_autofluo, tiles_signal)
 >>> stitcher_channel.compute_rigid_registration()
 
@@ -491,17 +491,18 @@ class baseStitcher():
         self.nrow = tiles.nrow
         self.n_vertex = tiles.n_tiles
         self.n_edges = tiles.n_edges
-        self.frame_size = tiles.frame_size
+        self.frame_size_h = tiles.frame_size_h
+        self.frame_size_v = tiles.frame_size_v
 
-        self.expected_overlap_h = int(overlap_h/100*self.frame_size)
-        self.expected_overlap_v = int(overlap_v/100*self.frame_size)
+        self.expected_overlap_h = int(overlap_h/100*self.frame_size_h)
+        self.expected_overlap_v = int(overlap_v/100*self.frame_size_v)
 
         self.overlap_h = int(self.expected_overlap_h*1.2)
-        if self.expected_overlap_h > self.frame_size:
-            self.expected_overlap_h = self.frame_size
+        if self.expected_overlap_h > self.frame_size_h:
+            self.expected_overlap_h = self.frame_size_h
         self.overlap_v = int(self.expected_overlap_v*1.2)
-        if self.expected_overlap_v > self.frame_size:
-            self.expected_overlap_v = self.frame_size
+        if self.expected_overlap_v > self.frame_size_v:
+            self.expected_overlap_v = self.frame_size_v
 
         self.mask = False
         self.threshold = None
@@ -509,8 +510,8 @@ class baseStitcher():
         self.segment = False
         self.segmenter = None
 
-        self.reg_x = int(self.frame_size*0.05)
-        self.reg_y = int(self.frame_size*0.05)
+        self.reg_x = int(self.frame_size_h*0.05)
+        self.reg_y = int(self.frame_size_v*0.05)
         self.reg_z = 20
 
         self.z_begin = None
@@ -1243,12 +1244,12 @@ class baseStitcher():
                 if self.tiles.tiles_pattern[tile.row, tile.col + 1] == 1:
                     # EAST 1
                     patch = pyapr.ReconPatch()
-                    patch.y_begin = self.frame_size - self.overlap_h
+                    patch.y_begin = self.frame_size_h - self.overlap_h
                     if self.z_begin is None:
                         proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     else:
                         patch_yx = pyapr.ReconPatch()
-                        patch_yx.y_begin = self.frame_size - self.overlap_h
+                        patch_yx.y_begin = self.frame_size_h - self.overlap_h
                         patch_yx.z_begin = self.z_begin
                         patch_yx.z_end = self.z_end
                         proj['east'] = _get_max_proj_apr(tile.apr, tile.parts, patch=patch, patch_yx=patch_yx,
@@ -1271,12 +1272,12 @@ class baseStitcher():
                 if self.tiles.tiles_pattern[tile.row + 1, tile.col] == 1:
                     # SOUTH 1
                     patch = pyapr.ReconPatch()
-                    patch.x_begin = self.frame_size - self.overlap_v
+                    patch.x_begin = self.frame_size_v - self.overlap_v
                     if self.z_begin is None:
                         proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch, plot=False)
                     else:
                         patch_yx = pyapr.ReconPatch()
-                        patch_yx.x_begin = self.frame_size - self.overlap_v
+                        patch_yx.x_begin = self.frame_size_v - self.overlap_v
                         patch_yx.z_begin = self.z_begin
                         patch_yx.z_end = self.z_end
                         proj['south'] = _get_max_proj_apr(tile.apr, tile.parts, patch=patch, patch_yx=patch_yx,
@@ -1540,10 +1541,10 @@ class tileStitcher(baseStitcher):
         reg_abs_map = np.zeros_like(reg_rel_map)
         # H
         for x in range(reg_abs_map.shape[2]):
-            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size - self.expected_overlap_h)
+            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size_h - self.expected_overlap_h)
         # V
         for x in range(reg_abs_map.shape[1]):
-            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size - self.expected_overlap_v)
+            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size_v - self.expected_overlap_v)
         # D
         reg_abs_map[2] = reg_rel_map[2]
         self.registration_map_abs = reg_abs_map
@@ -1796,11 +1797,11 @@ class tileStitcher(baseStitcher):
             raise ValueError('Error: overlap margin is too small and may make the stitching fail.')
 
         self.overlap_h = int(self.expected_overlap_h*(1+margin/100))
-        if self.expected_overlap_h > self.frame_size:
-            self.expected_overlap_h = self.frame_size
+        if self.expected_overlap_h > self.frame_size_h:
+            self.expected_overlap_h = self.frame_size_h
         self.overlap_v = int(self.expected_overlap_v*(1+margin/100))
-        if self.expected_overlap_v > self.frame_size:
-            self.expected_overlap_v = self.frame_size
+        if self.expected_overlap_v > self.frame_size_v:
+            self.expected_overlap_v = self.frame_size_v
 
     def set_z_range(self, z_begin, z_end):
         """
@@ -1828,16 +1829,16 @@ class tileStitcher(baseStitcher):
 
         """
         overlap = np.median(np.diff(np.median(self.registration_map_abs[0], axis=0)))
-        self.effective_overlap_h = (self.frame_size-overlap)/self.frame_size*100
+        self.effective_overlap_h = (self.frame_size_h-overlap)/self.frame_size_h*100
         print('Effective horizontal overlap: {:0.2f}%'.format(self.effective_overlap_h))
         overlap = np.median(np.diff(np.median(self.registration_map_abs[1], axis=1)))
-        self.effective_overlap_v = (self.frame_size-overlap)/self.frame_size*100
+        self.effective_overlap_v = (self.frame_size_v-overlap)/self.frame_size_v*100
         print('Effective vertical overlap: {:0.2f}%'.format(self.effective_overlap_v))
 
-        if np.abs(self.effective_overlap_v*self.frame_size/100-self.expected_overlap_v)>0.2*self.expected_overlap_v:
+        if np.abs(self.effective_overlap_v*self.frame_size_v/100-self.expected_overlap_v)>0.2*self.expected_overlap_v:
             warnings.warn('Expected vertical overlap is very different from the computed one, the registration '
                           'might be wrong.')
-        if np.abs(self.effective_overlap_h*self.frame_size/100-self.expected_overlap_h)>0.2*self.expected_overlap_h:
+        if np.abs(self.effective_overlap_h*self.frame_size_h/100-self.expected_overlap_h)>0.2*self.expected_overlap_h:
             warnings.warn('Expected horizontal overlap is very different from the computed one, the registration '
                           'might be wrong.')
 
@@ -1953,10 +1954,10 @@ class tileStitcher(baseStitcher):
         reg_abs_map = np.zeros_like(reg_rel_map)
         # H
         for x in range(reg_abs_map.shape[2]):
-            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size-self.overlap_h)
+            reg_abs_map[0, :, x] = reg_rel_map[0, :, x] + x * (self.frame_size_h-self.overlap_h)
         # V
         for x in range(reg_abs_map.shape[1]):
-            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size-self.overlap_v)
+            reg_abs_map[1, x, :] = reg_rel_map[1, x, :] + x * (self.frame_size_v-self.overlap_v)
         # D
         reg_abs_map[2] = reg_rel_map[2]
         self.registration_map_abs = reg_abs_map
@@ -2043,7 +2044,7 @@ class tileStitcher(baseStitcher):
         None
         """
         patch = pyapr.ReconPatch()
-        patch.y_begin = self.frame_size - self.overlap_h
+        patch.y_begin = self.frame_size_h - self.overlap_h
         proj_zy1, proj_zx1, proj_yx1 = _get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
         patch = pyapr.ReconPatch()
@@ -2082,7 +2083,7 @@ class tileStitcher(baseStitcher):
         None
         """
         patch = pyapr.ReconPatch()
-        patch.x_begin = self.frame_size - self.overlap_v
+        patch.x_begin = self.frame_size_v - self.overlap_v
         proj_zy1, proj_zx1, proj_yx1 = _get_max_proj_apr(apr_1, parts_1, patch, plot=False)
 
         patch = pyapr.ReconPatch()
@@ -2263,7 +2264,8 @@ class tileMerger():
         self.tiles = tiles
         self.lazy = self._find_if_lazy()
         self.type = tiles.type
-        self.frame_size = tiles.frame_size
+        self.frame_size_h = tiles.frame_size_h
+        self.frame_size_v = tiles.frame_size_v
         self.n_planes = self._get_n_planes()
         self.n_tiles = tiles.n_tiles
         self.n_row = tiles.nrow
@@ -2567,7 +2569,7 @@ class tileMerger():
             x size for merged array
         """
         x_pos = self.database['ABS_H'].to_numpy()
-        return x_pos.max() - x_pos.min() + self.frame_size
+        return x_pos.max() - x_pos.min() + self.frame_size_h
 
     def _get_ny(self):
         """
@@ -2579,7 +2581,7 @@ class tileMerger():
             y size for merged array
         """
         y_pos = self.database['ABS_V'].to_numpy()
-        return y_pos.max() - y_pos.min() + self.frame_size
+        return y_pos.max() - y_pos.min() + self.frame_size_v
 
     def _get_nz(self):
         """

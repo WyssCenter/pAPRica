@@ -17,7 +17,7 @@ def test_main():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr')
 
     # Parse data
-    tiles = paprica.parser.tileParser(path, frame_size=512, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size_h=512, frame_size_v=512, ftype='apr')
     tiles.check_files_integrity()
     tiles.compute_average_CR()
 
@@ -26,7 +26,8 @@ def test_main():
     assert(tiles.ncol == 4)
     assert(tiles.nrow == 4)
     assert(tiles.n_edges == 21)
-    assert(tiles.frame_size == 512)
+    assert(tiles.frame_size_h == 512)
+    assert(tiles.frame_size_v == 512)
     assert(tiles.path == path)
     assert(tiles.type == 'apr')
 

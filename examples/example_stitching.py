@@ -15,7 +15,7 @@ path = '/home/user/folder_containing_data'
 # If you don't have any data to try on, you can run the 'example_create_synthetic_dataset.py' script
 
 # We then parse this data using the parser
-tiles = paprica.tileParser(path=path, frame_size=2048, ftype='apr')
+tiles = paprica.tileParser(path=path, frame_size_h=2048, frame_size_v=2048, ftype='apr')
 # The previous parser expect the data to be in y_x.apr naming convention, this behavior can be adapted by creating
 # your own parsing class that inherits from tileParser. We provide an example for COLM data where we just need to
 # parse the data to associate each tile with its position on the grid:

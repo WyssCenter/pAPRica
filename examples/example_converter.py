@@ -15,7 +15,7 @@ path = '/home/user/folder_containing_data'
 # If you don't have any data to try on, you can run the 'example_create_synthetic_dataset.py' script
 
 # We then parse this data using the parser:
-tiles = paprica.tileParser(path=path, frame_size=2048)
+tiles = paprica.tileParser(path=path, frame_size_h=2048, frame_size_v=2048)
 
 # Next, we batch convert the data. Please refer to the original paper to understand and set correctly the
 # conversion parameters. The parameters that do not appear below are automatically determined but can also be
@@ -27,6 +27,6 @@ converter.batch_convert_to_apr(Ip_th=120,               # Intensity thresholding
                                )
 
 # It is also possible to batch reconstruct data
-tiles_tiff = paprica.tileParser(path='path_to_tiff_data', frame_size=2048)
+tiles_tiff = paprica.tileParser(path='path_to_tiff_data', frame_size_h=2048, frame_size_v=2048)
 converter = paprica.tileConverter(tiles_tiff)
 converter.batch_reconstruct_pixel()

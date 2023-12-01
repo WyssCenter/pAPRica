@@ -192,7 +192,8 @@ class tileConverter():
         if self.is_multitile:
             # Modify tileParser object to use APR instead
             self.tiles = paprica.parser.tileParser(folder_apr,
-                                                   frame_size=self.tiles.frame_size,
+                                                   frame_size_h=self.tiles.frame_size_h,
+                                                   frame_size_v=self.tiles.frame_size_v,
                                                    ftype='apr')
 
     def batch_reconstruct_pixel(self, mode='constant', progress_bar=True):

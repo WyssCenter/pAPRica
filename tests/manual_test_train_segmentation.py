@@ -61,7 +61,8 @@ def main():
     path = 'data/apr'
 
     # We load a tile
-    tiles = paprica.parser.tileParser(path, frame_size=512, overlap=128, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size_h=512, frame_size_v=512,
+                                      overlap_h=128, overlap_v=128, ftype='apr')
     tile = tiles[2]
     tile.load_tile()
 

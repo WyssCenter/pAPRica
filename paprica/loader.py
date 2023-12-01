@@ -46,7 +46,8 @@ def tile_from_apr(apr, parts):
                       neighbors=None,
                       neighbors_tot=None,
                       neighbors_path=None,
-                      frame_size=2048,
+                      frame_size_h=apr.shape(1),
+                      frame_size_v=apr.shape(2),
                       folder_root=None,
                       channel=None)
 
@@ -76,7 +77,8 @@ def tile_from_path(path):
                       neighbors=None,
                       neighbors_tot=None,
                       neighbors_path=None,
-                      frame_size=2048,
+                      frame_size_h=2048,
+                      frame_size_v=2048,
                       folder_root=os.path.basename(path),
                       channel=None)
 
@@ -86,7 +88,16 @@ class tileLoader():
     Class to load each tile, neighboring tiles, segmentation and neighboring segmentation.
 
     """
-    def __init__(self, path, row, col, ftype, neighbors, neighbors_tot, neighbors_path, frame_size, folder_root,
+    def __init__(self, path,
+                 row,
+                 col,
+                 ftype,
+                 neighbors,
+                 neighbors_tot,
+                 neighbors_path,
+                 frame_size_h,
+                 frame_size_v,
+                 folder_root,
                  channel):
         """
         Constructor of tileLoader object.
@@ -131,8 +142,10 @@ class tileLoader():
             in this case neighbors_tot = [[0, 0], [0, 2], [1, 1]]
         neighbors_path: list
             path of the neighbors whose coordinates are stored in neighbors
-        frame_size: int
-            camera frame size (only square sensors are supported for now).
+        frame_size_h: int
+            horizontal camera frame size.
+        frame_size_v: int
+            vertical camera frame size.
         folder_root: str
             root folder where everything should be saved.
         channel: int
@@ -147,7 +160,8 @@ class tileLoader():
         self.neighbors = neighbors
         self.neighbors_tot = neighbors_tot
         self.neighbors_path = neighbors_path
-        self.frame_size = frame_size
+        self.frame_size_h = frame_size_h
+        self.frame_size_v = frame_size_v
         self.folder_root = folder_root
         self.channel = channel
         self.is_loaded = False
@@ -373,7 +387,7 @@ class tileLoader():
         elif self.type == 'clearscope':
             u = self._load_clearscope(path)
         elif self.type == 'tiff3D':
-            u = imread(path)
+            u = np.squeeze(imread(path))
         elif self.type == 'apr':
             apr = pyapr.APR()
             parts = pyapr.ShortParticles()
@@ -401,7 +415,7 @@ class tileLoader():
             numpy array containing the data.
         """
         u = np.fromfile(path, dtype='uint16', count=-1)
-        return u.reshape((-1, self.frame_size, self.frame_size))
+        return u.reshape((-1, self.frame_size_v, self.frame_size_h))
 
     def _load_colm(self, path):
         """
@@ -419,7 +433,7 @@ class tileLoader():
         """
         files_sorted = sorted(glob(os.path.join(path, '*CHN0' + str(self.channel) + '_*tif')))
         n_files = len(files_sorted)
-        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
+        v = np.empty((n_files, self.frame_size_v, self.frame_size_h), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
             v[i] = imread(f)
         return v
@@ -440,7 +454,7 @@ class tileLoader():
         """
         files_sorted = sorted(glob(os.path.join(path, '*')))
         n_files = len(files_sorted)
-        v = np.empty((n_files, self.frame_size, self.frame_size), dtype='uint16')
+        v = np.empty((n_files, self.frame_size_v, self.frame_size_h), dtype='uint16')
         for i, f in enumerate(tqdm(files_sorted, desc='Loading sequence', leave=False)):
             v[i] = imread(f)
 

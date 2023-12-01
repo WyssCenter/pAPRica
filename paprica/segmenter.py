@@ -463,7 +463,8 @@ class multitileSegmenter():
         self.neighbors = tiles.neighbors
         self.n_edges = tiles.n_edges
         self.path_list = tiles.path_list
-        self.frame_size = tiles.frame_size
+        self.frame_size_h = tiles.frame_size_h
+        self.frame_size_v = tiles.frame_size_v
         self.verbose = verbose
 
         self.cells = None

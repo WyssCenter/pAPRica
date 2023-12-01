@@ -17,7 +17,7 @@ def test_main():
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data', 'apr')
 
     # Parse data
-    tiles = paprica.parser.tileParser(path, frame_size=512, ftype='apr')
+    tiles = paprica.parser.tileParser(path, frame_size_h=512, frame_size_v=512, ftype='apr')
 
     # Stitch data
     t = time()
@@ -47,6 +47,7 @@ def test_main():
     assert(len(stitcher1.database) == tiles.n_tiles)
     assert(stitcher1.nrow == tiles.nrow)
     assert(stitcher1.ncol == tiles.ncol)
-    assert(stitcher1.frame_size == tiles.frame_size)
+    assert(stitcher1.frame_size_h == tiles.frame_size_h)
+    assert(stitcher1.frame_size_v == tiles.frame_size_v)
     assert(stitcher1.n_edges == tiles.n_edges)
     assert(stitcher1.n_vertex == tiles.n_tiles)

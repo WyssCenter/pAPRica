@@ -99,7 +99,7 @@ class baseParser():
     Class used to parse several independent tiles (not multitile).
 
     """
-    def __init__(self, path, frame_size, ftype, verbose=True):
+    def __init__(self, path, frame_size_h, frame_size_v, ftype, verbose=True):
         """
         Constructor of the baseParser object.
 
@@ -107,14 +107,17 @@ class baseParser():
         ----------
         path: string
             path where to look for the data.
-        frame_size: int
-            size of each frame (camera resolution).
+        frame_size_h: int
+            horizontal camera frame size.
+        frame_size_v: int
+            vertical camera frame size.
         ftype: string
             input data type in 'apr', 'tiff2D' or 'tiff3D'
 
         """
         self.path = path
-        self.frame_size = frame_size
+        self.frame_size_h = frame_size_h
+        self.frame_size_v = frame_size_v
         self.type = ftype
         self.channel = None
         self.tiles_list = self._get_tile_list()
@@ -403,7 +406,8 @@ class baseParser():
                                          neighbors=self.neighbors,
                                          neighbors_tot=self.neighbors_tot,
                                          neighbors_path=self.neighbors_path,
-                                         frame_size=self.frame_size,
+                                         frame_size_h=self.frame_size_h,
+                                         frame_size_v=self.frame_size_v,
                                          folder_root=self.folder_root,
                                          channel=self.channel)
 
@@ -429,7 +433,8 @@ class baseParser():
                                                 neighbors=self.neighbors,
                                                 neighbors_tot=self.neighbors_tot,
                                                 neighbors_path=self.neighbors_path,
-                                                frame_size=self.frame_size,
+                                                frame_size_h=self.frame_size_h,
+                                                frame_size_v=self.frame_size_v,
                                                 folder_root=self.folder_root,
                                                 channel=self.channel)
 
@@ -447,7 +452,7 @@ class tileParser(baseParser):
     stitched later on.
 
     """
-    def __init__(self, path, frame_size=2048, ftype=None, verbose=True):
+    def __init__(self, path, frame_size_h=2048, frame_size_v=2048, ftype=None, verbose=True):
         """
         Constructor of the tileParser object.
 
@@ -455,15 +460,18 @@ class tileParser(baseParser):
         ----------
         path: string
             path where to look for the data.
-        frame_size: int
-            size of each frame (camera resolution).
+        frame_size_h: int
+            horizontal camera frame size.
+        frame_size_v: int
+            vertical camera frame size.
         ftype: string
             input data type in 'apr', 'tiff2D' or 'tiff3D'
 
         """
 
         self.path = path
-        self.frame_size = frame_size
+        self.frame_size_h = frame_size_h
+        self.frame_size_v = frame_size_v
         self.channel = None
         if ftype is None:
             self.type = self._get_type()
@@ -602,7 +610,8 @@ class tileParser(baseParser):
                                              neighbors=neighbors,
                                              neighbors_tot=neighbors_tot,
                                              neighbors_path=neighbors_path,
-                                             frame_size=self.frame_size,
+                                             frame_size_h=self.frame_size_h,
+                                             frame_size_v=self.frame_size_v,
                                              folder_root=self.folder_root,
                                              channel=self.channel)
 
@@ -626,7 +635,8 @@ class tileParser(baseParser):
                                              neighbors=neighbors,
                                              neighbors_tot=neighbors_tot,
                                              neighbors_path=neighbors_path,
-                                             frame_size=self.frame_size,
+                                             frame_size_h=self.frame_size_h,
+                                             frame_size_v=self.frame_size_v,
                                              folder_root=self.folder_root,
                                              channel=self.channel)
 
@@ -665,7 +675,8 @@ class tileParser(baseParser):
                                                 neighbors=neighbors,
                                                 neighbors_tot=neighbors_tot,
                                                 neighbors_path=neighbors_path,
-                                                frame_size=self.frame_size,
+                                                frame_size_h=self.frame_size_h,
+                                                frame_size_v=self.frame_size_v,
                                                 folder_root=self.folder_root,
                                                 channel=self.channel)
 
@@ -712,7 +723,7 @@ class colmParser(tileParser):
         self.ncol = u.shape[1]
         self.nrow = u.shape[0]
         path = os.path.join(path, 'VW0')
-        super().__init__(path, frame_size=2048, ftype='colm', verbose=verbose)
+        super().__init__(path, frame_size_h=2048, frame_size_v=2048, ftype='colm', verbose=verbose)
 
         self.channel = channel
 
@@ -832,7 +843,8 @@ class clearscopeParser(tileParser):
         self.channel = channel
         self.folder_settings, self.name_acq = os.path.split(path)
         self._parse_settings()
-        self.frame_size = 2048
+        self.frame_size_h = 2048
+        self.frame_size_v = 2048
         self.type = 'clearscope'
         self.tiles_list = self._get_tile_list()
         self.n_tiles = len(self.tiles_list)
@@ -1074,7 +1086,8 @@ class clearscopeParser(tileParser):
 #         """
 #
 #         self.path = path
-#         self.frame_size = 2048
+#         self.frame_size_h = 2048
+#         self.frame_size_v = 2048
 #         self.channel = channel
 #         self.channel_wavelength = self._get_channel_wavelength(channel)
 #         self.type = 'mesospim'

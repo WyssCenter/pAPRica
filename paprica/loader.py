@@ -46,8 +46,8 @@ def tile_from_apr(apr, parts):
                       neighbors=None,
                       neighbors_tot=None,
                       neighbors_path=None,
-                      frame_size_h=apr.shape(1),
-                      frame_size_v=apr.shape(2),
+                      frame_size_h=apr.shape(2),
+                      frame_size_v=apr.shape(1),
                       folder_root=None,
                       channel=None)
 
